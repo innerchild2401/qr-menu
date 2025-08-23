@@ -1,0 +1,114 @@
+[
+  {
+    "id": "grilled-salmon",
+    "name": "Grilled Salmon",
+    "description": "Fresh Atlantic salmon grilled to perfection with herbs and lemon, served with seasonal vegetables and quinoa pilaf",
+    "price": 24.99,
+    "image": "/uploads/demo/1703123456791_grilled_salmon.webp",
+    "nutrition": {
+      "calories": 420,
+      "protein": "35g",
+      "carbs": "12g",
+      "fat": "28g"
+    },
+    "categoryId": "mains"
+  },
+  {
+    "id": "truffle-pasta",
+    "name": "Truffle Pasta",
+    "description": "Handmade pasta with black truffle, parmesan, and wild mushrooms in a creamy sauce",
+    "price": 32.99,
+    "image": "/uploads/demo/1703123456792_truffle_pasta.webp",
+    "nutrition": {
+      "calories": 650,
+      "protein": "18g",
+      "carbs": "72g",
+      "fat": "32g"
+    },
+    "categoryId": "mains"
+  },
+  {
+    "id": "wagyu-burger",
+    "name": "Wagyu Burger",
+    "description": "Premium wagyu beef with caramelized onions, artisan cheese, and our signature sauce on a brioche bun",
+    "price": 28.99,
+    "image": "/uploads/demo/1703123456793_wagyu_burger.webp",
+    "nutrition": {
+      "calories": 780,
+      "protein": "42g",
+      "carbs": "45g",
+      "fat": "48g"
+    },
+    "categoryId": "mains"
+  },
+  {
+    "id": "caesar-salad",
+    "name": "Caesar Salad",
+    "description": "Crisp romaine lettuce with house-made caesar dressing, parmesan cheese, and garlic croutons",
+    "price": 16.99,
+    "image": "/uploads/demo/1703123456794_caesar_salad.webp",
+    "nutrition": {
+      "calories": 320,
+      "protein": "12g",
+      "carbs": "15g",
+      "fat": "25g"
+    },
+    "categoryId": "appetizers"
+  },
+  {
+    "id": "chocolate-souffle",
+    "name": "Chocolate Soufflé",
+    "description": "Rich dark chocolate soufflé with vanilla ice cream and berry compote",
+    "price": 14.99,
+    "image": "/uploads/demo/1703123456795_chocolate_souffle.webp",
+    "nutrition": {
+      "calories": 450,
+      "protein": "8g",
+      "carbs": "52g",
+      "fat": "24g"
+    },
+    "categoryId": "desserts"
+  },
+  {
+    "id": "lobster-bisque",
+    "name": "Lobster Bisque",
+    "description": "Creamy lobster bisque with a touch of cognac, fresh herbs, and a dollop of cream",
+    "price": 19.99,
+    "image": "/uploads/demo/1703123456796_lobster_bisque.webp",
+    "nutrition": {
+      "calories": 280,
+      "protein": "15g",
+      "carbs": "8g",
+      "fat": "20g"
+    },
+    "categoryId": "appetizers"
+  },
+  {
+    "id": "craft-cocktail",
+    "name": "Signature Craft Cocktail",
+    "description": "House-made cocktail featuring premium spirits, fresh herbs, and seasonal ingredients",
+    "price": 12.99,
+    "image": "/uploads/demo/1703123456797_craft_cocktail.webp",
+    "nutrition": {
+      "calories": 180,
+      "protein": "0g",
+      "carbs": "12g",
+      "fat": "0g"
+    },
+    "categoryId": "beverages"
+  },
+  {
+    "id": "tiramisu",
+    "name": "Classic Tiramisu",
+    "description": "Traditional Italian tiramisu with coffee-soaked ladyfingers, mascarpone, and cocoa",
+    "price": 11.99,
+    "image": "/uploads/demo/1703123456798_tiramisu.webp",
+    "nutrition": {
+      "calories": 380,
+      "protein": "6g",
+      "carbs": "35g",
+      "fat": "24g"
+    },
+    "categoryId": "desserts"
+  }
+]

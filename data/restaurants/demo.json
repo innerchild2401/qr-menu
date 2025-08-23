@@ -1,0 +1,16 @@
+{
+  "name": "Bella Vista Restaurant",
+  "slug": "demo",
+  "address": "123 Culinary Street, ",
+  "schedule": {
+    "monday": "11:00 AM - 10:00 PM",
+    "tuesday": "11:00 AM - 10:00 PM",
+    "wednesday": "11:00 AM - 10:00 PM",
+    "thursday": "11:00 AM - 10:00 PM",
+    "friday": "11:00 AM - 11:00 PM",
+    "saturday": "10:00 AM - 11:00 PM",
+    "sunday": "10:00 AM - 9:00 PM"
+  },
+  "logo": "/uploads/demo/1703123456789_bella_vista_logo.webp",
+  "cover": "/uploads/demo/1703123456790_bella_vista_cover.webp"
+}

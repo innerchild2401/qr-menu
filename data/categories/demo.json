@@ -1,0 +1,26 @@
+[
+  {
+    "id": "mains",
+    "name": "Main Courses",
+    "description": "Hearty and satisfying main dishes",
+    "order": 1
+  },
+  {
+    "id": "desserts",
+    "name": "Desserts",
+    "description": "Sweet endings to your perfect meal",
+    "order": 2
+  },
+  {
+    "id": "beverages",
+    "name": "Beverages",
+    "description": "Refreshing drinks and specialty cocktails",
+    "order": 3
+  },
+  {
+    "id": "starters",
+    "name": "starters",
+    "description": "",
+    "order": 4
+  }
+]

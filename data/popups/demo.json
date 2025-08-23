@@ -1,0 +1,47 @@
+[
+  {
+    "id": "holiday-special-2024",
+    "title": "🎉 Holiday Special Menu!",
+    "message": "Celebrate the season with our exclusive holiday dishes! Get 20% off on all main courses this week. Limited time offer - don't miss out!",
+    "image": "/uploads/demo/1703123456799_holiday_special.webp",
+    "ctaText": "View Holiday Menu",
+    "ctaUrl": "/menu/demo?category=holiday",
+    "active": true,
+    "startAt": "2024-12-01T00:00:00Z",
+    "endAt": "2024-12-31T23:59:59Z",
+    "frequency": "once-per-session"
+  },
+  {
+    "id": "new-dessert-launch",
+    "title": "🍰 New Dessert Alert!",
+    "message": "Introducing our signature chocolate lava cake! Made with premium Belgian chocolate and served with vanilla ice cream.",
+    "image": "/uploads/demo/1703123456800_new_dessert.webp",
+    "ctaText": "Try It Now",
+    "ctaUrl": "/menu/demo?highlight=chocolate-souffle",
+    "active": true,
+    "startAt": "2024-11-15T00:00:00Z",
+    "endAt": "2025-01-15T23:59:59Z",
+    "frequency": "every-visit"
+  },
+  {
+    "id": "lunch-special",
+    "title": "🍽️ Lunch Special Deal",
+    "message": "Monday to Friday: Enjoy our business lunch special! Any main course + drink + dessert for just $25.",
+    "ctaText": "Order Now",
+    "ctaUrl": "/menu/demo?special=lunch",
+    "active": true,
+    "startAt": "2024-01-01T00:00:00Z",
+    "endAt": "2025-12-31T23:59:59Z",
+    "frequency": "once-per-session"
+  },
+  {
+    "id": "weekend-brunch",
+    "title": "🥐 Weekend Brunch is Here!",
+    "message": "Join us for our amazing weekend brunch featuring fresh pastries, artisanal coffee, and signature breakfast dishes.",
+    "image": "/uploads/demo/1703123456801_weekend_brunch.webp",
+    "active": false,
+    "startAt": "2024-10-01T00:00:00Z",
+    "endAt": "2024-11-30T23:59:59Z",
+    "frequency": "every-visit"
+  }
+]

@@ -1,0 +1,173 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../../../../lib/auth';
+import { readJson, writeJson } from '../../../../../lib/fsStore';
+
+// Define types for popup data
+interface Popup {
+  id: string;
+  title: string;
+  message: string;
+  image?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  active: boolean;
+  startAt?: string;
+  endAt?: string;
+  frequency: "once-per-session" | "every-visit";
+}
+
+interface ExtendedSession {
+  user?: {
+    email?: string | null;
+  };
+  restaurantSlug?: string;
+}
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  try {
+    // Get session to verify authentication and get restaurant slug
+    const session = await getServerSession(authOptions) as ExtendedSession;
+    
+    if (!session || !session.restaurantSlug) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const restaurantSlug = session.restaurantSlug;
+
+    // Read popups data (no filtering - return all for admin)
+    const popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
+
+    return NextResponse.json({ popups });
+  } catch (error) {
+    console.error('Error fetching popups:', error);
+    
+    if (error instanceof Error && error.message.includes('File not found')) {
+      // Return empty array if no popups file exists yet
+      return NextResponse.json({ popups: [] });
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    // Get session to verify authentication and get restaurant slug
+    const session = await getServerSession(authOptions) as ExtendedSession;
+    
+    if (!session || !session.restaurantSlug) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const restaurantSlug = session.restaurantSlug;
+
+    // Parse request body
+    const { 
+      title, 
+      message, 
+      image, 
+      ctaText, 
+      ctaUrl, 
+      active, 
+      startAt, 
+      endAt, 
+      frequency 
+    } = await request.json();
+
+    // Validate required fields
+    if (!title || !title.trim()) {
+      return NextResponse.json(
+        { error: 'Popup title is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!message || !message.trim()) {
+      return NextResponse.json(
+        { error: 'Popup message is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!frequency || !['once-per-session', 'every-visit'].includes(frequency)) {
+      return NextResponse.json(
+        { error: 'Valid frequency is required (once-per-session or every-visit)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate dates if provided
+    if (startAt && endAt) {
+      const startDate = new Date(startAt);
+      const endDate = new Date(endAt);
+      if (endDate <= startDate) {
+        return NextResponse.json(
+          { error: 'End date must be after start date' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Read existing popups or start with empty array
+    let popups: Popup[] = [];
+    try {
+      popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
+    } catch (error) {
+      // File doesn't exist yet, start with empty array
+      popups = [];
+    }
+
+    // Generate new popup ID
+    const popupId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    
+    // Check if popup with this ID already exists
+    if (popups.find(popup => popup.id === popupId)) {
+      return NextResponse.json(
+        { error: 'A popup with this title already exists' },
+        { status: 400 }
+      );
+    }
+
+    // Create new popup
+    const newPopup: Popup = {
+      id: popupId,
+      title: title.trim(),
+      message: message.trim(),
+      image: image?.trim() || undefined,
+      ctaText: ctaText?.trim() || undefined,
+      ctaUrl: ctaUrl?.trim() || undefined,
+      active: Boolean(active),
+      startAt: startAt || undefined,
+      endAt: endAt || undefined,
+      frequency
+    };
+
+    // Add to popups array
+    popups.push(newPopup);
+
+    // Write updated popups back to file
+    await writeJson(`data/popups/${restaurantSlug}.json`, popups);
+
+    return NextResponse.json({ 
+      popup: newPopup,
+      message: 'Popup created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating popup:', error);
+    
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
