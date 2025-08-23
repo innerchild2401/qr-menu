@@ -96,7 +96,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
         // Generate or regenerate QR code
         qrCodeUrl = await generateAndUploadQRCode(
-          currentRestaurant.id,
           restaurantSlug,
           baseUrl
         );

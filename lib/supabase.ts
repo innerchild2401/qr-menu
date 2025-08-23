@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const supabaseUrl = 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.Lug4smvqk5sI-46MbFeh64Yu2nptehnUTlUCPSpYbqI';
+// Supabase configuration - use environment variables for Vercel compatibility
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.Lug4smvqk5sI-46MbFeh64Yu2nptehnUTlUCPSpYbqI';
 
-// For server-side admin operations (add service role key to environment)
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+// For server-side admin operations - use environment variable or fallback to provided key
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I';
 
 // Public client for client-side operations
 export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
@@ -55,7 +55,7 @@ export interface Product {
   description?: string;
   price: number;
   image?: string;
-  nutrition?: any; // JSON field
+  nutrition?: Record<string, unknown>; // JSON field
   available: boolean;
   sort_order?: number;
   created_at: string;
@@ -111,7 +111,7 @@ export const uploadFile = async (
   path: string,
   file: File | Buffer,
   options?: { contentType?: string; upsert?: boolean }
-): Promise<{ data?: any; error?: any }> => {
+): Promise<{ data?: unknown; error?: unknown }> => {
   return await supabaseAdmin.storage
     .from(bucket)
     .upload(path, file, {
@@ -124,7 +124,7 @@ export const uploadFile = async (
 export const deleteFile = async (
   bucket: string,
   path: string
-): Promise<{ data?: any; error?: any }> => {
+): Promise<{ data?: unknown; error?: unknown }> => {
   return await supabaseAdmin.storage
     .from(bucket)
     .remove([path]);

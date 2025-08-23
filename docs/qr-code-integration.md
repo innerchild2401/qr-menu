@@ -34,9 +34,9 @@ qr-codes/
 
 #### **Core Functions:**
 - `generateQRCode(menuUrl)` - Creates QR code PNG buffer
-- `uploadQRCode(restaurantId, buffer)` - Uploads to Supabase Storage
-- `generateAndUploadQRCode(restaurantId, slug, baseUrl)` - Complete workflow
-- `regenerateQRCode(restaurantId, slug, existingPath, baseUrl)` - Replace existing
+- `uploadQRCode(restaurantSlug, buffer)` - Uploads to Supabase Storage
+- `generateAndUploadQRCode(restaurantSlug, baseUrl)` - Complete workflow
+- `regenerateQRCode(restaurantSlug, existingPath, baseUrl)` - Replace existing
 - `deleteQRCode(storagePath)` - Remove from storage
 
 #### **QR Code Specifications:**

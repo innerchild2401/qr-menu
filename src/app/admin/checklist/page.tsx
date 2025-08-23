@@ -12,7 +12,7 @@ interface ChecklistItem {
   status: 'pending' | 'running' | 'success' | 'error';
   result?: string;
   error?: string;
-  action?: () => Promise<void>;
+  action?: () => Promise<string>;
 }
 
 export default function AdminChecklist() {

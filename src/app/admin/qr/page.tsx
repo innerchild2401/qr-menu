@@ -175,7 +175,7 @@ export default function AdminQR() {
           QR Code Management
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Manage your restaurant's QR code for the digital menu. Customers can scan this code to view your menu instantly.
+          Manage your restaurant&apos;s QR code for the digital menu. Customers can scan this code to view your menu instantly.
         </p>
       </div>
 
@@ -351,7 +351,7 @@ export default function AdminQR() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     <p className="text-sm text-gray-600 dark:text-gray-400">No QR code generated yet</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Click "Generate QR Code" to create one</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Click &quot;Generate QR Code&quot; to create one</p>
                   </div>
                 </div>
               )}

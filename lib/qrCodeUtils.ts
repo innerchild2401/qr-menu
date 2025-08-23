@@ -29,16 +29,16 @@ export async function generateQRCode(menuUrl: string): Promise<Buffer> {
  * Upload QR code to Supabase Storage and return public URL
  */
 export async function uploadQRCode(
-  restaurantId: string,
+  restaurantSlug: string,
   qrCodeBuffer: Buffer
 ): Promise<{ publicUrl: string; storagePath: string }> {
   try {
-    // Create unique filename with restaurant ID
-    const fileName = `${restaurantId}_qr_code.png`;
-    const storagePath = `restaurants/${fileName}`;
+    // Create filename with restaurant slug as requested
+    const fileName = `${restaurantSlug}.png`;
+    const storagePath = fileName; // Store directly in qr-codes bucket root
 
     // Upload to Supabase Storage
-    const { data, error } = await uploadFile(
+    const { error } = await uploadFile(
       STORAGE_BUCKETS.QR_CODES,
       storagePath,
       qrCodeBuffer,
@@ -88,7 +88,6 @@ export async function deleteQRCode(storagePath: string): Promise<void> {
  * Returns the public URL of the uploaded QR code
  */
 export async function generateAndUploadQRCode(
-  restaurantId: string,
   restaurantSlug: string,
   baseUrl: string = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 ): Promise<string> {
@@ -100,7 +99,7 @@ export async function generateAndUploadQRCode(
     const qrCodeBuffer = await generateQRCode(menuUrl);
 
     // Upload to storage
-    const { publicUrl } = await uploadQRCode(restaurantId, qrCodeBuffer);
+    const { publicUrl } = await uploadQRCode(restaurantSlug, qrCodeBuffer);
 
     return publicUrl;
   } catch (error) {
@@ -121,7 +120,6 @@ export function getQRCodeDownloadUrl(qrCodeUrl: string): string {
  * Regenerate QR code for a restaurant (useful for URL changes or updates)
  */
 export async function regenerateQRCode(
-  restaurantId: string,
   restaurantSlug: string,
   existingQRPath?: string,
   baseUrl: string = process.env.NEXTAUTH_URL || 'http://localhost:3000'
@@ -133,7 +131,7 @@ export async function regenerateQRCode(
     }
 
     // Generate new QR code
-    const newQRUrl = await generateAndUploadQRCode(restaurantId, restaurantSlug, baseUrl);
+    const newQRUrl = await generateAndUploadQRCode(restaurantSlug, baseUrl);
 
     return newQRUrl;
   } catch (error) {

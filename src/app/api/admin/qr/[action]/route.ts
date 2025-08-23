@@ -53,7 +53,6 @@ export async function POST(
             qrCodeUrl = restaurant.qr_code_url;
           } else {
             qrCodeUrl = await generateAndUploadQRCode(
-              restaurant.id,
               restaurantSlug,
               baseUrl
             );
@@ -77,7 +76,6 @@ export async function POST(
         case 'regenerate':
           // Force regenerate QR code
           qrCodeUrl = await regenerateQRCode(
-            restaurant.id,
             restaurantSlug,
             restaurant.qr_code_url,
             baseUrl

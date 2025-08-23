@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile, getPublicUrl, STORAGE_BUCKETS } from '../../../../../../lib/supabase';
-import { validateUploadFile, sanitizeFileName } from '../../../../../../lib/uploadUtils';
+import { validateFile, sanitizeFilename } from '../../../../../../lib/uploadUtils';
 
 export async function POST(
   request: NextRequest,
@@ -21,8 +21,8 @@ export async function POST(
     }
     
     // Validate file
-    const validation = validateUploadFile(file);
-    if (!validation.valid) {
+    const validation = validateFile(file);
+    if (validation) {
       return NextResponse.json(
         { error: validation.error },
         { status: 400 }
@@ -31,11 +31,11 @@ export async function POST(
     
     // Create file path: slug/timestamp_filename
     const timestamp = Date.now();
-    const sanitizedFileName = sanitizeFileName(file.name);
+    const sanitizedFileName = sanitizeFilename(file.name);
     const filePath = `${slug}/${timestamp}_${sanitizedFileName}`;
     
     // Upload to Supabase Storage
-    const { data, error } = await uploadFile(
+    const { error } = await uploadFile(
       STORAGE_BUCKETS.PRODUCTS,
       filePath,
       file,

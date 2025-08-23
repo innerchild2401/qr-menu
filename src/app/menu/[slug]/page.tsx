@@ -1,4 +1,5 @@
 import PromoPopup from '../../../components/PromoPopup';
+import Link from 'next/link';
 
 interface MenuPageProps {
   params: Promise<{
@@ -212,14 +213,14 @@ export default async function MenuPage({ params }: MenuPageProps) {
             Menu Not Found
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The restaurant menu for "{slug}" could not be found.
+            The restaurant menu for &quot;{slug}&quot; could not be found.
           </p>
-          <a 
+          <Link 
             href="/"
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             Go Home
-          </a>
+          </Link>
         </div>
       </div>
     );

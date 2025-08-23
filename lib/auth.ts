@@ -59,15 +59,15 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       // Add restaurantSlug to token on sign in
-      if (user) {
-        token.restaurantSlug = (user as any).restaurantSlug;
+      if (user && 'restaurantSlug' in user) {
+        token.restaurantSlug = (user as { restaurantSlug: string }).restaurantSlug;
       }
       return token;
     },
     async session({ session, token }) {
       // Add restaurantSlug to session
       if (token) {
-        (session as any).restaurantSlug = token.restaurantSlug;
+        (session as { restaurantSlug?: string }).restaurantSlug = token.restaurantSlug;
       }
       return session;
     },
