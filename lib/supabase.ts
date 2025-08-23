@@ -1,0 +1,211 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase configuration
+const supabaseUrl = 'https://nnhyuqhypzytnkkdifuk.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.Lug4smvqk5sI-46MbFeh64Yu2nptehnUTlUCPSpYbqI';
+
+// For server-side admin operations (add service role key to environment)
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+
+// Public client for client-side operations
+export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false, // For server-side usage
+  }
+});
+
+// Admin client for server-side operations with elevated privileges
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  }
+});
+
+// Database types (based on expected Supabase schema)
+export interface Restaurant {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  address?: string;
+  schedule?: string;
+  logo?: string;
+  cover?: string;
+  qr_code_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  description?: string;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  restaurant_id: string;
+  category_id?: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  nutrition?: any; // JSON field
+  available: boolean;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Popup {
+  id: string;
+  restaurant_id: string;
+  title: string;
+  message: string;
+  image?: string;
+  cta_text?: string;
+  cta_url?: string;
+  active: boolean;
+  start_at?: string;
+  end_at?: string;
+  frequency: 'once-per-session' | 'every-visit';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface User {
+  id: string;
+  restaurant_id: string;
+  email: string;
+  password_hash: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Storage bucket names
+export const STORAGE_BUCKETS = {
+  LOGOS: 'restaurant-logos',
+  COVERS: 'restaurant-covers',
+  PRODUCTS: 'product-images',
+  POPUPS: 'popup-images',
+  QR_CODES: 'qr-codes',
+} as const;
+
+// Helper function to get public URL from Supabase Storage
+export const getPublicUrl = (bucket: string, path: string): string => {
+  const { data } = supabasePublic.storage
+    .from(bucket)
+    .getPublicUrl(path);
+  
+  return data.publicUrl;
+};
+
+// Helper function to upload file to Supabase Storage
+export const uploadFile = async (
+  bucket: string,
+  path: string,
+  file: File | Buffer,
+  options?: { contentType?: string; upsert?: boolean }
+): Promise<{ data?: any; error?: any }> => {
+  return await supabaseAdmin.storage
+    .from(bucket)
+    .upload(path, file, {
+      contentType: options?.contentType,
+      upsert: options?.upsert ?? true,
+    });
+};
+
+// Helper function to delete file from Supabase Storage
+export const deleteFile = async (
+  bucket: string,
+  path: string
+): Promise<{ data?: any; error?: any }> => {
+  return await supabaseAdmin.storage
+    .from(bucket)
+    .remove([path]);
+};
+
+// Helper function to ensure restaurant exists and get ID
+export const getRestaurantBySlug = async (slug: string): Promise<Restaurant | null> => {
+  const { data, error } = await supabaseAdmin
+    .from('restaurants')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !data) {
+    console.error('Error fetching restaurant:', error);
+    return null;
+  }
+
+  return data;
+};
+
+// Helper function to get restaurant with related data
+export const getRestaurantWithData = async (slug: string) => {
+  const restaurant = await getRestaurantBySlug(slug);
+  if (!restaurant) {
+    return null;
+  }
+
+  // Fetch categories and products in parallel
+  const [categoriesResult, productsResult] = await Promise.all([
+    supabaseAdmin
+      .from('categories')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: true }),
+    
+    supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .eq('available', true)
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  if (categoriesResult.error) {
+    console.error('Error fetching categories:', categoriesResult.error);
+  }
+
+  if (productsResult.error) {
+    console.error('Error fetching products:', productsResult.error);
+  }
+
+  return {
+    restaurant,
+    categories: categoriesResult.data || [],
+    products: productsResult.data || [],
+  };
+};
+
+// Helper function to get active popups for a restaurant
+export const getActivePopups = async (slug: string): Promise<Popup[]> => {
+  const restaurant = await getRestaurantBySlug(slug);
+  if (!restaurant) {
+    return [];
+  }
+
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseAdmin
+    .from('popups')
+    .select('*')
+    .eq('restaurant_id', restaurant.id)
+    .eq('active', true)
+    .or(`start_at.is.null,start_at.lte.${now}`)
+    .or(`end_at.is.null,end_at.gte.${now}`)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching popups:', error);
+    return [];
+  }
+
+  return data || [];
+};

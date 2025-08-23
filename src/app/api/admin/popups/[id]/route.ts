@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../../lib/auth';
-import { readJson, writeJson } from '../../../../../../lib/fsStore';
-
-// Define types for popup data
-interface Popup {
-  id: string;
-  title: string;
-  message: string;
-  image?: string;
-  ctaText?: string;
-  ctaUrl?: string;
-  active: boolean;
-  startAt?: string;
-  endAt?: string;
-  frequency: "once-per-session" | "every-visit";
-}
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../../lib/supabase';
+import type { Popup } from '../../../../../../lib/supabase';
 
 interface ExtendedSession {
   user?: {
@@ -42,16 +29,25 @@ export async function PUT(
     const { id } = await params;
     const restaurantSlug = session.restaurantSlug;
 
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
     const { 
       title, 
       message, 
       image, 
-      ctaText, 
-      ctaUrl, 
+      cta_text, 
+      cta_url, 
       active, 
-      startAt, 
-      endAt, 
+      start_at, 
+      end_at, 
       frequency 
     } = await request.json();
 
@@ -78,9 +74,9 @@ export async function PUT(
     }
 
     // Validate dates if provided
-    if (startAt && endAt) {
-      const startDate = new Date(startAt);
-      const endDate = new Date(endAt);
+    if (start_at && end_at) {
+      const startDate = new Date(start_at);
+      const endDate = new Date(end_at);
       if (endDate <= startDate) {
         return NextResponse.json(
           { error: 'End date must be after start date' },
@@ -89,64 +85,48 @@ export async function PUT(
       }
     }
 
-    // Read existing popups
-    const popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
+    // Update popup in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('popups')
+      .update({
+        title: title.trim(),
+        message: message.trim(),
+        image: image?.trim() || null,
+        cta_text: cta_text?.trim() || null,
+        cta_url: cta_url?.trim() || null,
+        active: Boolean(active),
+        start_at: start_at || null,
+        end_at: end_at || null,
+        frequency,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('restaurant_id', restaurant.id) // Ensure user can only edit their own popups
+      .select()
+      .single();
 
-    // Find popup to update
-    const popupIndex = popups.findIndex(popup => popup.id === id);
-    if (popupIndex === -1) {
+    if (error) {
+      console.error('Supabase update error:', error);
+      return NextResponse.json(
+        { error: 'Failed to update popup' },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: 'Popup not found' },
         { status: 404 }
       );
     }
 
-    // Generate new ID from title if title changed
-    const newId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // If ID would change, check if new ID already exists
-    if (newId !== id && popups.find(popup => popup.id === newId)) {
-      return NextResponse.json(
-        { error: 'A popup with this title already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Update popup
-    const updatedPopup: Popup = {
-      ...popups[popupIndex],
-      id: newId,
-      title: title.trim(),
-      message: message.trim(),
-      image: image?.trim() || undefined,
-      ctaText: ctaText?.trim() || undefined,
-      ctaUrl: ctaUrl?.trim() || undefined,
-      active: Boolean(active),
-      startAt: startAt || undefined,
-      endAt: endAt || undefined,
-      frequency
-    };
-
-    // Replace popup in array
-    popups[popupIndex] = updatedPopup;
-
-    // Write updated popups back to file
-    await writeJson(`data/popups/${restaurantSlug}.json`, popups);
-
     return NextResponse.json({ 
-      popup: updatedPopup,
+      popup: data,
       message: 'Popup updated successfully'
     });
   } catch (error) {
     console.error('Error updating popup:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      return NextResponse.json(
-        { error: 'Popups not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -172,38 +152,46 @@ export async function DELETE(
     const { id } = await params;
     const restaurantSlug = session.restaurantSlug;
 
-    // Read existing popups
-    const popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
 
-    // Find popup to delete
-    const popupIndex = popups.findIndex(popup => popup.id === id);
-    if (popupIndex === -1) {
+    // Delete popup from Supabase
+    const { data, error } = await supabaseAdmin
+      .from('popups')
+      .delete()
+      .eq('id', id)
+      .eq('restaurant_id', restaurant.id) // Ensure user can only delete their own popups
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete popup' },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: 'Popup not found' },
         { status: 404 }
       );
     }
 
-    // Remove popup from array
-    const deletedPopup = popups.splice(popupIndex, 1)[0];
-
-    // Write updated popups back to file
-    await writeJson(`data/popups/${restaurantSlug}.json`, popups);
-
     return NextResponse.json({ 
-      popup: deletedPopup,
+      popup: data,
       message: 'Popup deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting popup:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      return NextResponse.json(
-        { error: 'Popups not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

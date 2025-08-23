@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../lib/auth';
-import { readJson, writeJson } from '../../../../../lib/fsStore';
-
-// Define types for category data
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  order: number;
-}
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase';
+import type { Category } from '../../../../../lib/supabase';
 
 interface ExtendedSession {
   user?: {
@@ -32,21 +25,34 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
-    // Read categories data
-    const categories = await readJson<Category[]>(`data/categories/${restaurantSlug}.json`);
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
 
-    // Sort categories by order
-    const sortedCategories = categories.sort((a, b) => a.order - b.order);
+    // Get categories from Supabase
+    const { data: categories, error } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: true });
 
-    return NextResponse.json({ categories: sortedCategories });
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch categories' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ categories: categories || [] });
   } catch (error) {
     console.error('Error fetching categories:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      // Return empty array if no categories file exists yet
-      return NextResponse.json({ categories: [] });
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -68,6 +74,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
     const { name, description } = await request.json();
 
@@ -79,42 +94,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Read existing categories or start with empty array
-    let categories: Category[] = [];
-    try {
-      categories = await readJson<Category[]>(`data/categories/${restaurantSlug}.json`);
-    } catch (error) {
-      // File doesn't exist yet, start with empty array
-      categories = [];
-    }
+    // Get current max sort order
+    const { data: maxOrderData } = await supabaseAdmin
+      .from('categories')
+      .select('sort_order')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: false })
+      .limit(1);
 
-    // Generate new category ID
-    const categoryId = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // Check if category with this ID already exists
-    if (categories.find(cat => cat.id === categoryId)) {
+    const nextSortOrder = maxOrderData?.[0]?.sort_order ? maxOrderData[0].sort_order + 1 : 1;
+
+    // Insert new category
+    const { data: newCategory, error } = await supabaseAdmin
+      .from('categories')
+      .insert({
+        restaurant_id: restaurant.id,
+        name: name.trim(),
+        description: description?.trim() || '',
+        sort_order: nextSortOrder
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'A category with this name already exists' },
-        { status: 400 }
+        { error: 'Failed to create category' },
+        { status: 500 }
       );
     }
-
-    // Determine order (highest order + 1)
-    const maxOrder = categories.length > 0 ? Math.max(...categories.map(cat => cat.order)) : 0;
-
-    // Create new category
-    const newCategory: Category = {
-      id: categoryId,
-      name: name.trim(),
-      description: description?.trim() || '',
-      order: maxOrder + 1
-    };
-
-    // Add to categories array
-    categories.push(newCategory);
-
-    // Write updated categories back to file
-    await writeJson(`data/categories/${restaurantSlug}.json`, categories);
 
     return NextResponse.json({ 
       category: newCategory,

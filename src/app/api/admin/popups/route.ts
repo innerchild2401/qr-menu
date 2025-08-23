@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../lib/auth';
-import { readJson, writeJson } from '../../../../../lib/fsStore';
-
-// Define types for popup data
-interface Popup {
-  id: string;
-  title: string;
-  message: string;
-  image?: string;
-  ctaText?: string;
-  ctaUrl?: string;
-  active: boolean;
-  startAt?: string;
-  endAt?: string;
-  frequency: "once-per-session" | "every-visit";
-}
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase';
+import type { Popup } from '../../../../../lib/supabase';
 
 interface ExtendedSession {
   user?: {
@@ -38,18 +25,34 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
-    // Read popups data (no filtering - return all for admin)
-    const popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ popups });
+    // Get all popups from Supabase (no filtering for admin)
+    const { data: popups, error } = await supabaseAdmin
+      .from('popups')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch popups' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ popups: popups || [] });
   } catch (error) {
     console.error('Error fetching popups:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      // Return empty array if no popups file exists yet
-      return NextResponse.json({ popups: [] });
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -71,16 +74,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
     const { 
       title, 
       message, 
       image, 
-      ctaText, 
-      ctaUrl, 
+      cta_text, 
+      cta_url, 
       active, 
-      startAt, 
-      endAt, 
+      start_at, 
+      end_at, 
       frequency 
     } = await request.json();
 
@@ -107,9 +119,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Validate dates if provided
-    if (startAt && endAt) {
-      const startDate = new Date(startAt);
-      const endDate = new Date(endAt);
+    if (start_at && end_at) {
+      const startDate = new Date(start_at);
+      const endDate = new Date(end_at);
       if (endDate <= startDate) {
         return NextResponse.json(
           { error: 'End date must be after start date' },
@@ -118,45 +130,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Read existing popups or start with empty array
-    let popups: Popup[] = [];
-    try {
-      popups = await readJson<Popup[]>(`data/popups/${restaurantSlug}.json`);
-    } catch (error) {
-      // File doesn't exist yet, start with empty array
-      popups = [];
-    }
+    // Insert new popup
+    const { data: newPopup, error } = await supabaseAdmin
+      .from('popups')
+      .insert({
+        restaurant_id: restaurant.id,
+        title: title.trim(),
+        message: message.trim(),
+        image: image?.trim() || null,
+        cta_text: cta_text?.trim() || null,
+        cta_url: cta_url?.trim() || null,
+        active: Boolean(active),
+        start_at: start_at || null,
+        end_at: end_at || null,
+        frequency
+      })
+      .select()
+      .single();
 
-    // Generate new popup ID
-    const popupId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // Check if popup with this ID already exists
-    if (popups.find(popup => popup.id === popupId)) {
+    if (error) {
+      console.error('Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'A popup with this title already exists' },
-        { status: 400 }
+        { error: 'Failed to create popup' },
+        { status: 500 }
       );
     }
-
-    // Create new popup
-    const newPopup: Popup = {
-      id: popupId,
-      title: title.trim(),
-      message: message.trim(),
-      image: image?.trim() || undefined,
-      ctaText: ctaText?.trim() || undefined,
-      ctaUrl: ctaUrl?.trim() || undefined,
-      active: Boolean(active),
-      startAt: startAt || undefined,
-      endAt: endAt || undefined,
-      frequency
-    };
-
-    // Add to popups array
-    popups.push(newPopup);
-
-    // Write updated popups back to file
-    await writeJson(`data/popups/${restaurantSlug}.json`, popups);
 
     return NextResponse.json({ 
       popup: newPopup,

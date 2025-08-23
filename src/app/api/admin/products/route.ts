@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../lib/auth';
-import { readJson, writeJson } from '../../../../../lib/fsStore';
-
-// Define types for product data
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  nutrition: {
-    calories: number;
-    protein: string;
-    carbs: string;
-    fat: string;
-  };
-  categoryId: string;
-}
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase';
+import type { Product } from '../../../../../lib/supabase';
 
 interface ExtendedSession {
   user?: {
@@ -40,18 +25,37 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
-    // Read products data
-    const products = await readJson<Product[]>(`data/products/${restaurantSlug}.json`);
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ products });
+    // Get products from Supabase with category information
+    const { data: products, error } = await supabaseAdmin
+      .from('products')
+      .select(`
+        *,
+        categories(name)
+      `)
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch products' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ products: products || [] });
   } catch (error) {
     console.error('Error fetching products:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      // Return empty array if no products file exists yet
-      return NextResponse.json({ products: [] });
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -73,8 +77,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const restaurantSlug = session.restaurantSlug;
 
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
-    const { name, description, price, image, nutrition, categoryId } = await request.json();
+    const { name, description, price, image, nutrition, category_id, available = true } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -84,83 +97,64 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!description || !description.trim()) {
-      return NextResponse.json(
-        { error: 'Product description is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!price || isNaN(parseFloat(price))) {
+    if (typeof price !== 'number' || price < 0) {
       return NextResponse.json(
         { error: 'Valid price is required' },
         { status: 400 }
       );
     }
 
-    if (!categoryId || !categoryId.trim()) {
-      return NextResponse.json(
-        { error: 'Category is required' },
-        { status: 400 }
-      );
-    }
+    // Validate category exists
+    if (category_id) {
+      const { data: category, error: categoryError } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('id', category_id)
+        .eq('restaurant_id', restaurant.id)
+        .single();
 
-    // Read existing products or start with empty array
-    let products: Product[] = [];
-    try {
-      products = await readJson<Product[]>(`data/products/${restaurantSlug}.json`);
-    } catch (error) {
-      // File doesn't exist yet, start with empty array
-      products = [];
-    }
-
-    // Generate new product ID
-    const productId = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // Check if product with this ID already exists
-    if (products.find(prod => prod.id === productId)) {
-      return NextResponse.json(
-        { error: 'A product with this name already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Parse nutrition data if it's a string
-    let parsedNutrition;
-    if (typeof nutrition === 'string') {
-      try {
-        parsedNutrition = JSON.parse(nutrition);
-      } catch (e) {
+      if (categoryError || !category) {
         return NextResponse.json(
-          { error: 'Invalid nutrition data format' },
+          { error: 'Invalid category' },
           { status: 400 }
         );
       }
-    } else {
-      parsedNutrition = nutrition;
     }
 
-    // Create new product
-    const newProduct: Product = {
-      id: productId,
-      name: name.trim(),
-      description: description.trim(),
-      price: parseFloat(price),
-      image: image || '',
-      nutrition: parsedNutrition || {
-        calories: 0,
-        protein: '0g',
-        carbs: '0g',
-        fat: '0g'
-      },
-      categoryId: categoryId.trim()
-    };
+    // Get current max sort order
+    const { data: maxOrderData } = await supabaseAdmin
+      .from('products')
+      .select('sort_order')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: false })
+      .limit(1);
 
-    // Add to products array
-    products.push(newProduct);
+    const nextSortOrder = maxOrderData?.[0]?.sort_order ? maxOrderData[0].sort_order + 1 : 1;
 
-    // Write updated products back to file
-    await writeJson(`data/products/${restaurantSlug}.json`, products);
+    // Insert new product
+    const { data: newProduct, error } = await supabaseAdmin
+      .from('products')
+      .insert({
+        restaurant_id: restaurant.id,
+        category_id: category_id || null,
+        name: name.trim(),
+        description: description?.trim() || '',
+        price: price,
+        image: image || null,
+        nutrition: nutrition || null,
+        available: available,
+        sort_order: nextSortOrder
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json(
+        { error: 'Failed to create product' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ 
       product: newProduct,

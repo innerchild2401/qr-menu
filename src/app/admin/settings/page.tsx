@@ -12,6 +12,7 @@ interface Restaurant {
   schedule: Record<string, string>;
   logo: string;
   cover: string;
+  qr_code_url?: string;
 }
 
 export default function AdminSettings() {

@@ -1,37 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readJson } from '../../../../../lib/fsStore';
-
-// Define types for our data structures
-interface Restaurant {
-  name: string;
-  slug: string;
-  address: string;
-  schedule: Record<string, string>;
-  logo: string;
-  cover: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  order: number;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  nutrition: {
-    calories: number;
-    protein: string;
-    carbs: string;
-    fat: string;
-  };
-  categoryId: string;
-}
+import { getRestaurantWithData } from '../../../../../lib/supabase';
+import { initializeServer } from '../../../../../lib/serverInit';
+import type { Restaurant, Category, Product } from '../../../../../lib/supabase';
 
 interface MenuResponse {
   restaurant: Restaurant;
@@ -44,43 +14,31 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse<MenuResponse | { error: string }>> {
   try {
+    // Initialize server resources
+    await initializeServer();
+    
     const { slug } = await params;
 
-    // Read data from JSON files
-    const [restaurant, categories, products] = await Promise.all([
-      readJson<Restaurant>(`data/restaurants/${slug}.json`),
-      readJson<Category[]>(`data/categories/${slug}.json`),
-      readJson<Product[]>(`data/products/${slug}.json`)
-    ]);
-
-    // Verify the restaurant slug matches
-    if (restaurant.slug !== slug) {
+    // Fetch restaurant data with categories and products from Supabase
+    const data = await getRestaurantWithData(slug);
+    
+    if (!data) {
       return NextResponse.json(
-        { error: 'Restaurant slug mismatch' },
+        { error: 'Restaurant not found' },
         { status: 404 }
       );
     }
 
-    // Sort categories by order
-    const sortedCategories = categories.sort((a, b) => a.order - b.order);
-
     const response: MenuResponse = {
-      restaurant,
-      categories: sortedCategories,
-      products
+      restaurant: data.restaurant,
+      categories: data.categories,
+      products: data.products
     };
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching menu data:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      return NextResponse.json(
-        { error: 'Menu not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

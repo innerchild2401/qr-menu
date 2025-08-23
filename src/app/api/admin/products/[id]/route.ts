@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../../lib/auth';
-import { readJson, writeJson } from '../../../../../../lib/fsStore';
-
-// Define types for product data
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  nutrition: {
-    calories: number;
-    protein: string;
-    carbs: string;
-    fat: string;
-  };
-  categoryId: string;
-}
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../../lib/supabase';
+import type { Product } from '../../../../../../lib/supabase';
 
 interface ExtendedSession {
   user?: {
@@ -44,8 +29,17 @@ export async function PUT(
     const { id } = await params;
     const restaurantSlug = session.restaurantSlug;
 
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
-    const { name, description, price, image, nutrition, categoryId } = await request.json();
+    const { name, description, price, image, nutrition, category_id, available } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -55,97 +49,70 @@ export async function PUT(
       );
     }
 
-    if (!description || !description.trim()) {
-      return NextResponse.json(
-        { error: 'Product description is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!price || isNaN(parseFloat(price))) {
+    if (typeof price !== 'number' || price < 0) {
       return NextResponse.json(
         { error: 'Valid price is required' },
         { status: 400 }
       );
     }
 
-    if (!categoryId || !categoryId.trim()) {
+    // Validate category exists if provided
+    if (category_id) {
+      const { data: category, error: categoryError } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('id', category_id)
+        .eq('restaurant_id', restaurant.id)
+        .single();
+
+      if (categoryError || !category) {
+        return NextResponse.json(
+          { error: 'Invalid category' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update product in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .update({
+        name: name.trim(),
+        description: description?.trim() || '',
+        price: price,
+        image: image || null,
+        nutrition: nutrition || null,
+        category_id: category_id || null,
+        available: available !== undefined ? available : true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('restaurant_id', restaurant.id) // Ensure user can only edit their own products
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase update error:', error);
       return NextResponse.json(
-        { error: 'Category is required' },
-        { status: 400 }
+        { error: 'Failed to update product' },
+        { status: 500 }
       );
     }
 
-    // Read existing products
-    const products = await readJson<Product[]>(`data/products/${restaurantSlug}.json`);
-
-    // Find product to update
-    const productIndex = products.findIndex(prod => prod.id === id);
-    if (productIndex === -1) {
+    if (!data) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
 
-    // Generate new ID from name if name changed
-    const newId = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    
-    // If ID would change, check if new ID already exists
-    if (newId !== id && products.find(prod => prod.id === newId)) {
-      return NextResponse.json(
-        { error: 'A product with this name already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Parse nutrition data if it's a string
-    let parsedNutrition;
-    if (typeof nutrition === 'string') {
-      try {
-        parsedNutrition = JSON.parse(nutrition);
-      } catch (e) {
-        return NextResponse.json(
-          { error: 'Invalid nutrition data format' },
-          { status: 400 }
-        );
-      }
-    } else {
-      parsedNutrition = nutrition;
-    }
-
-    // Update product
-    const updatedProduct: Product = {
-      ...products[productIndex],
-      id: newId,
-      name: name.trim(),
-      description: description.trim(),
-      price: parseFloat(price),
-      image: image || products[productIndex].image,
-      nutrition: parsedNutrition || products[productIndex].nutrition,
-      categoryId: categoryId.trim()
-    };
-
-    // Replace product in array
-    products[productIndex] = updatedProduct;
-
-    // Write updated products back to file
-    await writeJson(`data/products/${restaurantSlug}.json`, products);
-
     return NextResponse.json({ 
-      product: updatedProduct,
+      product: data,
       message: 'Product updated successfully'
     });
   } catch (error) {
     console.error('Error updating product:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      return NextResponse.json(
-        { error: 'Products not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -171,38 +138,46 @@ export async function DELETE(
     const { id } = await params;
     const restaurantSlug = session.restaurantSlug;
 
-    // Read existing products
-    const products = await readJson<Product[]>(`data/products/${restaurantSlug}.json`);
+    // Get restaurant ID from slug
+    const restaurant = await getRestaurantBySlug(restaurantSlug);
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'Restaurant not found' },
+        { status: 404 }
+      );
+    }
 
-    // Find product to delete
-    const productIndex = products.findIndex(prod => prod.id === id);
-    if (productIndex === -1) {
+    // Delete product from Supabase
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', id)
+      .eq('restaurant_id', restaurant.id) // Ensure user can only delete their own products
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete product' },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
 
-    // Remove product from array
-    const deletedProduct = products.splice(productIndex, 1)[0];
-
-    // Write updated products back to file
-    await writeJson(`data/products/${restaurantSlug}.json`, products);
-
     return NextResponse.json({ 
-      product: deletedProduct,
+      product: data,
       message: 'Product deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting product:', error);
     
-    if (error instanceof Error && error.message.includes('File not found')) {
-      return NextResponse.json(
-        { error: 'Products not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

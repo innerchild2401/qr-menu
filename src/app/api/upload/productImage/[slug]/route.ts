@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveUploadedFile } from '../../../../../../lib/uploadUtils';
+import { uploadFile, getPublicUrl, STORAGE_BUCKETS } from '../../../../../../lib/supabase';
+import { validateUploadFile, sanitizeFileName } from '../../../../../../lib/uploadUtils';
 
 export async function POST(
   request: NextRequest,
@@ -19,21 +20,51 @@ export async function POST(
       );
     }
     
-    // Save the uploaded file
-    const result = await saveUploadedFile(file, slug);
-    
-    if ('error' in result) {
+    // Validate file
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: result.error },
+        { error: validation.error },
         { status: 400 }
       );
     }
     
-    // Return the URL
+    // Create file path: slug/timestamp_filename
+    const timestamp = Date.now();
+    const sanitizedFileName = sanitizeFileName(file.name);
+    const filePath = `${slug}/${timestamp}_${sanitizedFileName}`;
+    
+    // Upload to Supabase Storage
+    const { data, error } = await uploadFile(
+      STORAGE_BUCKETS.PRODUCTS,
+      filePath,
+      file,
+      {
+        contentType: file.type,
+        upsert: true
+      }
+    );
+    
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return NextResponse.json(
+        { error: 'Failed to upload file' },
+        { status: 500 }
+      );
+    }
+    
+    // Get public URL
+    const publicUrl = getPublicUrl(STORAGE_BUCKETS.PRODUCTS, filePath);
+    
+    // Return the URL (relative path for consistency with existing frontend)
+    const relativeUrl = `/uploads/${STORAGE_BUCKETS.PRODUCTS}/${filePath}`;
+    
     return NextResponse.json({
-      url: result.url,
-      filename: result.filename,
-      size: result.size
+      url: relativeUrl,
+      publicUrl: publicUrl,
+      filename: sanitizedFileName,
+      size: file.size,
+      path: filePath
     });
     
   } catch (error) {
