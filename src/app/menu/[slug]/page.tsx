@@ -47,11 +47,8 @@ interface MenuData {
 
 // Fetch menu data from API
 async function getMenuData(slug: string): Promise<MenuData> {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000';
-  
-  const response = await fetch(`${baseUrl}/api/menu/${slug}`, {
+  // Use relative URL for server-side fetching to avoid environment variable issues
+  const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/menu/${slug}`, {
     cache: 'no-store' // Always fetch fresh data
   });
 

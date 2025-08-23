@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivePopups } from '../../../../../lib/supabase';
+import { getActivePopups } from '../../../../../lib/supabase-server';
 import { initializeServer } from '../../../../../lib/serverInit';
-import type { Popup } from '../../../../../lib/supabase';
+import type { Popup } from '../../../../../lib/supabase-server';
 
 interface PopupsResponse {
   popups: Popup[];

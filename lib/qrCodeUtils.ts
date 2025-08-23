@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { uploadFile, getPublicUrl, STORAGE_BUCKETS, deleteFile } from './supabase';
+import { uploadFile, getPublicUrl, STORAGE_BUCKETS, deleteFile } from './supabase-server';
 
 /**
  * Generate QR code for a restaurant's menu URL

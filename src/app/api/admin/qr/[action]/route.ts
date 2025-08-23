@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../../lib/auth';
-import { supabaseAdmin, getRestaurantBySlug } from '../../../../../../lib/supabase';
+import { supabaseAdmin, getRestaurantBySlug } from '../../../../../../lib/supabase-server';
 import { generateAndUploadQRCode, regenerateQRCode } from '../../../../../../lib/qrCodeUtils';
 
 interface ExtendedSession {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFile, getPublicUrl, STORAGE_BUCKETS } from '../../../../../../lib/supabase';
+import { uploadFile, getPublicUrl, STORAGE_BUCKETS } from '../../../../../../lib/supabase-server';
 import { validateFile, sanitizeFilename } from '../../../../../../lib/uploadUtils';
 
 export async function POST(
