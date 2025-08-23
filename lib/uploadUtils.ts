@@ -41,6 +41,9 @@ export function sanitizeFilename(filename: string): string {
   return `${finalName}${ext}`;
 }
 
+// Backward compatibility alias (for any old cached references)
+export const sanitizeFileName = sanitizeFilename;
+
 /**
  * Validate file type and size
  */
@@ -66,6 +69,9 @@ export function validateFile(file: File): UploadError | null {
   
   return null;
 }
+
+// Backward compatibility alias (for any old cached references)
+export const validateUploadFile = validateFile;
 
 /**
  * Save uploaded file to the uploads directory
