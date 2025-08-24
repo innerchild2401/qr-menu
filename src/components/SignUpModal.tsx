@@ -40,18 +40,26 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
     }
 
     try {
-             await signUp({
+      const result = await signUp({
         email: formData.email,
         password: formData.password,
         full_name: formData.fullName,
         restaurant_name: formData.restaurantName
       });
 
-      // Close modal and redirect to admin dashboard
+      console.log('✅ Signup successful, redirecting to admin...');
+      
+      // Close modal first
       onClose();
-      router.push('/admin/settings');
+      
+      // Add a small delay to ensure session is properly established
+      setTimeout(() => {
+        router.push('/admin/settings');
+      }, 500);
+      
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
+      console.error('❌ Signup error:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred during signup');
     } finally {
       setIsLoading(false);
     }

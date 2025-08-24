@@ -24,15 +24,23 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError('');
 
     try {
-      await signIn({
+      const result = await signIn({
         email: formData.email,
         password: formData.password
       });
 
-      // Close modal and redirect to admin dashboard
+      console.log('✅ Login successful, redirecting to admin...');
+      
+      // Close modal first
       onClose();
-      router.push('/admin/settings');
+      
+      // Add a small delay to ensure session is properly established
+      setTimeout(() => {
+        router.push('/admin/settings');
+      }, 500);
+      
     } catch (error) {
+      console.error('❌ Login error:', error);
       setError(error instanceof Error ? error.message : 'Invalid email or password');
     } finally {
       setIsLoading(false);

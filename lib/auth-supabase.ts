@@ -169,6 +169,36 @@ export const signUp = async (data: SignUpData) => {
       console.log('✅ User-restaurant relationship verified');
     }
 
+    // Step 6: Ensure the user is properly authenticated
+    console.log('🔐 Ensuring user authentication...');
+    
+    // Check if we have a session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('❌ Session error:', sessionError);
+      throw new Error('Failed to establish user session');
+    }
+    
+    if (!session) {
+      console.log('⚠️  No session found, attempting to sign in...');
+      
+      // Try to sign in with the credentials to establish session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      
+      if (signInError) {
+        console.error('❌ Auto-signin failed:', signInError);
+        throw new Error('Account created but failed to sign in automatically. Please sign in manually.');
+      }
+      
+      console.log('✅ Auto-signin successful');
+    } else {
+      console.log('✅ User session already established');
+    }
+
     console.log('🎉 Signup process completed successfully!');
     return { user: authData.user, restaurant };
     
@@ -179,16 +209,55 @@ export const signUp = async (data: SignUpData) => {
 };
 
 export const signIn = async (data: SignInData) => {
-  const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email: data.email,
-    password: data.password,
-  });
+  try {
+    console.log('🔐 Starting signin process...');
+    
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      console.error('❌ Signin error:', error);
+      
+      // Provide more specific error messages
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Invalid email or password. Please check your credentials and try again.');
+      } else if (error.message.includes('Email not confirmed')) {
+        throw new Error('Please check your email and confirm your account before signing in.');
+      } else if (error.message.includes('Too many requests')) {
+        throw new Error('Too many login attempts. Please wait a moment before trying again.');
+      } else {
+        throw new Error(`Sign in failed: ${error.message}`);
+      }
+    }
+
+    if (!authData.user) {
+      throw new Error('Sign in failed: No user data received');
+    }
+
+    console.log('✅ Signin successful:', authData.user.id);
+    
+    // Verify the session is established
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('❌ Session verification error:', sessionError);
+      throw new Error('Failed to establish user session');
+    }
+    
+    if (!session) {
+      console.error('❌ No session established after signin');
+      throw new Error('Sign in successful but session not established. Please try again.');
+    }
+    
+    console.log('✅ User session verified');
+    return authData;
+    
+  } catch (error) {
+    console.error('❌ Signin process failed:', error);
+    throw error;
   }
-
-  return authData;
 };
 
 export const signOut = async () => {
