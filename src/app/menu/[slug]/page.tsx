@@ -48,7 +48,10 @@ interface MenuData {
 // Fetch menu data from API
 async function getMenuData(slug: string): Promise<MenuData> {
   // Use relative URL for server-side fetching to avoid environment variable issues
-  const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/menu/${slug}`, {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const apiUrl = `${baseUrl}/api/menu/${slug}`;
+  
+  const response = await fetch(apiUrl, {
     cache: 'no-store' // Always fetch fresh data
   });
 

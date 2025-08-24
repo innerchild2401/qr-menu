@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Restaurant, Category, Product } from '../../../../../lib/supabase-server';
+import type { Restaurant, Category, Product } from '@/lib/supabase-server';
 
 interface MenuResponse {
   restaurant: Restaurant;
@@ -13,6 +13,9 @@ export async function GET(
 ): Promise<NextResponse<MenuResponse | { error: string }>> {
   try {
     const { slug } = await params;
+    
+    // Ensure slug is properly trimmed and handled
+    const cleanSlug = (slug ?? '').toString().trim();
     
     // Add debugging for deployed environment
     const isDebug = process.env.DEBUG_MENU === 'true';
@@ -33,7 +36,7 @@ export async function GET(
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', cleanSlug)
       .maybeSingle();
 
     if (restaurantError) {
