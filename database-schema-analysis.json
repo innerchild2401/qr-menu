@@ -1,0 +1,108 @@
+{
+  "restaurants": {
+    "exists": true,
+    "columns": [
+      "id",
+      "slug",
+      "name",
+      "address",
+      "schedule",
+      "logo_url",
+      "cover_url",
+      "created_at",
+      "owner_id"
+    ],
+    "sampleData": {
+      "id": "6b0a75ae-1c2b-4361-a330-7e76b80a9d95",
+      "slug": "demo",
+      "name": "Demo Bistro",
+      "address": "Str. Exemplu 10, Bucuresti",
+      "schedule": null,
+      "logo_url": null,
+      "cover_url": null,
+      "created_at": "2025-08-23T19:38:50.285528+00:00",
+      "owner_id": null
+    },
+    "rowCount": 5
+  },
+  "categories": {
+    "exists": true,
+    "columns": [
+      "id",
+      "restaurant_id",
+      "name"
+    ],
+    "sampleData": {
+      "id": 1,
+      "restaurant_id": "6b0a75ae-1c2b-4361-a330-7e76b80a9d95",
+      "name": "Starters"
+    },
+    "rowCount": 1
+  },
+  "products": {
+    "exists": true,
+    "columns": [
+      "id",
+      "restaurant_id",
+      "category_id",
+      "name",
+      "description",
+      "price",
+      "nutrition",
+      "image_url",
+      "created_at"
+    ],
+    "sampleData": {
+      "id": 1,
+      "restaurant_id": "6b0a75ae-1c2b-4361-a330-7e76b80a9d95",
+      "category_id": 1,
+      "name": "Bruschetta",
+      "description": "Tomato, basil, garlic on toast",
+      "price": 12.5,
+      "nutrition": null,
+      "image_url": null,
+      "created_at": "2025-08-23T20:01:03.693475+00:00"
+    },
+    "rowCount": 4
+  },
+  "popups": {
+    "exists": true,
+    "columns": [],
+    "sampleData": null,
+    "rowCount": 0
+  },
+  "users": {
+    "exists": true,
+    "columns": [
+      "id",
+      "email",
+      "full_name",
+      "created_at",
+      "updated_at"
+    ],
+    "sampleData": {
+      "id": "62599841-9a31-4e99-a7b5-00ee174cefb5",
+      "email": "afilip.mme@gmail.com",
+      "full_name": "me",
+      "created_at": "2025-08-24T15:44:56.27438+00:00",
+      "updated_at": "2025-08-24T15:44:56.27438+00:00"
+    },
+    "rowCount": 4
+  },
+  "user_restaurants": {
+    "exists": true,
+    "columns": [
+      "user_id",
+      "restaurant_id",
+      "role",
+      "created_at"
+    ],
+    "sampleData": {
+      "user_id": "62599841-9a31-4e99-a7b5-00ee174cefb5",
+      "restaurant_id": "e49bedf8-35ec-4fe1-8cac-49fa8bb48e00",
+      "role": "owner",
+      "created_at": "2025-08-24T15:44:56.444408+00:00"
+    },
+    "rowCount": 4
+  }
+}
