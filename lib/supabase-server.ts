@@ -63,11 +63,17 @@ export interface Popup {
 
 export interface User {
   id: string;
-  restaurant_id: string;
   email: string;
-  password_hash: string;
+  full_name?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserRestaurant {
+  user_id: string;
+  restaurant_id: string;
+  role: 'owner' | 'admin' | 'staff';
+  created_at: string;
 }
 
 // Storage bucket names

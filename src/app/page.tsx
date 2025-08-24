@@ -1,34 +1,44 @@
+'use client';
+
 import Link from "next/link";
+import { useState } from "react";
+import SignUpModal from "@/components/SignUpModal";
 
 export default function Home() {
-  return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Hero Section */}
-        <div className="space-y-8">
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white">
-            Smart
-            <span className="text-blue-600 dark:text-blue-400">Menu</span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Experience the future of dining with our intelligent menu system. 
-            Discover personalized recommendations and seamless ordering.
-          </p>
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
 
-          <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-            <Link
-              href="/menu/demo"
-              className="inline-block w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
-            >
-              Try Demo Menu
-            </Link>
+  return (
+    <>
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Hero Section */}
+          <div className="space-y-8">
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white">
+              Smart
+              <span className="text-blue-600 dark:text-blue-400">Menu</span>
+            </h1>
             
-            <button className="inline-block w-full sm:w-auto bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold py-4 px-8 rounded-lg text-lg border-2 border-gray-300 dark:border-gray-600 transition-colors duration-200">
-              Learn More
-            </button>
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Experience the future of dining with our intelligent menu system. 
+              Discover personalized recommendations and seamless ordering.
+            </p>
+
+            <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+              <Link
+                href="/menu/demo"
+                className="inline-block w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
+              >
+                Try Demo Menu
+              </Link>
+              
+              <button 
+                onClick={() => setShowSignUpModal(true)}
+                className="inline-block w-full sm:w-auto bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold py-4 px-8 rounded-lg text-lg border-2 border-gray-300 dark:border-gray-600 transition-colors duration-200"
+              >
+                Sign Up Now
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Features */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -63,6 +73,12 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+      
+      {/* Sign Up Modal */}
+      <SignUpModal 
+        isOpen={showSignUpModal} 
+        onClose={() => setShowSignUpModal(false)} 
+      />
+    </>
   );
 }

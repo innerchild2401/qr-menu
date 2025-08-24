@@ -1,25 +1,52 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/auth-supabase';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+        return;
+      }
+      setUser(session.user);
+      setIsLoading(false);
+    };
 
-  if (status === 'loading') {
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!session) {
+          router.push('/');
+          return;
+        }
+        setUser(session.user);
+        setIsLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -30,7 +57,7 @@ export default function AdminLayout({
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (!user) {
     return null;
   }
 
@@ -95,10 +122,10 @@ export default function AdminLayout({
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                {session?.user?.email}
+                {user?.email}
               </span>
               <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={handleSignOut}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 Sign Out
