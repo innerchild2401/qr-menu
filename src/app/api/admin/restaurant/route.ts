@@ -1,35 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../../../lib/auth';
-import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase-server';
-
-interface ExtendedSession {
-  user?: {
-    email?: string | null;
-  };
-  restaurantSlug?: string;
-}
+import { supabaseAdmin } from '../../../../../lib/supabase-server';
+import { getCurrentUserRestaurant } from '../../../../../lib/admin-utils';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user's restaurant
+    const restaurant = await getCurrentUserRestaurant();
     
-    if (!session || !session.restaurantSlug) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const restaurantSlug = session.restaurantSlug;
-
-    // Get restaurant data from Supabase
-    const restaurant = await getRestaurantBySlug(restaurantSlug);
-
     if (!restaurant) {
       return NextResponse.json(
-        { error: 'Restaurant not found' },
+        { error: 'No restaurant found for current user' },
         { status: 404 }
       );
     }
@@ -37,6 +17,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ restaurant });
   } catch (error) {
     console.error('Error fetching restaurant data:', error);
+    
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -47,30 +34,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user's restaurant
+    const restaurant = await getCurrentUserRestaurant();
     
-    if (!session || !session.restaurantSlug) {
+    if (!restaurant) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const restaurantSlug = session.restaurantSlug;
-
-    // Parse request body
-    const updatedData = await request.json();
-
-    // Get current restaurant data
-    const currentRestaurant = await getRestaurantBySlug(restaurantSlug);
-    
-    if (!currentRestaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
+        { error: 'No restaurant found for current user' },
         { status: 404 }
       );
     }
+
+    // Parse request body
+    const updatedData = await request.json();
 
     // Validate required fields
     if (!updatedData.name || !updatedData.address) {
@@ -80,9 +55,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Note: qr_code_url column doesn't exist in actual schema
-    // QR code generation is handled separately in /api/admin/qr/[action]
-
     // Update restaurant in Supabase
     const { data, error } = await supabaseAdmin
       .from('restaurants')
@@ -90,11 +62,10 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         name: updatedData.name,
         address: updatedData.address,
         schedule: updatedData.schedule,
-        logo_url: updatedData.logo_url, // Frontend should send logo_url
-        cover_url: updatedData.cover_url // Frontend should send cover_url
-        // Note: description, qr_code_url, updated_at columns don't exist in actual schema
+        logo_url: updatedData.logo_url,
+        cover_url: updatedData.cover_url
       })
-      .eq('id', currentRestaurant.id)
+      .eq('id', restaurant.id)
       .select()
       .single();
 
@@ -112,6 +83,13 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     console.error('Error updating restaurant data:', error);
+    
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     
     return NextResponse.json(
       { error: 'Internal server error' },
