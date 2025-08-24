@@ -13,6 +13,14 @@ export async function GET(
 ): Promise<NextResponse<MenuResponse | { error: string }>> {
   try {
     const { slug } = await params;
+    
+    // Add debugging for deployed environment
+    const isDebug = process.env.DEBUG_MENU === 'true';
+    const debugInfo = isDebug ? {
+      slug,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'set' : 'not-set',
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'not-set'
+    } : null;
 
     // Direct Supabase queries
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
@@ -21,18 +29,28 @@ export async function GET(
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Get restaurant
+    // Get restaurant - use maybeSingle to avoid throwing errors
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .select('*')
       .eq('slug', slug)
-      .single();
+      .maybeSingle();
 
-    if (restaurantError || !restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
-      );
+    if (restaurantError) {
+      console.error('Supabase error:', restaurantError);
+      const errorResponse = {
+        error: 'Database error',
+        ...(debugInfo && { debug: debugInfo })
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
+    }
+
+    if (!restaurant) {
+      const errorResponse = {
+        error: 'Restaurant not found',
+        ...(debugInfo && { debug: debugInfo })
+      };
+      return NextResponse.json(errorResponse, { status: 404 });
     }
 
     // Get categories and products in parallel
