@@ -307,10 +307,10 @@ INSERT INTO categories (id, restaurant_id, name, description, sort_order) VALUES
 ('c4', 'f47ac10b-58cc-4372-a567-0e02b2c3d479', 'Beverages', 'Refreshing drinks and cocktails', 4);
 
 -- Insert demo products
-INSERT INTO products (restaurant_id, category_id, name, description, price, image, nutrition, available, sort_order) VALUES
-('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Grilled Salmon', 'Fresh Atlantic salmon with herbs', 28.99, '/uploads/product-images/demo/1703123456791_grilled_salmon.webp', '{"calories": 350, "protein": "35g", "carbs": "5g", "fat": "18g"}'::jsonb, true, 1),
-('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Truffle Pasta', 'Handmade pasta with truffle oil', 24.99, '/uploads/product-images/demo/1703123456792_truffle_pasta.webp', '{"calories": 480, "protein": "12g", "carbs": "65g", "fat": "18g"}'::jsonb, true, 2),
-('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Wagyu Burger', 'Premium wagyu beef burger', 32.99, '/uploads/product-images/demo/1703123456793_wagyu_burger.webp', '{"calories": 620, "protein": "28g", "carbs": "45g", "fat": "35g"}'::jsonb, true, 3);
+INSERT INTO products (restaurant_id, category_id, name, description, price, image_url, nutrition) VALUES
+('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Grilled Salmon', 'Fresh Atlantic salmon with herbs', 28.99, '/uploads/product-images/demo/1703123456791_grilled_salmon.webp', '{"calories": 350, "protein": "35g", "carbs": "5g", "fat": "18g"}'::jsonb),
+('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Truffle Pasta', 'Handmade pasta with truffle oil', 24.99, '/uploads/product-images/demo/1703123456792_truffle_pasta.webp', '{"calories": 480, "protein": "12g", "carbs": "65g", "fat": "18g"}'::jsonb),
+('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'c2', 'Wagyu Burger', 'Premium wagyu beef burger', 32.99, '/uploads/product-images/demo/1703123456793_wagyu_burger.webp', '{"calories": 620, "protein": "28g", "carbs": "45g", "fat": "35g"}'::jsonb);
 
 -- Insert demo popups
 INSERT INTO popups (restaurant_id, title, message, image, cta_text, cta_url, active, start_at, end_at, frequency) VALUES

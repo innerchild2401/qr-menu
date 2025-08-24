@@ -139,7 +139,7 @@ export default async function MenuPage({ params }: MenuPageProps) {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden relative"
               >
                 {/* Product Image */}
                 {product.image_url && (
@@ -149,11 +149,13 @@ export default async function MenuPage({ params }: MenuPageProps) {
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-lg text-sm font-bold">
-                      ${product.price.toFixed(2)}
-                    </div>
                   </div>
                 )}
+                
+                {/* Price Badge - Always show regardless of image */}
+                <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-lg text-sm font-bold z-10">
+                  ${product.price.toFixed(2)}
+                </div>
 
                 {/* Card Header */}
                 <div className="p-4">
