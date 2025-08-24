@@ -21,6 +21,7 @@ export interface Restaurant {
   schedule?: string;
   logo_url?: string; // Actual column name
   cover_url?: string; // Actual column name
+  owner_id?: string; // Links to users.id
   created_at: string;
   // Note: description, qr_code_url, updated_at columns don't exist in actual schema
 }

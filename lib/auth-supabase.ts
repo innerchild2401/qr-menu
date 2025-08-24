@@ -48,7 +48,7 @@ export const signUp = async (data: SignUpData) => {
   }
 
   if (authData.user) {
-    // Create restaurant for the new user
+    // Create restaurant for the new user with owner_id
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .insert({
@@ -63,18 +63,9 @@ export const signUp = async (data: SignUpData) => {
       throw new Error(`Failed to create restaurant: ${restaurantError.message}`);
     }
 
-    // Link user to restaurant
-    const { error: linkError } = await supabase
-      .from('user_restaurants')
-      .insert({
-        user_id: authData.user.id,
-        restaurant_id: restaurant.id,
-        role: 'owner'
-      });
-
-    if (linkError) {
-      throw new Error(`Failed to link user to restaurant: ${linkError.message}`);
-    }
+    // The user_restaurants relationship is automatically created by the database trigger
+    // when owner_id is set during restaurant creation
+    console.log('Restaurant created successfully and linked to user via owner_id.');
 
     return { user: authData.user, restaurant };
   }
