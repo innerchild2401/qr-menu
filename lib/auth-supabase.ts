@@ -48,6 +48,46 @@ export const signUp = async (data: SignUpData) => {
   }
 
   if (authData.user) {
+    // Wait a moment for the trigger to create the user record in the users table
+    // Then verify the user exists before creating the restaurant
+    let userExists = false;
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (!userExists && attempts < maxAttempts) {
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authData.user.id)
+        .single();
+      
+      if (userRecord && !userError) {
+        userExists = true;
+        break;
+      }
+      
+      // Wait 500ms before retrying
+      await new Promise(resolve => setTimeout(resolve, 500));
+      attempts++;
+    }
+    
+    if (!userExists) {
+      // Fallback: manually create the user record if the trigger failed
+      const { error: createUserError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: authData.user.email!,
+          full_name: data.full_name
+        });
+      
+      if (createUserError) {
+        throw new Error(`Failed to create user record: ${createUserError.message}`);
+      }
+      
+      console.log('User record created manually due to trigger failure.');
+    }
+
     // Create restaurant for the new user with owner_id
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
@@ -103,6 +143,17 @@ export const getCurrentUser = async () => {
   return user;
 };
 
+// Helper function to get the current authenticated user with proper error handling
+export const getAuthenticatedUser = async () => {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    throw new Error('No authenticated user found. Please sign in.');
+  }
+  
+  return user;
+};
+
 export const getUserRestaurants = async (userId: string) => {
   const { data, error } = await supabase
     .rpc('get_user_restaurants', { user_uuid: userId });
@@ -121,4 +172,39 @@ const generateSlug = (name: string): string => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
     .substring(0, 50);
+};
+
+// Function to create a restaurant for the authenticated user
+export const createRestaurant = async (restaurantData: { name: string; address?: string; schedule?: Record<string, unknown> }) => {
+  const user = await getAuthenticatedUser();
+  
+  // Verify user exists in users table
+  const { data: userRecord, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.id)
+    .single();
+  
+  if (userError || !userRecord) {
+    throw new Error('User record not found. Please try signing out and signing in again.');
+  }
+  
+  // Create restaurant with owner_id
+  const { data: restaurant, error: restaurantError } = await supabase
+    .from('restaurants')
+    .insert({
+      name: restaurantData.name,
+      slug: generateSlug(restaurantData.name),
+      address: restaurantData.address,
+      schedule: restaurantData.schedule,
+      owner_id: user.id
+    })
+    .select()
+    .single();
+  
+  if (restaurantError) {
+    throw new Error(`Failed to create restaurant: ${restaurantError.message}`);
+  }
+  
+  return restaurant;
 };
