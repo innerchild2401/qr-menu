@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { supabase } from '@/lib/auth-supabase';
 import { useState, useEffect } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -16,7 +16,7 @@ interface ChecklistItem {
 }
 
 export default function AdminChecklist() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
@@ -25,12 +25,12 @@ export default function AdminChecklist() {
 
   // Initialize checklist
   useEffect(() => {
-    if (session?.restaurantSlug) {
+    if (user) {
       setChecklist([
         {
           id: 'json-restaurant',
           title: 'Restaurant JSON File',
-          description: `Verify /data/restaurants/${session.restaurantSlug}.json exists and parses correctly`,
+          description: `Verify restaurant data exists and parses correctly`,
           status: 'pending',
           action: async () => {
             const response = await fetch(`/api/admin/restaurant`);
@@ -47,7 +47,7 @@ export default function AdminChecklist() {
         {
           id: 'json-categories',
           title: 'Categories JSON File',
-          description: `Verify /data/categories/${session.restaurantSlug}.json exists and parses correctly`,
+          description: `Verify categories data exists and parses correctly`,
           status: 'pending',
           action: async () => {
             const response = await fetch(`/api/admin/categories`);
@@ -61,7 +61,7 @@ export default function AdminChecklist() {
         {
           id: 'json-products',
           title: 'Products JSON File',
-          description: `Verify /data/products/${session.restaurantSlug}.json exists and parses correctly`,
+          description: `Verify products data exists and parses correctly`,
           status: 'pending',
           action: async () => {
             const response = await fetch(`/api/admin/products`);
@@ -75,7 +75,7 @@ export default function AdminChecklist() {
         {
           id: 'json-popups',
           title: 'Popups JSON File',
-          description: `Verify /data/popups/${session.restaurantSlug}.json exists and parses correctly`,
+          description: `Verify popups data exists and parses correctly`,
           status: 'pending',
           action: async () => {
             const response = await fetch(`/api/admin/popups`);
@@ -97,7 +97,7 @@ export default function AdminChecklist() {
             const formData = new FormData();
             formData.append('file', testFile);
             
-            const response = await fetch(`/api/upload/productImage/${session.restaurantSlug}`, {
+            const response = await fetch(`/api/upload/productImage/test-slug`, {
               method: 'POST',
               body: formData
             });
@@ -113,10 +113,10 @@ export default function AdminChecklist() {
         {
           id: 'api-menu',
           title: 'Menu API Endpoint',
-          description: `Test /api/menu/${session.restaurantSlug} returns valid menu data`,
+          description: `Test menu API returns valid menu data`,
           status: 'pending',
           action: async () => {
-            const response = await fetch(`/api/menu/${session.restaurantSlug}`);
+            const response = await fetch(`/api/menu/test-slug`);
             if (!response.ok) {
               throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -130,10 +130,10 @@ export default function AdminChecklist() {
         {
           id: 'api-popups',
           title: 'Popups API Endpoint',
-          description: `Test /api/popups/${session.restaurantSlug} returns popup data`,
+          description: `Test popups API returns popup data`,
           status: 'pending',
           action: async () => {
-            const response = await fetch(`/api/popups/${session.restaurantSlug}`);
+            const response = await fetch(`/api/popups/test-slug`);
             if (!response.ok) {
               throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -163,7 +163,7 @@ export default function AdminChecklist() {
         }
       ]);
     }
-  }, [session]);
+  }, []);
 
   const runSingleCheck = async (itemId: string) => {
     const item = checklist.find(item => item.id === itemId);
@@ -287,16 +287,16 @@ export default function AdminChecklist() {
   };
 
   const openMenuInNewTab = () => {
-    if (session?.restaurantSlug) {
+    if (user) {
       const protocol = window.location.protocol;
       const hostname = window.location.hostname;
       const port = window.location.port;
-      const url = `${protocol}//${hostname}${port ? `:${port}` : ''}/menu/${session.restaurantSlug}`;
+              const url = `${protocol}//${hostname}${port ? `:${port}` : ''}/menu/test-slug`;
       window.open(url, '_blank');
     }
   };
 
-  if (!session?.restaurantSlug) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
@@ -440,7 +440,7 @@ export default function AdminChecklist() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href={`/menu/${session.restaurantSlug}`}
+                  href={`/menu/test-slug`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center"
@@ -458,7 +458,7 @@ export default function AdminChecklist() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href={`/api/menu/${session.restaurantSlug}`}
+                  href={`/api/menu/test-slug`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center"
@@ -471,7 +471,7 @@ export default function AdminChecklist() {
               </li>
               <li>
                 <a
-                  href={`/api/popups/${session.restaurantSlug}`}
+                  href={`/api/popups/test-slug`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center"
@@ -495,7 +495,7 @@ export default function AdminChecklist() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-300">Restaurant Slug:</span>
-            <p className="text-gray-600 dark:text-gray-400">{session.restaurantSlug}</p>
+                            <p className="text-gray-600 dark:text-gray-400">test-slug</p>
           </div>
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-300">Current URL:</span>
@@ -503,7 +503,7 @@ export default function AdminChecklist() {
           </div>
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-300">User Email:</span>
-            <p className="text-gray-600 dark:text-gray-400">{session.user?.email}</p>
+            <p className="text-gray-600 dark:text-gray-400">{user?.email}</p>
           </div>
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-300">Tests Status:</span>

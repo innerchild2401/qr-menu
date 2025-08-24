@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.56.0",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.1",
     "next": "15.5.0",
     "next-auth": "^4.24.11",
     "qrcode": "^1.5.4",

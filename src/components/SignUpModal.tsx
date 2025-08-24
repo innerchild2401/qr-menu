@@ -54,10 +54,17 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
       
       // Email confirmation is disabled, so always redirect
       console.log('✅ Signup successful, redirecting to admin...');
+      
       // Add a small delay to ensure session is properly established
       setTimeout(() => {
-        router.push('/admin/settings');
-      }, 500);
+        try {
+          router.push('/admin/settings');
+        } catch (redirectError) {
+          console.error('❌ Redirect error:', redirectError);
+          // Fallback: try to navigate to admin root
+          router.push('/admin');
+        }
+      }, 1000); // Increased delay to ensure session is fully established
       
     } catch (error) {
       console.error('❌ Signup error:', error);

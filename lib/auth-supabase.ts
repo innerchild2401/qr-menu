@@ -60,13 +60,6 @@ export const signUp = async (data: SignUpData) => {
     }
 
     console.log('✅ Auth user created successfully:', authData.user.id);
-    console.log('📧 Email confirmation required:', authData.user.email_confirmed_at ? 'No' : 'Yes');
-
-    // Step 2: Check if email confirmation is required
-    if (!authData.user.email_confirmed_at) {
-      console.log('📧 Email confirmation required, user will need to confirm email before signing in');
-      // For now, we'll proceed with the rest of the setup, but the user will need to confirm email
-    }
 
     // Step 3: Ensure user record exists in public.users table
     let userRecord = null;

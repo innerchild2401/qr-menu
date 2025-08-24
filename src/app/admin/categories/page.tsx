@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { supabase } from '@/lib/auth-supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -18,7 +18,6 @@ interface CategoryFormData {
 }
 
 export default function AdminCategories() {
-  const { data: session } = useSession();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
@@ -28,6 +27,7 @@ export default function AdminCategories() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '', description: '' });
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -49,10 +49,27 @@ export default function AdminCategories() {
 
   // Load categories on mount
   useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadCategories();
-    }
-  }, [session, loadCategories]);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        loadCategories();
+      }
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          loadCategories();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [loadCategories]);
 
   const resetForm = () => {
     setFormData({ name: '', description: '' });

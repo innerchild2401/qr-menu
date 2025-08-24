@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { supabase } from '@/lib/auth-supabase';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useToast } from '../../../hooks/useToast';
@@ -31,7 +31,7 @@ interface PopupFormData {
 }
 
 export default function AdminPopups() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
@@ -78,10 +78,10 @@ export default function AdminPopups() {
 
   // Load popups on mount
   useEffect(() => {
-    if (session?.restaurantSlug) {
+    if (user) {
       loadPopups();
     }
-  }, [session, loadPopups]);
+  }, [loadPopups]);
 
   const resetForm = () => {
     setFormData({
@@ -100,7 +100,7 @@ export default function AdminPopups() {
   };
 
   const handleImageUpload = async (file: File) => {
-    if (!session?.restaurantSlug) return '';
+    if (!user) return '';
 
     try {
       setIsUploadingImage(true);
@@ -108,7 +108,7 @@ export default function AdminPopups() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`/api/upload/productImage/${session.restaurantSlug}`, {
+      const response = await fetch(`/api/upload/productImage/test-slug`, {
         method: 'POST',
         body: formData
       });

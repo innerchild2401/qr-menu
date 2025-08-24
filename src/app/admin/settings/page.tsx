@@ -1,9 +1,9 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
+import { supabase } from '@/lib/auth-supabase';
 
 interface Restaurant {
   name: string;
@@ -16,7 +16,6 @@ interface Restaurant {
 }
 
 export default function AdminSettings() {
-  const { data: session } = useSession();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // Form state
@@ -27,17 +26,35 @@ export default function AdminSettings() {
   const [coverPreview, setCoverPreview] = useState<string>('');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Load restaurant data
+  // Load user session and restaurant data
   useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadRestaurantData();
-    }
-  }, [session]);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        loadRestaurantData();
+      }
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          loadRestaurantData();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const loadRestaurantData = async () => {
     try {
@@ -81,7 +98,7 @@ export default function AdminSettings() {
   };
 
   const handleFileUpload = async (file: File, type: 'logo' | 'cover') => {
-    if (!session?.restaurantSlug) return;
+    if (!restaurant?.slug) return;
 
     const setUploading = type === 'logo' ? setIsUploadingLogo : setIsUploadingCover;
     const setPreview = type === 'logo' ? setLogoPreview : setCoverPreview;
@@ -92,7 +109,7 @@ export default function AdminSettings() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`/api/upload/${type}/${session.restaurantSlug}`, {
+      const response = await fetch(`/api/upload/${type}/${restaurant.slug}`, {
         method: 'POST',
         body: formData
       });

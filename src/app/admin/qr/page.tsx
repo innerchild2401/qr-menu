@@ -1,7 +1,7 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/auth-supabase';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
 
@@ -17,7 +17,7 @@ interface QRCodeInfo {
 }
 
 export default function AdminQR() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
@@ -26,14 +26,29 @@ export default function AdminQR() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   
-  // Load QR code info when component mounts
+  // Load user session
   useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadQRCodeInfo();
-    }
-  }, [session]);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
+    };
 
-  const loadQRCodeInfo = async () => {
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+  
+  const loadQRCodeInfo = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/qr/info');
@@ -50,7 +65,14 @@ export default function AdminQR() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError]);
+
+  // Load QR code info when component mounts
+  useEffect(() => {
+    if (user) {
+      loadQRCodeInfo();
+    }
+  }, [user, loadQRCodeInfo]);
 
   const generateQRCode = async () => {
     try {
@@ -155,7 +177,7 @@ export default function AdminQR() {
     }
   };
 
-  if (isLoading || !session?.restaurantSlug) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">

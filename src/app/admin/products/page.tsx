@@ -1,7 +1,7 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/lib/auth-supabase';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
 
@@ -41,7 +41,7 @@ interface ProductFormData {
 }
 
 export default function AdminProducts() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
@@ -72,14 +72,29 @@ export default function AdminProducts() {
   // File input ref
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Load data on mount
+  // Load user session
   useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadData();
-    }
-  }, [session]);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
+    };
 
-  const loadData = async () => {
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -98,12 +113,19 @@ export default function AdminProducts() {
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.categories || []);
       }
-    } catch (error) {
+    } catch {
       showError('Error loading data');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError]);
+
+  // Load data on mount
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
 
   const resetForm = () => {
     setFormData({
@@ -124,7 +146,7 @@ export default function AdminProducts() {
   };
 
   const handleImageUpload = async (file: File) => {
-    if (!session?.restaurantSlug) return '';
+    if (!user) return '';
 
     try {
       setIsUploadingImage(true);
@@ -132,7 +154,7 @@ export default function AdminProducts() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`/api/upload/productImage/${session.restaurantSlug}`, {
+      const response = await fetch(`/api/upload/productImage/test-slug`, {
         method: 'POST',
         body: formData
       });
@@ -147,7 +169,7 @@ export default function AdminProducts() {
         showError(error.error || 'Failed to upload image');
         return '';
       }
-    } catch (error) {
+    } catch {
       showError('Error uploading image');
       return '';
     } finally {
@@ -221,7 +243,7 @@ export default function AdminProducts() {
         const error = await response.json();
         showError(error.error || 'Failed to save product');
       }
-    } catch (error) {
+    } catch {
       showError('Error saving product');
     } finally {
       setIsSubmitting(false);
@@ -264,7 +286,7 @@ export default function AdminProducts() {
         const error = await response.json();
         showError(error.error || 'Failed to delete product');
       }
-    } catch (error) {
+    } catch {
       showError('Error deleting product');
     }
   };
