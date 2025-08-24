@@ -1,48 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../../../lib/auth';
-import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase-server';
+import { getCurrentUserAndRestaurant } from '../../../../../lib/currentRestaurant';
+import { supabaseAdmin } from '../../../../../lib/supabase-server';
 import type { Popup } from '../../../../../lib/supabase-server';
-
-interface ExtendedSession {
-  user?: {
-    email?: string | null;
-  };
-  restaurantSlug?: string;
-}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user and restaurant using unified resolver
+    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
     
-    if (!session || !session.restaurantSlug) {
+    if (error || !user || !restaurant) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: error || 'Unauthorized' },
+        { status: error === 'No restaurant found' ? 404 : 401 }
       );
     }
 
-    const restaurantSlug = session.restaurantSlug;
-
-    // Get restaurant ID from slug
-    const restaurant = await getRestaurantBySlug(restaurantSlug);
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get all popups from Supabase (no filtering for admin)
-    const { data: popups, error } = await supabaseAdmin
+    // Get all popups for the current restaurant
+    const { data: popups, error: popupsError } = await supabaseAdmin
       .from('popups')
       .select('*')
       .eq('restaurant_id', restaurant.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (popupsError) {
+      console.error('Supabase error:', popupsError);
       return NextResponse.json(
         { error: 'Failed to fetch popups' },
         { status: 500 }
@@ -62,24 +43,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user and restaurant using unified resolver
+    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
     
-    if (!session || !session.restaurantSlug) {
+    if (error || !user || !restaurant) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const restaurantSlug = session.restaurantSlug;
-
-    // Get restaurant ID from slug
-    const restaurant = await getRestaurantBySlug(restaurantSlug);
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
+        { error: error || 'Unauthorized' },
+        { status: error === 'No restaurant found' ? 404 : 401 }
       );
     }
 
@@ -87,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { 
       title, 
       message, 
-      image, 
+      image_url, 
       cta_text, 
       cta_url, 
       active, 
@@ -99,57 +69,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Validate required fields
     if (!title || !title.trim()) {
       return NextResponse.json(
-        { error: 'Popup title is required' },
+        { error: 'Title is required' },
         { status: 400 }
       );
     }
 
     if (!message || !message.trim()) {
       return NextResponse.json(
-        { error: 'Popup message is required' },
+        { error: 'Message is required' },
         { status: 400 }
       );
     }
 
-    if (!frequency || !['once-per-session', 'every-visit'].includes(frequency)) {
-      return NextResponse.json(
-        { error: 'Valid frequency is required (once-per-session or every-visit)' },
-        { status: 400 }
-      );
-    }
-
-    // Validate dates if provided
-    if (start_at && end_at) {
-      const startDate = new Date(start_at);
-      const endDate = new Date(end_at);
-      if (endDate <= startDate) {
-        return NextResponse.json(
-          { error: 'End date must be after start date' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Insert new popup
-    const { data: newPopup, error } = await supabaseAdmin
+    // Create new popup
+    const { data: popup, error: createError } = await supabaseAdmin
       .from('popups')
       .insert({
-        restaurant_id: restaurant.id,
         title: title.trim(),
         message: message.trim(),
-        image: image?.trim() || null,
-        cta_text: cta_text?.trim() || null,
-        cta_url: cta_url?.trim() || null,
-        active: Boolean(active),
+        image_url: image_url || null,
+        cta_text: cta_text || null,
+        cta_url: cta_url || null,
+        active: active !== undefined ? active : true,
         start_at: start_at || null,
         end_at: end_at || null,
-        frequency
+        frequency: frequency || 'once-per-session',
+        restaurant_id: restaurant.id
       })
       .select()
       .single();
 
-    if (error) {
-      console.error('Supabase insert error:', error);
+    if (createError) {
+      console.error('Supabase error:', createError);
       return NextResponse.json(
         { error: 'Failed to create popup' },
         { status: 500 }
@@ -157,8 +108,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.json({ 
-      popup: newPopup,
-      message: 'Popup created successfully'
+      popup,
+      message: 'Popup created successfully' 
     });
   } catch (error) {
     console.error('Error creating popup:', error);

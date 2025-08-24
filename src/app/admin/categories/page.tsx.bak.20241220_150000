@@ -8,12 +8,13 @@ import { ToastContainer } from '../../../components/Toast';
 interface Category {
   id: string;
   name: string;
-  restaurant_id: string;
-  created_at: string;
+  description: string;
+  order: number;
 }
 
 interface CategoryFormData {
   name: string;
+  description: string;
 }
 
 export default function AdminCategories() {
@@ -25,9 +26,8 @@ export default function AdminCategories() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState<CategoryFormData>({ name: '' });
+  const [formData, setFormData] = useState<CategoryFormData>({ name: '', description: '' });
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -37,19 +37,11 @@ export default function AdminCategories() {
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
-        setHasRestaurant(true);
-      } else if (response.status === 404) {
-        // No restaurant found
-        setHasRestaurant(false);
-        setCategories([]);
       } else {
         showError('Failed to load categories');
-        setHasRestaurant(false);
       }
-    } catch (error) {
-      console.error('Error loading categories:', error);
+    } catch {
       showError('Error loading categories');
-      setHasRestaurant(false);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +72,7 @@ export default function AdminCategories() {
   }, [loadCategories]);
 
   const resetForm = () => {
-    setFormData({ name: '' });
+    setFormData({ name: '', description: '' });
     setShowAddForm(false);
     setEditingCategory(null);
   };
@@ -119,8 +111,7 @@ export default function AdminCategories() {
         const errorData = await response.json();
         showError(errorData.error || 'Failed to save category');
       }
-    } catch (error) {
-      console.error('Error saving category:', error);
+    } catch {
       showError('Error saving category');
     } finally {
       setIsSubmitting(false);
@@ -130,7 +121,8 @@ export default function AdminCategories() {
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
-      name: category.name
+      name: category.name,
+      description: category.description
     });
     setShowAddForm(true);
   };
@@ -153,8 +145,7 @@ export default function AdminCategories() {
         const errorData = await response.json();
         showError(errorData.error || 'Failed to delete category');
       }
-    } catch (error) {
-      console.error('Error deleting category:', error);
+    } catch {
       showError('Error deleting category');
     }
   };
@@ -163,46 +154,6 @@ export default function AdminCategories() {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Show message if no restaurant exists
-  if (hasRestaurant === false) {
-    return (
-      <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Category Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage your menu categories and their organization
-          </p>
-        </div>
-
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Restaurant Found
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You need to create a restaurant first before you can manage categories.
-            </p>
-            <button
-              onClick={() => window.location.href = '/admin/settings'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Go to Settings
-            </button>
-          </div>
-        </div>
       </div>
     );
   }
@@ -255,7 +206,20 @@ export default function AdminCategories() {
               />
             </div>
             
-            <div className="flex space-x-3 pt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Enter category description (optional)"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex space-x-3">
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -264,17 +228,17 @@ export default function AdminCategories() {
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
+                    {editingCategory ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (
                   editingCategory ? 'Update Category' : 'Create Category'
                 )}
               </button>
+              
               <button
                 type="button"
                 onClick={resetForm}
-                disabled={isSubmitting}
-                className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
+                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -286,14 +250,14 @@ export default function AdminCategories() {
       {/* Categories List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Categories ({categories.length})
+          Current Categories ({categories.length})
         </h2>
         
         {categories.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -301,53 +265,87 @@ export default function AdminCategories() {
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               Add First Category
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Created</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id} className="border-b border-gray-100 dark:border-gray-700">
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
-                      {category.name}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {new Date(category.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleEdit(category)}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(category)}
-                          className="text-red-600 hover:text-red-700 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mr-3">
+                        {category.name}
+                      </h3>
+                      <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full text-xs">
+                        Order: {category.order}
+                      </span>
+                    </div>
+                    
+                    {category.description && (
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                        {category.description}
+                      </p>
+                    )}
+                    
+                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                      ID: {category.id}
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(category)}
+                      className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category)}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Category Statistics */}
+      {categories.length > 0 && (
+        <div className="mt-6 bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            Category Statistics
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Total Categories:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white">{categories.length}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">With Descriptions:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                {categories.filter(cat => cat.description).length}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Next Order:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                {categories.length > 0 ? Math.max(...categories.map(cat => cat.order)) + 1 : 1}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

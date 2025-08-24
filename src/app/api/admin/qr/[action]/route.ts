@@ -1,42 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../../../../lib/auth';
-import { getRestaurantBySlug } from '../../../../../../lib/supabase-server';
+import { getCurrentUserAndRestaurant } from '../../../../../../lib/currentRestaurant';
 import { generateAndUploadQRCode, regenerateQRCode } from '../../../../../../lib/qrCodeUtils';
-
-interface ExtendedSession {
-  user?: {
-    email?: string | null;
-  };
-  restaurantSlug?: string;
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ action: string }> }
 ): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user and restaurant using unified resolver
+    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
     
-    if (!session || !session.restaurantSlug) {
+    if (error || !user || !restaurant) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: error || 'Unauthorized' },
+        { status: error === 'No restaurant found' ? 404 : 401 }
       );
     }
 
     const { action } = await params;
-    const restaurantSlug = session.restaurantSlug;
-
-    // Get restaurant data
-    const restaurant = await getRestaurantBySlug(restaurantSlug);
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
-      );
-    }
 
     // Get base URL from request headers or environment
     const host = request.headers.get('host') || 'localhost:3000';
@@ -48,22 +29,22 @@ export async function POST(
     try {
       switch (action) {
         case 'generate':
-          // Generate new QR code (qr_code_url column doesn't exist in actual schema)
+          // Generate new QR code
           qrCodeUrl = await generateAndUploadQRCode(
-            restaurantSlug,
+            restaurant.slug,
             baseUrl
           );
-          console.log('QR code generated but cannot be stored in database (column does not exist)');
+          console.log('QR code generated successfully');
           break;
 
         case 'regenerate':
-          // Force regenerate QR code (qr_code_url column doesn't exist in actual schema)
+          // Force regenerate QR code
           qrCodeUrl = await regenerateQRCode(
-            restaurantSlug,
+            restaurant.slug,
             undefined, // No existing QR URL since column doesn't exist
             baseUrl
           );
-          console.log('QR code regenerated but cannot be stored in database (column does not exist)');
+          console.log('QR code regenerated successfully');
           break;
 
         default:
@@ -75,7 +56,7 @@ export async function POST(
 
       return NextResponse.json({
         qrCodeUrl,
-        menuUrl: `${baseUrl}/menu/${restaurantSlug}`,
+        menuUrl: `${baseUrl}/menu/${restaurant.slug}`,
         message: `QR code ${action}d successfully`
       });
 
@@ -103,32 +84,22 @@ export async function GET(
   { params }: { params: Promise<{ action: string }> }
 ): Promise<NextResponse> {
   try {
-    // Get session to verify authentication and get restaurant slug
-    const session = await getServerSession(authOptions) as ExtendedSession;
+    // Get current user and restaurant using unified resolver
+    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
     
-    if (!session || !session.restaurantSlug) {
+    if (error || !user || !restaurant) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: error || 'Unauthorized' },
+        { status: error === 'No restaurant found' ? 404 : 401 }
       );
     }
 
     const { action } = await params;
-    const restaurantSlug = session.restaurantSlug;
 
     if (action !== 'info') {
       return NextResponse.json(
-        { error: 'Invalid action for GET request. Use "info"' },
+        { error: 'Invalid action. Use "info"' },
         { status: 400 }
-      );
-    }
-
-    // Get restaurant data
-    const restaurant = await getRestaurantBySlug(restaurantSlug);
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
       );
     }
 
@@ -137,10 +108,13 @@ export async function GET(
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const baseUrl = `${protocol}://${host}`;
 
+    // For now, we don't store QR codes in the database, so we'll return basic info
+    const menuUrl = `${baseUrl}/menu/${restaurant.slug}`;
+    
     return NextResponse.json({
-      qrCodeUrl: null, // qr_code_url column doesn't exist in actual schema
-      menuUrl: `${baseUrl}/menu/${restaurantSlug}`,
-      hasQRCode: false, // Column doesn't exist, so no stored QR code
+      qrCodeUrl: undefined, // No stored QR code URL
+      menuUrl,
+      hasQRCode: false, // We don't have a stored QR code
       restaurant: {
         id: restaurant.id,
         name: restaurant.name,

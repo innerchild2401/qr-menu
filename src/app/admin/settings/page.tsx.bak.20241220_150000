@@ -6,18 +6,12 @@ import { ToastContainer } from '../../../components/Toast';
 import { supabase } from '@/lib/auth-supabase';
 
 interface Restaurant {
-  id: string;
   name: string;
   slug: string;
   address: string;
   schedule: Record<string, string>;
   logo_url?: string;
   cover_url?: string;
-}
-
-interface CreateRestaurantForm {
-  name: string;
-  address: string;
 }
 
 export default function AdminSettings() {
@@ -33,14 +27,6 @@ export default function AdminSettings() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
-  
-  // Create restaurant form state
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateRestaurantForm>({
-    name: '',
-    address: ''
-  });
   
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -73,19 +59,14 @@ export default function AdminSettings() {
   const loadRestaurantData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/me/restaurant');
+      const response = await fetch('/api/admin/restaurant');
       
       if (response.ok) {
         const data = await response.json();
-        if (data.restaurant) {
-          setRestaurant(data.restaurant);
-          setLogoPreview(data.restaurant.logo_url || '');
-          setCoverPreview(data.restaurant.cover_url || '');
-          setHasRestaurant(true);
-        } else {
-          setHasRestaurant(false);
-          setRestaurant(null);
-        }
+        setRestaurant(data.restaurant);
+        setLogoPreview(data.restaurant.logo_url || '');
+        setCoverPreview(data.restaurant.cover_url || '');
+        setHasRestaurant(true);
       } else if (response.status === 404) {
         // No restaurant found
         setHasRestaurant(false);
@@ -95,59 +76,10 @@ export default function AdminSettings() {
         setHasRestaurant(false);
       }
     } catch (error) {
-      console.error('Error loading restaurant data:', error);
       showError('Error loading restaurant data');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCreateRestaurant = async () => {
-    if (!createForm.name.trim() || !createForm.address.trim()) {
-      showError('Restaurant name and address are required');
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      
-      const response = await fetch('/api/admin/restaurant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: createForm.name.trim(),
-          address: createForm.address.trim(),
-          schedule: {
-            monday: '9:00 AM - 10:00 PM',
-            tuesday: '9:00 AM - 10:00 PM',
-            wednesday: '9:00 AM - 10:00 PM',
-            thursday: '9:00 AM - 10:00 PM',
-            friday: '9:00 AM - 11:00 PM',
-            saturday: '9:00 AM - 11:00 PM',
-            sunday: '10:00 AM - 9:00 PM'
-          }
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        showSuccess('Restaurant created successfully!');
-        setShowCreateForm(false);
-        setCreateForm({ name: '', address: '' });
-        // Reload restaurant data
-        await loadRestaurantData();
-      } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to create restaurant');
-      }
-    } catch (error) {
-      console.error('Error creating restaurant:', error);
-      showError('Error creating restaurant');
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -248,102 +180,29 @@ export default function AdminSettings() {
     );
   }
 
-  // Show create restaurant form if no restaurant exists
+  // Show CTA to create restaurant if none exists
   if (hasRestaurant === false) {
     return (
-      <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Restaurant Settings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Create your first restaurant to get started
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto">
+          <div className="text-gray-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            No Restaurant Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            You don&apos;t have a restaurant set up yet. Create your first restaurant to get started.
           </p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            Create Restaurant
+          </button>
         </div>
-
-        {!showCreateForm ? (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No Restaurant Found
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                You don&apos;t have a restaurant set up yet. Create your first restaurant to get started.
-              </p>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Create Restaurant
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Create Your Restaurant
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Restaurant Name *
-                </label>
-                <input
-                  type="text"
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter restaurant name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Address *
-                </label>
-                <input
-                  type="text"
-                  value={createForm.address}
-                  onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter restaurant address"
-                />
-              </div>
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={handleCreateRestaurant}
-                  disabled={isCreating}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
-                >
-                  {isCreating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Restaurant'
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowCreateForm(false)}
-                  disabled={isCreating}
-                  className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

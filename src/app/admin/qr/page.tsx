@@ -25,13 +25,43 @@ export default function AdminQR() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
   
-  // Load user session
+  const loadQRCodeInfo = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/qr/info');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setQrInfo(data);
+        setHasRestaurant(true);
+      } else if (response.status === 404) {
+        // No restaurant found
+        setHasRestaurant(false);
+        setQrInfo(null);
+      } else {
+        throw new Error('Failed to load QR code information');
+      }
+    } catch (error) {
+      console.error('Error loading QR code info:', error);
+      showError('Failed to load QR code information');
+      setHasRestaurant(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showError]);
+
+  // Load user session and QR code info
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
+        loadQRCodeInfo();
+      } else {
+        setHasRestaurant(false);
+        setIsLoading(false);
       }
     };
 
@@ -41,38 +71,16 @@ export default function AdminQR() {
       async (event, session) => {
         if (session?.user) {
           setUser(session.user);
+          loadQRCodeInfo();
+        } else {
+          setHasRestaurant(false);
+          setIsLoading(false);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
-  
-  const loadQRCodeInfo = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/admin/qr/info');
-      
-      if (!response.ok) {
-        throw new Error('Failed to load QR code information');
-      }
-      
-      const data = await response.json();
-      setQrInfo(data);
-    } catch (error) {
-      console.error('Error loading QR code info:', error);
-      showError('Failed to load QR code information');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showError]);
-
-  // Load QR code info when component mounts
-  useEffect(() => {
-    if (user) {
-      loadQRCodeInfo();
-    }
-  }, [user, loadQRCodeInfo]);
+  }, [loadQRCodeInfo]);
 
   const generateQRCode = async () => {
     try {
@@ -177,12 +185,52 @@ export default function AdminQR() {
     }
   };
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading QR code information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no restaurant exists
+  if (hasRestaurant === false) {
+    return (
+      <div>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
+        
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            QR Code Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your restaurant&apos;s QR code for the digital menu
+          </p>
+        </div>
+
+        <div className="text-center py-12">
+          <div className="max-w-md mx-auto">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              No Restaurant Found
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              You need to create a restaurant first before you can generate a QR code.
+            </p>
+            <button
+              onClick={() => window.location.href = '/admin/settings'}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Go to Settings
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -201,89 +249,66 @@ export default function AdminQR() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Information & Actions */}
+      {qrInfo ? (
         <div className="space-y-6">
           {/* Restaurant Info */}
-          {qrInfo && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Restaurant Information
-              </h2>
-              
-              <div className="space-y-3">
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
-                  <p className="text-gray-600 dark:text-gray-400">{qrInfo.restaurant.name}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Slug:</span>
-                  <p className="text-gray-600 dark:text-gray-400">{qrInfo.restaurant.slug}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Menu URL:</span>
-                  <div className="flex mt-1">
-                    <input
-                      type="text"
-                      value={qrInfo.menuUrl}
-                      readOnly
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-gray-50 dark:bg-gray-700 dark:text-white text-sm"
-                    />
-                    <button
-                      onClick={copyUrlToClipboard}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors text-sm"
-                    >
-                      Copy
-                    </button>
-                  </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Restaurant Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Restaurant Name
+                </label>
+                <p className="text-gray-900 dark:text-white font-medium">
+                  {qrInfo.restaurant.name}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Menu URL
+                </label>
+                <div className="flex items-center space-x-2">
+                  <p className="text-blue-600 dark:text-blue-400 font-mono text-sm truncate">
+                    {qrInfo.menuUrl}
+                  </p>
+                  <button
+                    onClick={copyUrlToClipboard}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title="Copy URL"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={openMenuInNewTab}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title="Open menu"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* QR Code Actions */}
+          {/* QR Code Section */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              QR Code Actions
-            </h2>
-            
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${qrInfo?.hasQRCode ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {qrInfo?.hasQRCode ? 'QR Code Generated' : 'No QR Code'}
-                </span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {!qrInfo?.hasQRCode ? (
-                  <button
-                    onClick={generateQRCode}
-                    disabled={isGenerating}
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Generating QR Code...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Generate QR Code
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="space-y-3">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                QR Code
+              </h2>
+              <div className="flex space-x-3">
+                {qrInfo.hasQRCode ? (
+                  <>
                     <button
                       onClick={regenerateQRCode}
                       disabled={isRegenerating}
-                      className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+                      className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
                     >
                       {isRegenerating ? (
                         <>
@@ -291,150 +316,109 @@ export default function AdminQR() {
                           Regenerating...
                         </>
                       ) : (
-                        <>
-                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          Regenerate QR Code
-                        </>
+                        'Regenerate'
                       )}
                     </button>
-
                     <button
                       onClick={downloadQRCode}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
                     >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      Download PNG
+                      Download
                     </button>
-                  </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={generateQRCode}
+                    disabled={isGenerating}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate QR Code'
+                    )}
+                  </button>
                 )}
-                
-                <button
-                  onClick={openMenuInNewTab}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Preview Menu
-                </button>
               </div>
             </div>
-          </div>
 
-          {/* Usage Instructions */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">
-              📱 How Customers Use QR Codes
-            </h3>
-            <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-              <p><strong>Simple 3-Step Process:</strong></p>
-              <ol className="list-decimal list-inside space-y-1 ml-4">
-                <li>Customer opens camera app on their phone</li>
-                <li>Points camera at QR code</li>
-                <li>Taps the notification that appears to open menu</li>
-              </ol>
-              
-              <p className="pt-3"><strong>Compatible with:</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>iPhone (iOS 11+)</li>
-                <li>Android phones (most recent versions)</li>
-                <li>Any QR code scanner app</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - QR Code Display */}
-        <div className="space-y-6">
-          {/* QR Code Display */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              QR Code Preview
-            </h2>
-            
-            <div className="text-center">
-              {qrInfo?.qrCodeUrl ? (
-                <div className="inline-block p-6 bg-white rounded-lg shadow-sm">
+            {qrInfo.hasQRCode && qrInfo.qrCodeUrl ? (
+              <div className="text-center">
+                <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
                   <img
                     src={qrInfo.qrCodeUrl}
-                    alt={`QR Code for ${qrInfo.restaurant.name} menu`}
-                    className="max-w-full h-auto mx-auto"
-                    style={{ maxWidth: '300px', imageRendering: 'pixelated' }}
+                    alt="Menu QR Code"
+                    className="w-64 h-64 object-contain"
                   />
                 </div>
-              ) : (
-                <div className="w-64 h-64 mx-auto bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">No QR code generated yet</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Click &quot;Generate QR Code&quot; to create one</p>
-                  </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                  Scan this QR code to access your digital menu
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                  </svg>
                 </div>
-              )}
-            </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  No QR Code Generated
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Generate a QR code to allow customers to easily access your digital menu.
+                </p>
+                <button
+                  onClick={generateQRCode}
+                  disabled={isGenerating}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center mx-auto"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    'Generate QR Code'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* QR Code Technical Info */}
-          {qrInfo?.qrCodeUrl && (
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                QR Code Details
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Size:</span>
-                  <p className="text-gray-600 dark:text-gray-400">512×512 pixels</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Format:</span>
-                  <p className="text-gray-600 dark:text-gray-400">PNG</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Error Correction:</span>
-                  <p className="text-gray-600 dark:text-gray-400">Medium (M)</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Quiet Zone:</span>
-                  <p className="text-gray-600 dark:text-gray-400">2 modules</p>
-                </div>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Storage:</span>
-                <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Stored securely in Supabase cloud storage</p>
-              </div>
-            </div>
-          )}
-
-          {/* Best Practices */}
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-3">
-              💡 Best Practices
+          {/* Instructions */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">
+              How to Use Your QR Code
             </h3>
-            <div className="text-sm text-yellow-800 dark:text-yellow-200 space-y-2">
-              <p><strong>Printing:</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Print at least 2×2 cm (0.8×0.8 inch)</li>
-                <li>Use high contrast (black on white)</li>
-                <li>Avoid reflective surfaces</li>
-              </ul>
-              
-              <p><strong>Placement Ideas:</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Table tents and placemats</li>
-                <li>Window stickers</li>
-                <li>Business cards</li>
-              </ul>
+            <div className="space-y-3 text-blue-800 dark:text-blue-200">
+              <div className="flex items-start">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-0.5">1</span>
+                <p>Download the QR code image and print it on your menu cards, tables, or promotional materials.</p>
+              </div>
+              <div className="flex items-start">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-0.5">2</span>
+                <p>Customers can scan the QR code with their smartphone camera to instantly access your digital menu.</p>
+              </div>
+              <div className="flex items-start">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-0.5">3</span>
+                <p>The QR code will always link to your current menu, so updates are automatically reflected.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading restaurant information...</p>
+        </div>
+      )}
     </div>
   );
 }
