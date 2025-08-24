@@ -6,7 +6,7 @@ import { supabase } from '@/lib/auth-supabase';
 import LoginModal from './LoginModal';
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 

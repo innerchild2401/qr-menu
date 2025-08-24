@@ -40,7 +40,7 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
     }
 
     try {
-      const result = await signUp({
+             await signUp({
         email: formData.email,
         password: formData.password,
         full_name: formData.fullName,

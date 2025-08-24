@@ -150,7 +150,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Don't have an account?{' '}
+                             Don&apos;t have an account?{' '}
               <button
                 onClick={onClose}
                 className="text-blue-600 hover:text-blue-700 font-medium"
