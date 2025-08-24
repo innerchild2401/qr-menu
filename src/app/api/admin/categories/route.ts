@@ -38,8 +38,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { data: categories, error } = await supabaseAdmin
       .from('categories')
       .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: true });
+      .eq('restaurant_id', restaurant.id);
 
     if (error) {
       console.error('Supabase error:', error);
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Parse request body
-    const { name, description } = await request.json();
+    const { name } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -94,24 +93,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Get current max sort order
-    const { data: maxOrderData } = await supabaseAdmin
-      .from('categories')
-      .select('sort_order')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: false })
-      .limit(1);
-
-    const nextSortOrder = maxOrderData?.[0]?.sort_order ? maxOrderData[0].sort_order + 1 : 1;
+    // Note: sort_order column doesn't exist in actual schema
 
     // Insert new category
     const { data: newCategory, error } = await supabaseAdmin
       .from('categories')
       .insert({
         restaurant_id: restaurant.id,
-        name: name.trim(),
-        description: description?.trim() || '',
-        sort_order: nextSortOrder
+        name: name.trim()
+        // Note: description and sort_order columns don't exist in actual schema
       })
       .select()
       .single();

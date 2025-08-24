@@ -13,8 +13,8 @@ interface Restaurant {
   slug: string;
   address: string;
   schedule: Record<string, string>;
-  logo: string;
-  cover: string;
+  logo_url?: string; // Actual column name
+  cover_url?: string; // Actual column name
 }
 
 interface Category {
@@ -73,19 +73,23 @@ export default async function MenuPage({ params }: MenuPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Restaurant Header */}
           <div className="text-center mb-12">
-            <div className="mb-6">
-              <img
-                src={restaurant.cover}
-                alt={restaurant.name}
-                className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg"
-              />
-            </div>
+            {restaurant.cover_url && (
+              <div className="mb-6">
+                <img
+                  src={restaurant.cover_url}
+                  alt={restaurant.name}
+                  className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg"
+                />
+              </div>
+            )}
             <div className="flex items-center justify-center mb-4">
-              <img
-                src={restaurant.logo}
-                alt={`${restaurant.name} logo`}
-                className="w-16 h-16 rounded-full object-cover mr-4"
-              />
+              {restaurant.logo_url && (
+                <img
+                  src={restaurant.logo_url}
+                  alt={`${restaurant.name} logo`}
+                  className="w-16 h-16 rounded-full object-cover mr-4"
+                />
+              )}
               <div>
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
                   {restaurant.name}

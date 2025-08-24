@@ -12,29 +12,24 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   }
 });
 
-// Database types (based on expected Supabase schema)
+// Database types (based on actual Supabase schema)
 export interface Restaurant {
   id: string;
   slug: string;
   name: string;
-  description?: string;
   address?: string;
   schedule?: string;
-  logo?: string;
-  cover?: string;
-  qr_code_url?: string;
+  logo_url?: string; // Actual column name
+  cover_url?: string; // Actual column name
   created_at: string;
-  updated_at: string;
+  // Note: description, qr_code_url, updated_at columns don't exist in actual schema
 }
 
 export interface Category {
   id: string;
   restaurant_id: string;
   name: string;
-  description?: string;
-  sort_order?: number;
-  created_at: string;
-  updated_at: string;
+  // Note: description, sort_order, updated_at columns don't exist in actual schema
 }
 
 export interface Product {
@@ -47,6 +42,7 @@ export interface Product {
   image_url?: string; // Actual column name in database
   nutrition?: Record<string, unknown>; // JSON field
   created_at: string;
+  // Note: available, sort_order, updated_at columns don't exist in actual schema
 }
 
 export interface Popup {
@@ -150,14 +146,12 @@ export const getRestaurantWithData = async (slug: string) => {
     supabaseAdmin
       .from('categories')
       .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: true }),
+      .eq('restaurant_id', restaurant.id),
     
     supabaseAdmin
       .from('products')
       .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: true }),
+      .eq('restaurant_id', restaurant.id),
   ]);
 
   if (categoriesResult.error) {

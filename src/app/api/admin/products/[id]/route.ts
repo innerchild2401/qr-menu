@@ -80,11 +80,10 @@ export async function PUT(
         name: name.trim(),
         description: description?.trim() || '',
         price: price,
-        image: image || null,
+        image_url: image || null, // Use image_url instead of image
         nutrition: nutrition || null,
-        category_id: category_id || null,
-        available: available !== undefined ? available : true,
-        updated_at: new Date().toISOString()
+        category_id: category_id || null
+        // Note: available and updated_at columns don't exist in actual schema
       })
       .eq('id', id)
       .eq('restaurant_id', restaurant.id) // Ensure user can only edit their own products

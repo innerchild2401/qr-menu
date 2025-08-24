@@ -53,9 +53,8 @@ export async function PUT(
     const { data, error } = await supabaseAdmin
       .from('categories')
       .update({
-        name: name.trim(),
-        description: description?.trim() || '',
-        updated_at: new Date().toISOString()
+        name: name.trim()
+        // Note: description and updated_at columns don't exist in actual schema
       })
       .eq('id', id)
       .eq('restaurant_id', restaurant.id) // Ensure user can only edit their own categories

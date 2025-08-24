@@ -111,13 +111,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       .from('restaurants')
       .update({
         name: updatedData.name,
-        description: updatedData.description,
         address: updatedData.address,
         schedule: updatedData.schedule,
-        logo: updatedData.logo,
-        cover: updatedData.cover,
-        qr_code_url: qrCodeUrl,
-        updated_at: new Date().toISOString()
+        logo_url: updatedData.logo, // Use logo_url instead of logo
+        cover_url: updatedData.cover // Use cover_url instead of cover
+        // Note: description, qr_code_url, updated_at columns don't exist in actual schema
       })
       .eq('id', currentRestaurant.id)
       .select()

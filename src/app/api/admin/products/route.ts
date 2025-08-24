@@ -41,8 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         *,
         categories(name)
       `)
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: true });
+      .eq('restaurant_id', restaurant.id);
 
     if (error) {
       console.error('Supabase error:', error);
@@ -87,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Parse request body
-    const { name, description, price, image, nutrition, category_id, available = true } = await request.json();
+    const { name, description, price, image, nutrition, category_id } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -121,15 +120,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Get current max sort order
-    const { data: maxOrderData } = await supabaseAdmin
-      .from('products')
-      .select('sort_order')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order', { ascending: false })
-      .limit(1);
-
-    const nextSortOrder = maxOrderData?.[0]?.sort_order ? maxOrderData[0].sort_order + 1 : 1;
+    // Note: sort_order column doesn't exist in actual schema
+    // Using created_at for ordering instead
 
     // Insert new product
     const { data: newProduct, error } = await supabaseAdmin
@@ -140,10 +132,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         name: name.trim(),
         description: description?.trim() || '',
         price: price,
-        image: image || null,
-        nutrition: nutrition || null,
-        available: available,
-        sort_order: nextSortOrder
+        image_url: image || null, // Use image_url instead of image
+        nutrition: nutrition || null
+        // Note: available and sort_order columns don't exist in actual schema
       })
       .select()
       .single();

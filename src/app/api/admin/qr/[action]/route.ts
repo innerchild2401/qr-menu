@@ -57,14 +57,9 @@ export async function POST(
               baseUrl
             );
 
-            // Update restaurant with QR code URL
-            const { error: updateError } = await supabaseAdmin
-              .from('restaurants')
-              .update({
-                qr_code_url: qrCodeUrl,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', restaurant.id);
+            // Note: qr_code_url and updated_at columns don't exist in actual schema
+            // QR code URL cannot be stored in database
+            console.log('QR code generated but cannot be stored in database');
 
             if (updateError) {
               console.error('Failed to update restaurant with QR URL:', updateError);
@@ -81,19 +76,9 @@ export async function POST(
             baseUrl
           );
 
-          // Update restaurant with new QR code URL
-          const { error: updateError } = await supabaseAdmin
-            .from('restaurants')
-            .update({
-              qr_code_url: qrCodeUrl,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', restaurant.id);
-
-          if (updateError) {
-            console.error('Failed to update restaurant with new QR URL:', updateError);
-            // Don't fail the request, QR code was still generated
-          }
+          // Note: qr_code_url and updated_at columns don't exist in actual schema
+          // QR code URL cannot be stored in database
+          console.log('QR code regenerated but cannot be stored in database');
           break;
 
         default:
