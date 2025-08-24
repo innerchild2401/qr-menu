@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
 
@@ -29,14 +29,7 @@ export default function AdminCategories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '', description: '' });
 
-  // Load categories on mount
-  useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadCategories();
-    }
-  }, [session]);
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/categories');
@@ -47,12 +40,19 @@ export default function AdminCategories() {
       } else {
         showError('Failed to load categories');
       }
-    } catch (error) {
+    } catch {
       showError('Error loading categories');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError]);
+
+  // Load categories on mount
+  useEffect(() => {
+    if (session?.restaurantSlug) {
+      loadCategories();
+    }
+  }, [session, loadCategories]);
 
   const resetForm = () => {
     setFormData({ name: '', description: '' });
@@ -91,10 +91,10 @@ export default function AdminCategories() {
         resetForm();
         loadCategories(); // Reload categories
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to save category');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to save category');
       }
-    } catch (error) {
+    } catch {
       showError('Error saving category');
     } finally {
       setIsSubmitting(false);
@@ -125,10 +125,10 @@ export default function AdminCategories() {
         showSuccess(data.message);
         loadCategories(); // Reload categories
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to delete category');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to delete category');
       }
-    } catch (error) {
+    } catch {
       showError('Error deleting category');
     }
   };

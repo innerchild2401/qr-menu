@@ -1,7 +1,8 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
 
@@ -57,14 +58,7 @@ export default function AdminPopups() {
   // File input ref
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Load popups on mount
-  useEffect(() => {
-    if (session?.restaurantSlug) {
-      loadPopups();
-    }
-  }, [session]);
-
-  const loadPopups = async () => {
+  const loadPopups = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/popups');
@@ -75,12 +69,19 @@ export default function AdminPopups() {
       } else {
         showError('Failed to load popups');
       }
-    } catch (error) {
+    } catch {
       showError('Error loading popups');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError]);
+
+  // Load popups on mount
+  useEffect(() => {
+    if (session?.restaurantSlug) {
+      loadPopups();
+    }
+  }, [session, loadPopups]);
 
   const resetForm = () => {
     setFormData({
@@ -118,11 +119,11 @@ export default function AdminPopups() {
         showSuccess('Image uploaded successfully');
         return result.url;
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to upload image');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to upload image');
         return '';
       }
-    } catch (error) {
+    } catch {
       showError('Error uploading image');
       return '';
     } finally {
@@ -188,10 +189,10 @@ export default function AdminPopups() {
         resetForm();
         loadPopups(); // Reload popups
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to save popup');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to save popup');
       }
-    } catch (error) {
+    } catch {
       showError('Error saving popup');
     } finally {
       setIsSubmitting(false);
@@ -229,10 +230,10 @@ export default function AdminPopups() {
         showSuccess(data.message);
         loadPopups(); // Reload popups
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to delete popup');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to delete popup');
       }
-    } catch (error) {
+    } catch {
       showError('Error deleting popup');
     }
   };
@@ -254,10 +255,10 @@ export default function AdminPopups() {
         showSuccess(`Popup ${!popup.active ? 'activated' : 'deactivated'}`);
         loadPopups(); // Reload popups
       } else {
-        const error = await response.json();
-        showError(error.error || 'Failed to update popup');
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to update popup');
       }
-    } catch (error) {
+    } catch {
       showError('Error updating popup');
     }
   };
@@ -388,9 +389,11 @@ export default function AdminPopups() {
                   </label>
                   {imagePreview ? (
                     <div className="relative">
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Popup preview"
+                        width={400}
+                        height={128}
                         className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
                       />
                       <button
@@ -613,9 +616,11 @@ export default function AdminPopups() {
 
               {popup.image && (
                 <div className="mt-4">
-                  <img
+                  <Image
                     src={popup.image}
                     alt={popup.title}
+                    width={128}
+                    height={80}
                     className="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
                   />
                 </div>
