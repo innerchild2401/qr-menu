@@ -9,6 +9,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    // Disable email confirmation for immediate sign-in
+    detectSessionInUrl: false,
   }
 });
 
@@ -36,7 +38,7 @@ export const signUp = async (data: SignUpData) => {
   try {
     console.log('🚀 Starting signup process...');
     
-    // Step 1: Create the auth user with auto-confirm enabled
+    // Step 1: Create the auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -174,52 +176,40 @@ export const signUp = async (data: SignUpData) => {
       console.log('✅ User-restaurant relationship verified');
     }
 
-    // Step 7: Handle authentication based on email confirmation status
-    console.log('🔐 Handling authentication...');
+    // Step 7: Ensure user is automatically signed in
+    console.log('🔐 Ensuring user authentication...');
     
-    if (authData.user.email_confirmed_at) {
-      // User is already confirmed, we can proceed with auto-login
-      console.log('✅ User email already confirmed, proceeding with auto-login');
+    // Check if we have a session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('❌ Session error:', sessionError);
+      throw new Error('Failed to establish user session');
+    }
+    
+    if (!session) {
+      console.log('⚠️  No session found, attempting to sign in...');
       
-      // Check if we have a session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
       
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        throw new Error('Failed to establish user session');
+      if (signInError) {
+        console.error('❌ Auto-signin failed:', signInError);
+        throw new Error('Account created but failed to sign in automatically. Please sign in manually.');
       }
       
-      if (!session) {
-        console.log('⚠️  No session found, attempting to sign in...');
-        
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        
-        if (signInError) {
-          console.error('❌ Auto-signin failed:', signInError);
-          throw new Error('Account created but failed to sign in automatically. Please sign in manually.');
-        }
-        
-        console.log('✅ Auto-signin successful');
-      } else {
-        console.log('✅ User session already established');
-      }
+      console.log('✅ Auto-signin successful');
     } else {
-      // User needs to confirm email first
-      console.log('📧 User needs to confirm email before signing in');
-      console.log('📧 Check your email for confirmation link');
-      
-      // We'll still return success, but the user will need to confirm email
-      // The frontend should handle this case appropriately
+      console.log('✅ User session already established');
     }
 
     console.log('🎉 Signup process completed successfully!');
     return { 
       user: authData.user, 
       restaurant,
-      emailConfirmed: !!authData.user.email_confirmed_at,
+      emailConfirmed: true, // Always true since we disabled email confirmation
       session: authData.session
     };
     

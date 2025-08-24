@@ -52,22 +52,12 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
       // Close modal first
       onClose();
       
-      // Handle different scenarios based on email confirmation
-      if (result.emailConfirmed) {
-        console.log('✅ Email confirmed, redirecting to admin...');
-        // Add a small delay to ensure session is properly established
-        setTimeout(() => {
-          router.push('/admin/settings');
-        }, 500);
-      } else {
-        console.log('📧 Email confirmation required');
-        // Show a success message with email confirmation instructions
-        setError('Account created successfully! Please check your email and click the confirmation link to activate your account. You can then sign in with your credentials.');
-        // Don't redirect, let the user see the message
-        setTimeout(() => {
-          setError('');
-        }, 10000); // Clear message after 10 seconds
-      }
+      // Email confirmation is disabled, so always redirect
+      console.log('✅ Signup successful, redirecting to admin...');
+      // Add a small delay to ensure session is properly established
+      setTimeout(() => {
+        router.push('/admin/settings');
+      }, 500);
       
     } catch (error) {
       console.error('❌ Signup error:', error);
