@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../lib/auth';
 import { supabaseAdmin, getRestaurantBySlug } from '../../../../../lib/supabase-server';
-import { generateAndUploadQRCode, regenerateQRCode } from '../../../../../lib/qrCodeUtils';
-import type { Restaurant } from '../../../../../lib/supabase-server';
 
 interface ExtendedSession {
   user?: {
@@ -82,29 +80,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check if QR code needs to be regenerated (slug or name change)
-    let qrCodeUrl = currentRestaurant.qr_code_url;
-    const shouldRegenerateQR = !qrCodeUrl || 
-      (updatedData.name && updatedData.name !== currentRestaurant.name);
-
-    if (shouldRegenerateQR) {
-      try {
-        // Get base URL from request headers or environment
-        const host = request.headers.get('host') || 'localhost:3000';
-        const protocol = request.headers.get('x-forwarded-proto') || 'http';
-        const baseUrl = `${protocol}://${host}`;
-
-        // Generate or regenerate QR code
-        qrCodeUrl = await generateAndUploadQRCode(
-          restaurantSlug,
-          baseUrl
-        );
-      } catch (qrError) {
-        console.error('QR code generation failed:', qrError);
-        // Don't fail the entire update if QR generation fails
-        // Just log the error and continue
-      }
-    }
+    // Note: qr_code_url column doesn't exist in actual schema
+    // QR code generation is handled separately in /api/admin/qr/[action]
 
     // Update restaurant in Supabase
     const { data, error } = await supabaseAdmin
@@ -113,8 +90,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         name: updatedData.name,
         address: updatedData.address,
         schedule: updatedData.schedule,
-        logo_url: updatedData.logo, // Use logo_url instead of logo
-        cover_url: updatedData.cover // Use cover_url instead of cover
+        logo_url: updatedData.logo_url, // Frontend should send logo_url
+        cover_url: updatedData.cover_url // Frontend should send cover_url
         // Note: description, qr_code_url, updated_at columns don't exist in actual schema
       })
       .eq('id', currentRestaurant.id)

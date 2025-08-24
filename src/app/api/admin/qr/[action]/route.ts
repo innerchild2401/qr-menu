@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../../lib/auth';
-import { supabaseAdmin, getRestaurantBySlug } from '../../../../../../lib/supabase-server';
+import { getRestaurantBySlug } from '../../../../../../lib/supabase-server';
 import { generateAndUploadQRCode, regenerateQRCode } from '../../../../../../lib/qrCodeUtils';
 
 interface ExtendedSession {
@@ -48,37 +48,22 @@ export async function POST(
     try {
       switch (action) {
         case 'generate':
-          // Generate new QR code (or use existing if already present)
-          if (restaurant.qr_code_url) {
-            qrCodeUrl = restaurant.qr_code_url;
-          } else {
-            qrCodeUrl = await generateAndUploadQRCode(
-              restaurantSlug,
-              baseUrl
-            );
-
-            // Note: qr_code_url and updated_at columns don't exist in actual schema
-            // QR code URL cannot be stored in database
-            console.log('QR code generated but cannot be stored in database');
-
-            if (updateError) {
-              console.error('Failed to update restaurant with QR URL:', updateError);
-              // Don't fail the request, QR code was still generated
-            }
-          }
+          // Generate new QR code (qr_code_url column doesn't exist in actual schema)
+          qrCodeUrl = await generateAndUploadQRCode(
+            restaurantSlug,
+            baseUrl
+          );
+          console.log('QR code generated but cannot be stored in database (column does not exist)');
           break;
 
         case 'regenerate':
-          // Force regenerate QR code
+          // Force regenerate QR code (qr_code_url column doesn't exist in actual schema)
           qrCodeUrl = await regenerateQRCode(
             restaurantSlug,
-            restaurant.qr_code_url,
+            undefined, // No existing QR URL since column doesn't exist
             baseUrl
           );
-
-          // Note: qr_code_url and updated_at columns don't exist in actual schema
-          // QR code URL cannot be stored in database
-          console.log('QR code regenerated but cannot be stored in database');
+          console.log('QR code regenerated but cannot be stored in database (column does not exist)');
           break;
 
         default:
@@ -153,9 +138,9 @@ export async function GET(
     const baseUrl = `${protocol}://${host}`;
 
     return NextResponse.json({
-      qrCodeUrl: restaurant.qr_code_url,
+      qrCodeUrl: null, // qr_code_url column doesn't exist in actual schema
       menuUrl: `${baseUrl}/menu/${restaurantSlug}`,
-      hasQRCode: !!restaurant.qr_code_url,
+      hasQRCode: false, // Column doesn't exist, so no stored QR code
       restaurant: {
         id: restaurant.id,
         name: restaurant.name,

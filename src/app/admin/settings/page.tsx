@@ -10,9 +10,9 @@ interface Restaurant {
   slug: string;
   address: string;
   schedule: Record<string, string>;
-  logo: string;
-  cover: string;
-  qr_code_url?: string;
+  logo_url?: string; // Actual column name
+  cover_url?: string; // Actual column name
+  // Note: qr_code_url column doesn't exist in actual schema
 }
 
 export default function AdminSettings() {
@@ -47,8 +47,8 @@ export default function AdminSettings() {
       if (response.ok) {
         const data = await response.json();
         setRestaurant(data.restaurant);
-        setLogoPreview(data.restaurant.logo);
-        setCoverPreview(data.restaurant.cover);
+        setLogoPreview(data.restaurant.logo_url || '');
+        setCoverPreview(data.restaurant.cover_url || '');
       } else {
         showError('Failed to load restaurant data');
       }
@@ -105,7 +105,7 @@ export default function AdminSettings() {
         if (restaurant) {
           setRestaurant({
             ...restaurant,
-            [type]: result.url
+            [type === 'logo' ? 'logo_url' : 'cover_url']: result.url
           });
         }
         

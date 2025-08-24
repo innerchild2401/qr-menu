@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRestaurantWithData } from '../../../../../lib/supabase-server';
-import { initializeServer } from '../../../../../lib/serverInit';
 import type { Restaurant, Category, Product } from '../../../../../lib/supabase-server';
 
 interface MenuResponse {
