@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from './supabase-server';
+import type { CookieOptions } from '@supabase/ssr';
 
 // Restaurant type for admin operations
 export interface AdminRestaurant {
@@ -42,7 +43,7 @@ const createServerSupabaseClient = async () => {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
           });

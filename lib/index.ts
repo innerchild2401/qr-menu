@@ -49,8 +49,5 @@ export {
   regenerateQRCode
 } from './qrCodeUtils';
 
-// Re-export auth configuration
-export { authOptions } from './auth';
-
 // Re-export server initialization
 export { initializeServer } from './serverInit';

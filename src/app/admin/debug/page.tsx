@@ -5,7 +5,44 @@ import { useState } from 'react';
 export default function DebugPage() {
   const [email, setEmail] = useState('eu@eu.com');
   const [restaurantSlug, setRestaurantSlug] = useState('');
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<{
+    user?: { id: string; email: string; full_name: string };
+    userRecord?: { id: string; email: string; full_name: string; created_at: string; updated_at: string };
+    userRestaurants?: Array<{
+      user_id: string;
+      restaurant_id: string;
+      role: string;
+      restaurants: {
+        id: string;
+        name: string;
+        slug: string;
+        owner_id: string;
+      };
+    }>;
+    ownedRestaurants?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      owner_id: string;
+    }>;
+    enhancedResults?: Array<{
+      restaurant_id: string;
+      restaurant_name: string;
+      restaurant_slug: string;
+      role: string;
+      owner_id: string;
+    }>;
+    allRestaurants?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      owner_id: string;
+      created_at: string;
+    }>;
+    errors?: Record<string, string>;
+    recommendations?: string[];
+    error?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -174,7 +211,7 @@ export default function DebugPage() {
               <div>
                 <h3 className="text-lg font-medium mb-2">Enhanced Function Results</h3>
                 <pre className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md overflow-x-auto text-sm">
-                  {JSON.stringify(debugData.enhancedRestaurants, null, 2)}
+                  {JSON.stringify(debugData.enhancedResults, null, 2)}
                 </pre>
               </div>
 
