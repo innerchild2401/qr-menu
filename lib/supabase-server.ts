@@ -44,12 +44,9 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
-  image?: string;
+  image_url?: string; // Actual column name in database
   nutrition?: Record<string, unknown>; // JSON field
-  available: boolean;
-  sort_order?: number;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Popup {
@@ -128,8 +125,12 @@ export const getRestaurantBySlug = async (slug: string): Promise<Restaurant | nu
     .eq('slug', slug)
     .single();
 
-  if (error || !data) {
+  if (error) {
     console.error('Error fetching restaurant:', error);
+    return null;
+  }
+
+  if (!data) {
     return null;
   }
 
@@ -139,6 +140,7 @@ export const getRestaurantBySlug = async (slug: string): Promise<Restaurant | nu
 // Helper function to get restaurant with related data
 export const getRestaurantWithData = async (slug: string) => {
   const restaurant = await getRestaurantBySlug(slug);
+  
   if (!restaurant) {
     return null;
   }
@@ -155,7 +157,6 @@ export const getRestaurantWithData = async (slug: string) => {
       .from('products')
       .select('*')
       .eq('restaurant_id', restaurant.id)
-      .eq('available', true)
       .order('sort_order', { ascending: true }),
   ]);
 

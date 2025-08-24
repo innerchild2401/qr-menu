@@ -29,14 +29,14 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  image: string;
-  nutrition: {
-    calories: number;
-    protein: string;
-    carbs: string;
-    fat: string;
+  image_url?: string; // Updated to match database schema
+  nutrition?: {
+    calories?: number;
+    protein?: string;
+    carbs?: string;
+    fat?: string;
   };
-  categoryId: string;
+  categoryId?: string;
 }
 
 interface MenuData {
@@ -106,16 +106,18 @@ export default async function MenuPage({ params }: MenuPageProps) {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
               >
                 {/* Product Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-lg text-sm font-bold">
-                    ${product.price.toFixed(2)}
+                {product.image_url && (
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-lg text-sm font-bold">
+                      ${product.price.toFixed(2)}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Card Header */}
                 <div className="p-4">
@@ -130,15 +132,17 @@ export default async function MenuPage({ params }: MenuPageProps) {
                   </p>
 
                   {/* Nutrition Info */}
-                  <div className="mb-4 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Nutrition:</p>
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>{product.nutrition.calories} cal</span>
-                      <span>Protein: {product.nutrition.protein}</span>
-                      <span>Carbs: {product.nutrition.carbs}</span>
-                      <span>Fat: {product.nutrition.fat}</span>
+                  {product.nutrition && (
+                    <div className="mb-4 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Nutrition:</p>
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        {product.nutrition.calories && <span>{product.nutrition.calories} cal</span>}
+                        {product.nutrition.protein && <span>Protein: {product.nutrition.protein}</span>}
+                        {product.nutrition.carbs && <span>Carbs: {product.nutrition.carbs}</span>}
+                        {product.nutrition.fat && <span>Fat: {product.nutrition.fat}</span>}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
