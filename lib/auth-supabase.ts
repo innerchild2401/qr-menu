@@ -33,84 +33,149 @@ export interface SignInData {
 
 // Auth functions
 export const signUp = async (data: SignUpData) => {
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options: {
-      data: {
-        full_name: data.full_name,
-      }
-    }
-  });
-
-  if (authError) {
-    throw new Error(authError.message);
-  }
-
-  if (authData.user) {
-    // Wait a moment for the trigger to create the user record in the users table
-    // Then verify the user exists before creating the restaurant
-    let userExists = false;
-    let attempts = 0;
-    const maxAttempts = 5;
+  try {
+    console.log('🚀 Starting signup process...');
     
-    while (!userExists && attempts < maxAttempts) {
-      const { data: userRecord, error: userError } = await supabase
+    // Step 1: Create the auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          full_name: data.full_name,
+        }
+      }
+    });
+
+    if (authError) {
+      console.error('❌ Auth signup error:', authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+
+    if (!authData.user) {
+      throw new Error('Failed to create user account');
+    }
+
+    console.log('✅ Auth user created successfully:', authData.user.id);
+
+    // Step 2: Ensure user record exists in public.users table
+    let userRecord = null;
+    let attempts = 0;
+    const maxAttempts = 10; // Increased retry attempts
+    
+    while (!userRecord && attempts < maxAttempts) {
+      console.log(`🔄 Attempt ${attempts + 1}/${maxAttempts}: Checking for user record...`);
+      
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, email, full_name')
         .eq('id', authData.user.id)
         .single();
       
-      if (userRecord && !userError) {
-        userExists = true;
+      if (userData && !userError) {
+        userRecord = userData;
+        console.log('✅ User record found in public.users table');
         break;
       }
       
-      // Wait 500ms before retrying
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait longer between attempts (1 second)
+      await new Promise(resolve => setTimeout(resolve, 1000));
       attempts++;
     }
     
-    if (!userExists) {
-      // Fallback: manually create the user record if the trigger failed
-      const { error: createUserError } = await supabase
+    // Step 3: Fallback - manually create user record if trigger failed
+    if (!userRecord) {
+      console.log('⚠️  Trigger failed to create user record, creating manually...');
+      
+      const { data: createdUser, error: createUserError } = await supabase
         .from('users')
         .insert({
           id: authData.user.id,
           email: authData.user.email!,
           full_name: data.full_name
-        });
+        })
+        .select()
+        .single();
       
       if (createUserError) {
-        throw new Error(`Failed to create user record: ${createUserError.message}`);
+        console.error('❌ Failed to create user record manually:', createUserError);
+        throw new Error(`Failed to create user profile: ${createUserError.message}`);
       }
       
-      console.log('User record created manually due to trigger failure.');
+      userRecord = createdUser;
+      console.log('✅ User record created manually');
     }
 
-    // Create restaurant for the new user with owner_id
+    // Step 4: Create restaurant with proper error handling
+    console.log('🏪 Creating restaurant...');
+    
+    const restaurantData = {
+      name: data.restaurant_name,
+      slug: generateSlug(data.restaurant_name),
+      owner_id: authData.user.id
+    };
+    
+    console.log('📋 Restaurant data:', restaurantData);
+    
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
-      .insert({
-        name: data.restaurant_name,
-        slug: generateSlug(data.restaurant_name),
-        owner_id: authData.user.id
-      })
+      .insert(restaurantData)
       .select()
       .single();
 
     if (restaurantError) {
-      throw new Error(`Failed to create restaurant: ${restaurantError.message}`);
+      console.error('❌ Restaurant creation error:', restaurantError);
+      
+      // Provide more specific error messages
+      if (restaurantError.code === '23503') {
+        throw new Error(`Foreign key constraint violation: The user record may not exist. Please try signing in again.`);
+      } else if (restaurantError.code === '23505') {
+        throw new Error(`Restaurant with this name already exists. Please choose a different name.`);
+      } else {
+        throw new Error(`Failed to create restaurant: ${restaurantError.message}`);
+      }
     }
 
-    // The user_restaurants relationship is automatically created by the database trigger
-    // when owner_id is set during restaurant creation
-    console.log('Restaurant created successfully and linked to user via owner_id.');
+    console.log('✅ Restaurant created successfully:', restaurant.id);
 
+    // Step 5: Verify user-restaurant relationship was created
+    console.log('🔗 Verifying user-restaurant relationship...');
+    
+    const { error: relationshipError } = await supabase
+      .from('user_restaurants')
+      .select('user_id, restaurant_id, role')
+      .eq('user_id', authData.user.id)
+      .eq('restaurant_id', restaurant.id)
+      .single();
+    
+    if (relationshipError) {
+      console.warn('⚠️  User-restaurant relationship not found, creating manually...');
+      
+      const { error: createRelError } = await supabase
+        .from('user_restaurants')
+        .insert({
+          user_id: authData.user.id,
+          restaurant_id: restaurant.id,
+          role: 'owner'
+        });
+      
+      if (createRelError) {
+        console.error('❌ Failed to create user-restaurant relationship:', createRelError);
+        // Don't throw error here as the restaurant was created successfully
+      } else {
+        console.log('✅ User-restaurant relationship created manually');
+      }
+    } else {
+      console.log('✅ User-restaurant relationship verified');
+    }
+
+    console.log('🎉 Signup process completed successfully!');
     return { user: authData.user, restaurant };
+    
+  } catch (error) {
+    console.error('❌ Signup process failed:', error);
+    throw error;
   }
-
-  throw new Error('Failed to create user');
 };
 
 export const signIn = async (data: SignInData) => {
