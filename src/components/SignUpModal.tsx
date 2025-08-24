@@ -47,15 +47,27 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
         restaurant_name: formData.restaurantName
       });
 
-      console.log('✅ Signup successful, redirecting to admin...');
+      console.log('✅ Signup successful:', result);
       
       // Close modal first
       onClose();
       
-      // Add a small delay to ensure session is properly established
-      setTimeout(() => {
-        router.push('/admin/settings');
-      }, 500);
+      // Handle different scenarios based on email confirmation
+      if (result.emailConfirmed) {
+        console.log('✅ Email confirmed, redirecting to admin...');
+        // Add a small delay to ensure session is properly established
+        setTimeout(() => {
+          router.push('/admin/settings');
+        }, 500);
+      } else {
+        console.log('📧 Email confirmation required');
+        // Show a success message with email confirmation instructions
+        setError('Account created successfully! Please check your email and click the confirmation link to activate your account. You can then sign in with your credentials.');
+        // Don't redirect, let the user see the message
+        setTimeout(() => {
+          setError('');
+        }, 10000); // Clear message after 10 seconds
+      }
       
     } catch (error) {
       console.error('❌ Signup error:', error);

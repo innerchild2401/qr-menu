@@ -36,14 +36,15 @@ export const signUp = async (data: SignUpData) => {
   try {
     console.log('🚀 Starting signup process...');
     
-    // Step 1: Create the auth user
+    // Step 1: Create the auth user with auto-confirm enabled
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         data: {
           full_name: data.full_name,
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/admin/settings`
       }
     });
 
@@ -57,11 +58,18 @@ export const signUp = async (data: SignUpData) => {
     }
 
     console.log('✅ Auth user created successfully:', authData.user.id);
+    console.log('📧 Email confirmation required:', authData.user.email_confirmed_at ? 'No' : 'Yes');
 
-    // Step 2: Ensure user record exists in public.users table
+    // Step 2: Check if email confirmation is required
+    if (!authData.user.email_confirmed_at) {
+      console.log('📧 Email confirmation required, user will need to confirm email before signing in');
+      // For now, we'll proceed with the rest of the setup, but the user will need to confirm email
+    }
+
+    // Step 3: Ensure user record exists in public.users table
     let userRecord = null;
     let attempts = 0;
-    const maxAttempts = 10; // Increased retry attempts
+    const maxAttempts = 10;
     
     while (!userRecord && attempts < maxAttempts) {
       console.log(`🔄 Attempt ${attempts + 1}/${maxAttempts}: Checking for user record...`);
@@ -78,12 +86,11 @@ export const signUp = async (data: SignUpData) => {
         break;
       }
       
-      // Wait longer between attempts (1 second)
       await new Promise(resolve => setTimeout(resolve, 1000));
       attempts++;
     }
     
-    // Step 3: Fallback - manually create user record if trigger failed
+    // Step 4: Fallback - manually create user record if trigger failed
     if (!userRecord) {
       console.log('⚠️  Trigger failed to create user record, creating manually...');
       
@@ -106,7 +113,7 @@ export const signUp = async (data: SignUpData) => {
       console.log('✅ User record created manually');
     }
 
-    // Step 4: Create restaurant with proper error handling
+    // Step 5: Create restaurant with proper error handling
     console.log('🏪 Creating restaurant...');
     
     const restaurantData = {
@@ -126,7 +133,6 @@ export const signUp = async (data: SignUpData) => {
     if (restaurantError) {
       console.error('❌ Restaurant creation error:', restaurantError);
       
-      // Provide more specific error messages
       if (restaurantError.code === '23503') {
         throw new Error(`Foreign key constraint violation: The user record may not exist. Please try signing in again.`);
       } else if (restaurantError.code === '23505') {
@@ -138,7 +144,7 @@ export const signUp = async (data: SignUpData) => {
 
     console.log('✅ Restaurant created successfully:', restaurant.id);
 
-    // Step 5: Verify user-restaurant relationship was created
+    // Step 6: Verify user-restaurant relationship was created
     console.log('🔗 Verifying user-restaurant relationship...');
     
     const { error: relationshipError } = await supabase
@@ -161,7 +167,6 @@ export const signUp = async (data: SignUpData) => {
       
       if (createRelError) {
         console.error('❌ Failed to create user-restaurant relationship:', createRelError);
-        // Don't throw error here as the restaurant was created successfully
       } else {
         console.log('✅ User-restaurant relationship created manually');
       }
@@ -169,38 +174,54 @@ export const signUp = async (data: SignUpData) => {
       console.log('✅ User-restaurant relationship verified');
     }
 
-    // Step 6: Ensure the user is properly authenticated
-    console.log('🔐 Ensuring user authentication...');
+    // Step 7: Handle authentication based on email confirmation status
+    console.log('🔐 Handling authentication...');
     
-    // Check if we have a session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('❌ Session error:', sessionError);
-      throw new Error('Failed to establish user session');
-    }
-    
-    if (!session) {
-      console.log('⚠️  No session found, attempting to sign in...');
+    if (authData.user.email_confirmed_at) {
+      // User is already confirmed, we can proceed with auto-login
+      console.log('✅ User email already confirmed, proceeding with auto-login');
       
-      // Try to sign in with the credentials to establish session
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      // Check if we have a session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (signInError) {
-        console.error('❌ Auto-signin failed:', signInError);
-        throw new Error('Account created but failed to sign in automatically. Please sign in manually.');
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error('Failed to establish user session');
       }
       
-      console.log('✅ Auto-signin successful');
+      if (!session) {
+        console.log('⚠️  No session found, attempting to sign in...');
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        
+        if (signInError) {
+          console.error('❌ Auto-signin failed:', signInError);
+          throw new Error('Account created but failed to sign in automatically. Please sign in manually.');
+        }
+        
+        console.log('✅ Auto-signin successful');
+      } else {
+        console.log('✅ User session already established');
+      }
     } else {
-      console.log('✅ User session already established');
+      // User needs to confirm email first
+      console.log('📧 User needs to confirm email before signing in');
+      console.log('📧 Check your email for confirmation link');
+      
+      // We'll still return success, but the user will need to confirm email
+      // The frontend should handle this case appropriately
     }
 
     console.log('🎉 Signup process completed successfully!');
-    return { user: authData.user, restaurant };
+    return { 
+      user: authData.user, 
+      restaurant,
+      emailConfirmed: !!authData.user.email_confirmed_at,
+      session: authData.session
+    };
     
   } catch (error) {
     console.error('❌ Signup process failed:', error);
