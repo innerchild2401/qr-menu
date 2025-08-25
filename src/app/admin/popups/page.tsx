@@ -65,19 +65,29 @@ export default function AdminPopups() {
   const loadPopups = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await authenticatedApiCall('/api/admin/popups');
       
-      if (response.ok) {
-        const data = await response.json();
-        setPopups(data.popups || []);
+      // First, check if user has a restaurant
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
+      if (restaurantResponse.ok) {
         setHasRestaurant(true);
-      } else if (response.status === 404) {
+      } else if (restaurantResponse.status === 404) {
         // No restaurant found
         setHasRestaurant(false);
         setPopups([]);
+        return;
+      } else {
+        showError('Failed to load restaurant data');
+        setHasRestaurant(false);
+        return;
+      }
+
+      // Then load popups
+      const popupsResponse = await authenticatedApiCall('/api/admin/popups');
+      if (popupsResponse.ok) {
+        const data = await popupsResponse.json();
+        setPopups(data.popups || []);
       } else {
         showError('Failed to load popups');
-        setHasRestaurant(false);
       }
     } catch (error) {
       console.error('Error loading popups:', error);

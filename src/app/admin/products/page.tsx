@@ -102,22 +102,29 @@ export default function AdminProducts() {
     try {
       setIsLoading(true);
       
-      // Load categories first
-      const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
-      if (categoriesResponse.ok) {
-        const categoriesData = await categoriesResponse.json();
-        setCategories(categoriesData.categories || []);
+      // First, check if user has a restaurant
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
+      if (restaurantResponse.ok) {
         setHasRestaurant(true);
-      } else if (categoriesResponse.status === 404) {
+      } else if (restaurantResponse.status === 404) {
         // No restaurant found
         setHasRestaurant(false);
         setCategories([]);
         setProducts([]);
         return;
       } else {
-        showError('Failed to load categories');
+        showError('Failed to load restaurant data');
         setHasRestaurant(false);
         return;
+      }
+
+      // Load categories
+      const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData.categories || []);
+      } else {
+        showError('Failed to load categories');
       }
 
       // Load products

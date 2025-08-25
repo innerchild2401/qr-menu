@@ -33,19 +33,29 @@ export default function AdminCategories() {
   const loadCategories = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await authenticatedApiCall('/api/admin/categories');
       
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories || []);
+      // First, check if user has a restaurant
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
+      if (restaurantResponse.ok) {
         setHasRestaurant(true);
-      } else if (response.status === 404) {
+      } else if (restaurantResponse.status === 404) {
         // No restaurant found
         setHasRestaurant(false);
         setCategories([]);
+        return;
+      } else {
+        showError('Failed to load restaurant data');
+        setHasRestaurant(false);
+        return;
+      }
+
+      // Then load categories
+      const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
+      if (categoriesResponse.ok) {
+        const data = await categoriesResponse.json();
+        setCategories(data.categories || []);
       } else {
         showError('Failed to load categories');
-        setHasRestaurant(false);
       }
     } catch (error) {
       console.error('Error loading categories:', error);

@@ -31,16 +31,27 @@ export default function AdminQR() {
   const loadQRCodeInfo = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await authenticatedApiCall('/api/admin/qr/info');
       
-      if (response.ok) {
-        const data = await response.json();
-        setQrInfo(data);
+      // First, check if user has a restaurant
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
+      if (restaurantResponse.ok) {
         setHasRestaurant(true);
-      } else if (response.status === 404) {
+      } else if (restaurantResponse.status === 404) {
         // No restaurant found
         setHasRestaurant(false);
         setQrInfo(null);
+        return;
+      } else {
+        showError('Failed to load restaurant data');
+        setHasRestaurant(false);
+        return;
+      }
+
+      // Then load QR code info
+      const qrResponse = await authenticatedApiCall('/api/admin/qr/info');
+      if (qrResponse.ok) {
+        const data = await qrResponse.json();
+        setQrInfo(data);
       } else {
         throw new Error('Failed to load QR code information');
       }
