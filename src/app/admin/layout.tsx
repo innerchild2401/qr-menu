@@ -16,25 +16,40 @@ export default function AdminLayout({
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/');
-        return;
-      }
-      setUser(session.user);
-      setIsLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Session error:', error);
+          router.push('/');
+          return;
+        }
         if (!session) {
           router.push('/');
           return;
         }
         setUser(session.user);
         setIsLoading(false);
+      } catch (error) {
+        console.error('Error getting session:', error);
+        router.push('/');
+      }
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        try {
+          if (!session) {
+            router.push('/');
+            return;
+          }
+          setUser(session.user);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Auth state change error:', error);
+          router.push('/');
+        }
       }
     );
 
@@ -42,8 +57,16 @@ export default function AdminLayout({
   }, [router]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+      router.push('/');
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      router.push('/');
+    }
   };
 
   if (isLoading) {
@@ -122,7 +145,7 @@ export default function AdminLayout({
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                {user?.email}
+                {user?.email || 'User'}
               </span>
               <button
                 onClick={handleSignOut}

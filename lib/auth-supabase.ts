@@ -4,6 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.Lug4smvqk5sI-46MbFeh64Yu2nptehnUTlUCPSpYbqI';
 
+// Debug environment variables in development
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Not set');
+  console.log('Supabase Anon Key:', supabaseAnonKey ? 'Set' : 'Not set');
+}
+
 // Client-side Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -13,6 +19,20 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   }
 });
+
+// Validate Supabase client initialization
+if (typeof window !== 'undefined') {
+  try {
+    // Test the client by making a simple call
+    supabase.auth.getSession().then(({ error }) => {
+      if (error) {
+        console.error('Supabase client initialization error:', error);
+      }
+    });
+  } catch (error) {
+    console.error('Error initializing Supabase client:', error);
+  }
+}
 
 // Auth types
 export interface AuthUser {

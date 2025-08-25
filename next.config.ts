@@ -13,11 +13,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Ensure proper environment variable handling
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  },
+  // Environment variables are automatically available to client-side code
+  // No need to explicitly set them here
   // Server external packages for better performance
   serverExternalPackages: ['@supabase/supabase-js'],
 };
