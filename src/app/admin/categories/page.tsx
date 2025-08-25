@@ -148,7 +148,7 @@ export default function AdminCategories() {
     }
 
     try {
-      const response = await fetch(`/api/admin/categories/${category.id}`, {
+      const response = await authenticatedApiCall(`/api/admin/categories/${category.id}`, {
         method: 'DELETE',
       });
 

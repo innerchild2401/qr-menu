@@ -35,77 +35,51 @@ export async function PUT(
       );
     }
 
-    const { id } = await params;
-
     // Parse request body
-    const { 
-      title, 
-      message, 
-      image_url, 
-      cta_text, 
-      cta_url, 
-      active, 
-      start_at, 
-      end_at, 
-      frequency 
-    } = await request.json();
+    const { name } = await request.json();
 
     // Validate required fields
-    if (!title || !title.trim()) {
+    if (!name || !name.trim()) {
       return NextResponse.json(
-        { error: 'Title is required' },
+        { error: 'Category name is required' },
         { status: 400 }
       );
     }
 
-    if (!message || !message.trim()) {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      );
-    }
+    const { id } = await params;
 
-    // Update popup in Supabase
-    const { data, error: updateError } = await supabaseAdmin
-      .from('popups')
+    // Update category
+    const { data: updatedCategory, error: updateError } = await supabaseAdmin
+      .from('categories')
       .update({
-        title: title.trim(),
-        message: message.trim(),
-        image_url: image_url || null,
-        cta_text: cta_text || null,
-        cta_url: cta_url || null,
-        active: active !== undefined ? active : true,
-        start_at: start_at || null,
-        end_at: end_at || null,
-        frequency: frequency || 'once-per-session'
+        name: name.trim()
       })
       .eq('id', id)
-      .eq('restaurant_id', restaurant.id) // Ensure user owns this popup
+      .eq('restaurant_id', restaurant.id)
       .select()
       .single();
 
     if (updateError) {
-      console.error('Supabase error:', updateError);
+      console.error('Supabase update error:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update popup' },
+        { error: 'Failed to update category' },
         { status: 500 }
       );
     }
 
-    if (!data) {
+    if (!updatedCategory) {
       return NextResponse.json(
-        { error: 'Popup not found' },
+        { error: 'Category not found' },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ 
-      popup: data,
-      message: 'Popup updated successfully' 
+      category: updatedCategory,
+      message: 'Category updated successfully'
     });
   } catch (error) {
-    console.error('Error updating popup:', error);
-    
+    console.error('Error updating category:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -148,27 +122,26 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Delete popup from Supabase
+    // Delete category
     const { error: deleteError } = await supabaseAdmin
-      .from('popups')
+      .from('categories')
       .delete()
       .eq('id', id)
-      .eq('restaurant_id', restaurant.id); // Ensure user owns this popup
+      .eq('restaurant_id', restaurant.id);
 
     if (deleteError) {
-      console.error('Supabase error:', deleteError);
+      console.error('Supabase delete error:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete popup' },
+        { error: 'Failed to delete category' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ 
-      message: 'Popup deleted successfully' 
+      message: 'Category deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting popup:', error);
-    
+    console.error('Error deleting category:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
