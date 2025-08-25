@@ -4,7 +4,9 @@ let matchColumnsWithAI: ((headers: string[]) => Promise<Record<string, string | 
 // Dynamic import for AI matcher
 const loadAIMatcher = async () => {
   try {
+    console.log('🔄 Loading AI column matcher...');
     const aiModule = await import('./aiColumnMatcher');
+    console.log('✅ AI column matcher loaded successfully');
     return aiModule.matchColumnsWithAI;
   } catch (error) {
     console.warn('⚠️ AI column matcher not available:', error);
@@ -58,7 +60,7 @@ export const columnSynonyms = {
   ],
   description: [
     // English
-    'description', 'details', 'ingredients', 'notes', 'info', 'summary',
+    'description', 'details', 'ingredients', 'notes', 'info', 'summary', 'about',
     // Romanian
     'descriere', 'detalii', 'ingrediente', 'note', 'informatii', 'sumar',
     'descrierea', 'detaliile', 'ingredientele', 'notele', 'informatia'
@@ -236,13 +238,15 @@ export async function detectColumnsWithDetails(headers: string[]): Promise<Colum
   let detectionMethod: 'synonym' | 'ai' | 'hybrid' | 'manual' = 'synonym';
   
   if (synonymMatchedFields < 4) {
+    console.log(`🤖 AI detection needed - only ${synonymMatchedFields}/4 fields matched with synonyms`);
     try {
       // Load AI matcher if not already loaded
       if (!matchColumnsWithAI) {
         matchColumnsWithAI = await loadAIMatcher();
       }
       
-            if (matchColumnsWithAI) {
+      if (matchColumnsWithAI) {
+        console.log('🧠 Calling AI column matcher...');
         aiMatches = await matchColumnsWithAI(headers);
         
         // Merge results
