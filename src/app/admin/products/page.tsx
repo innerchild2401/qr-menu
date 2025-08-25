@@ -1466,7 +1466,7 @@ export default function AdminProducts() {
 
                      {/* Manual Selection Interface */}
                      {showManualSelection && parsedData && (
-                       <div className="mt-6">
+                       <div className="mt-6 max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                            Manual Column Selection
                          </h4>
@@ -1531,7 +1531,7 @@ export default function AdminProducts() {
                            </div>
                          </div>
 
-                         <div className="mt-4 flex justify-end space-x-3">
+                         <div className="mt-4 flex justify-end space-x-3 sticky bottom-0 bg-white dark:bg-gray-800 pt-4 border-t border-gray-200 dark:border-gray-600">
                            <button
                              onClick={() => setShowManualSelection(false)}
                              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"

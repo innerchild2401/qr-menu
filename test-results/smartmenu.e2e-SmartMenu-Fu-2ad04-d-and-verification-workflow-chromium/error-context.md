@@ -1,0 +1,46 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "SmartMenu" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7] [cursor=pointer]: SmartMenu
+      - generic [ref=e9]:
+        - link "Home" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "Demo" [ref=e11] [cursor=pointer]:
+          - /url: /menu/demo
+      - generic [ref=e13]:
+        - link "Admin" [ref=e14] [cursor=pointer]:
+          - /url: /admin/settings
+        - button "Sign Out" [ref=e15]
+  - main [ref=e16]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "SmartMenu" [level=1] [ref=e20]:
+          - text: Smart
+          - generic [ref=e21]: Menu
+        - paragraph [ref=e22]: Experience the future of dining with our intelligent menu system. Discover personalized recommendations and seamless ordering.
+        - generic [ref=e23]:
+          - link "Try Demo Menu" [ref=e24] [cursor=pointer]:
+            - /url: /menu/demo
+          - button "Sign Up Now" [ref=e25]
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - img [ref=e29]
+          - heading "Smart Recommendations" [level=3] [ref=e31]
+          - paragraph [ref=e32]: AI-powered suggestions based on your preferences and dietary needs.
+        - generic [ref=e33]:
+          - img [ref=e35]
+          - heading "Fast Ordering" [level=3] [ref=e37]
+          - paragraph [ref=e38]: Quick and seamless ordering process with real-time updates.
+        - generic [ref=e39]:
+          - img [ref=e41]
+          - heading "Personalized Experience" [level=3] [ref=e43]
+          - paragraph [ref=e44]: Tailored dining experience that adapts to your tastes and preferences.
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51] [cursor=pointer]
+  - alert [ref=e54]
+```
