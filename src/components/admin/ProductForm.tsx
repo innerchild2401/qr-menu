@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
 
 interface Product {
@@ -79,7 +79,7 @@ export default function ProductForm({
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize form data when editing product changes
-  useState(() => {
+  useEffect(() => {
     if (editingProduct) {
       setFormData({
         name: editingProduct.name,
@@ -97,7 +97,7 @@ export default function ProductForm({
     } else {
       resetForm();
     }
-  });
+  }, [editingProduct]);
 
   const resetForm = () => {
     setFormData({
