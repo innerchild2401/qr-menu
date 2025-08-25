@@ -3,8 +3,8 @@ import path from 'path';
 import { ensureDir } from './fsStore';
 
 // Allowed file types
-const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
+const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.tiff'];
 
 // File size limit: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -48,22 +48,26 @@ export const sanitizeFileName = sanitizeFilename;
  * Validate file type and size
  */
 export function validateFile(file: File): UploadError | null {
-  // Check file type
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    const ext = path.extname(file.name).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return {
-        error: `Invalid file type. Allowed types: ${ALLOWED_EXTENSIONS.join(', ')}`,
-        code: 'INVALID_TYPE'
-      };
-    }
-  }
-  
-  // Check file size
+  // Check file size first
   if (file.size > MAX_FILE_SIZE) {
     return {
       error: `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
       code: 'FILE_TOO_LARGE'
+    };
+  }
+  
+  // Check file type - be more permissive
+  const ext = path.extname(file.name).toLowerCase();
+  const mimeType = file.type.toLowerCase();
+  
+  // Allow if either MIME type or extension is valid
+  const isValidMimeType = ALLOWED_TYPES.includes(mimeType);
+  const isValidExtension = ALLOWED_EXTENSIONS.includes(ext);
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return {
+      error: `Invalid file type. Allowed types: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      code: 'INVALID_TYPE'
     };
   }
   

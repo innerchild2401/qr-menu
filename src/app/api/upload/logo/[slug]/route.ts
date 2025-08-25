@@ -56,12 +56,8 @@ export async function POST(
     // Get public URL
     const publicUrl = getPublicUrl(STORAGE_BUCKETS.LOGOS, filePath);
     
-    // Return the URL (relative path for consistency with existing frontend)
-    const relativeUrl = `/uploads/${STORAGE_BUCKETS.LOGOS}/${filePath}`;
-    
     return NextResponse.json({
-      url: relativeUrl,
-      publicUrl: publicUrl,
+      url: publicUrl,
       filename: sanitizedFileName,
       size: file.size,
       path: filePath

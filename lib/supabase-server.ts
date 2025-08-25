@@ -79,11 +79,11 @@ export interface UserRestaurant {
 
 // Storage bucket names
 export const STORAGE_BUCKETS = {
-  LOGOS: 'restaurant-logos',
-  COVERS: 'restaurant-covers',
-  PRODUCTS: 'product-images',
-  POPUPS: 'popup-images',
-  QR_CODES: 'qr-codes',
+  LOGOS: 'logos',
+  COVERS: 'covers',
+  PRODUCTS: 'products',
+  POPUPS: 'popups',
+  QR_CODES: 'qr_codes',
 } as const;
 
 // Helper function to get public URL from Supabase Storage
