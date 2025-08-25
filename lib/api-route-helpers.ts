@@ -14,7 +14,6 @@ export function getUserFromHeaders(request: NextRequest): string | null {
  */
 export async function getUserRestaurant(userId: string) {
   try {
-    console.log('🔍 Looking up restaurant for user:', userId);
     
     // First, try to find restaurant via user_restaurants table
     const { data: userRestaurant, error: urError } = await supabaseAdmin
@@ -36,7 +35,6 @@ export async function getUserRestaurant(userId: string) {
         .single();
 
       if (!rError && restaurant) {
-        console.log('✅ Found restaurant via user_restaurants:', restaurant.name);
         return restaurant;
       }
     }
@@ -49,11 +47,9 @@ export async function getUserRestaurant(userId: string) {
       .single();
 
     if (!rError && restaurant) {
-      console.log('✅ Found restaurant via owner_id:', restaurant.name);
       return restaurant;
     }
 
-    console.log('❌ No restaurant found for user:', userId);
     return null;
   } catch (error) {
     console.error('Error getting user restaurant:', error);
