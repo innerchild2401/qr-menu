@@ -81,23 +81,41 @@ export default function ProductForm({
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Generate AI description when product name changes
-  const handleNameChange = async (name: string) => {
+  // Handle name change
+  const handleNameChange = (name: string) => {
     setFormData(prev => ({ ...prev, name }));
-    
-    // Generate AI description if name is not empty and description is empty
-    if (name.trim() && !formData.description.trim() && !editingProduct) {
-      setIsGeneratingAI(true);
-      try {
-        const aiDesc = await generateDescription(name);
-        setAiDescription(aiDesc);
-      } catch (error) {
-        console.error('Error generating AI description:', error);
-      } finally {
-        setIsGeneratingAI(false);
-      }
-    }
   };
+
+  // Generate AI description when product name changes (with debouncing)
+  useEffect(() => {
+    const name = formData.name;
+    
+    // Clear AI description if name is empty
+    if (!name.trim()) {
+      setAiDescription('');
+      return;
+    }
+    
+    // Generate AI description if name is not empty, description is empty, and not editing
+    if (name.trim() && !formData.description.trim() && !editingProduct) {
+      const timeoutId = setTimeout(async () => {
+        setIsGeneratingAI(true);
+        try {
+          const aiDesc = await generateDescription(name);
+          // Only set if the name hasn't changed during generation
+          if (formData.name === name) {
+            setAiDescription(aiDesc);
+          }
+        } catch (error) {
+          console.error('Error generating AI description:', error);
+        } finally {
+          setIsGeneratingAI(false);
+        }
+      }, 1000); // 1 second delay
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.name, formData.description, editingProduct]);
 
   // Initialize form data when editing product changes
   useEffect(() => {

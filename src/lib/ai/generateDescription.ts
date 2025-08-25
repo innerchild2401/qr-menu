@@ -12,6 +12,20 @@ let generator: Generator | null = null;
 let isInitializing = false;
 let initPromise: Promise<Generator> | null = null;
 
+// Detect if text is in Romanian
+function isRomanian(text: string): boolean {
+  const romanianChars = /[ăâîșțĂÂÎȘȚ]/;
+  const romanianWords = [
+    'pizza', 'salată', 'soupă', 'desert', 'băutură', 'cafea', 'bere', 'vin',
+    'carne', 'pește', 'pui', 'vegetarian', 'vegan', 'gluten', 'lactoză',
+    'gustos', 'delicios', 'fresc', 'cald', 'rece', 'picant', 'dulce', 'sărat',
+    'mic', 'mare', 'mediu', 'porție', 'gram', 'kilogram', 'litru', 'bucată'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  return romanianChars.test(text) || romanianWords.some(word => lowerText.includes(word));
+}
+
 export async function generateDescription(productName: string): Promise<string> {
   try {
     // Initialize the model if not already done
@@ -29,19 +43,29 @@ export async function generateDescription(productName: string): Promise<string> 
       throw new Error("Failed to initialize AI model");
     }
 
-    const prompt = `Write a short, enticing product description for "${productName}" in a friendly, natural tone.`;
+    // Detect language and create appropriate prompt
+    const isRomanianText = isRomanian(productName);
+    const language = isRomanianText ? 'Romanian' : 'English';
+    
+    const prompt = isRomanianText 
+      ? `Scrie o descriere scurtă și atractivă pentru "${productName}" într-un ton prietenos și natural, în limba română.`
+      : `Write a short, enticing product description for "${productName}" in a friendly, natural tone in English.`;
+
     const output = await generator(prompt, { 
-      max_length: 100,
+      max_length: 120,
       do_sample: true,
-      temperature: 0.7,
+      temperature: 0.8,
       top_p: 0.9
     });
 
     return output[0].generated_text.trim();
   } catch (error) {
     console.error("Error generating AI description:", error);
-    // Return a fallback description if AI generation fails
-    return `Delicious ${productName.toLowerCase()} - a must-try item on our menu!`;
+    // Return a fallback description in the detected language
+    const isRomanianText = isRomanian(productName);
+    return isRomanianText 
+      ? `Delicios ${productName.toLowerCase()} - un produs de încercat din meniul nostru!`
+      : `Delicious ${productName.toLowerCase()} - a must-try item on our menu!`;
   }
 }
 
@@ -55,10 +79,15 @@ export async function generateDescriptionsBatch(productNames: string[]): Promise
       descriptions.push(description);
       
       // Add a small delay to prevent overwhelming the model
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
     } catch (error) {
       console.error(`Error generating description for ${productName}:`, error);
-      descriptions.push(`Delicious ${productName.toLowerCase()} - a must-try item on our menu!`);
+      // Use language-appropriate fallback
+      const isRomanianText = isRomanian(productName);
+      const fallback = isRomanianText 
+        ? `Delicios ${productName.toLowerCase()} - un produs de încercat din meniul nostru!`
+        : `Delicious ${productName.toLowerCase()} - a must-try item on our menu!`;
+      descriptions.push(fallback);
     }
   }
   
