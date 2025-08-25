@@ -387,6 +387,11 @@ export default function BulkUploadModal({
       if (uploadResult.success > 0) {
         showSuccess(`Successfully uploaded ${uploadResult.success} products${allFailedRows.length > 0 ? ` (${allFailedRows.length} failed)` : ''}`);
         onSuccess(); // Refresh the products list
+        
+        // Auto-close modal after successful upload
+        setTimeout(() => {
+          closeModal();
+        }, 2000); // Close after 2 seconds to show the success message
       }
 
       console.log('✅ Upload Complete:', {
