@@ -154,20 +154,21 @@ export default function BulkUploadModal({
       const text = new TextDecoder().decode(arrayBuffer);
       const lines = text.split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      const dataRows = lines.slice(1, 6); // First 5 data rows
+      const allDataRows = lines.slice(1); // ALL data rows, not just first 5
+      const previewDataRows = allDataRows.slice(0, 5); // First 5 for preview only
       
       const result = await detectColumnsWithDetails(headers);
       const previewData: ParsedRow[] = [];
       
-      dataRows.forEach(row => {
+      previewDataRows.forEach(row => {
         const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
         if (values.length >= headers.length) {
           previewData.push(parseRowData(values, result.mapping));
         }
       });
 
-      // Convert all data rows to the format needed for manual selection
-      const allData: (string | number | null)[][] = dataRows.map(row => 
+      // Convert ALL data rows to the format needed for upload
+      const allData: (string | number | null)[][] = allDataRows.map(row => 
         row.split(',').map(v => v.trim().replace(/"/g, ''))
       );
 
@@ -186,17 +187,17 @@ export default function BulkUploadModal({
       }
 
       const headers: string[] = [];
-      const dataRows: (string | number | null)[][] = [];
+      const allDataRows: (string | number | null)[][] = [];
       
-      // Extract headers and first 5 data rows
+      // Extract headers and ALL data rows
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) {
           // Headers
           row.eachCell((cell) => {
             headers.push(String(cell.value ?? ''));
           });
-        } else if (rowNumber <= 6) {
-          // First 5 data rows
+        } else {
+          // ALL data rows
           const rowData: (string | number | null)[] = [];
           row.eachCell((cell) => {
             const value = cell.value;
@@ -208,19 +209,20 @@ export default function BulkUploadModal({
               rowData.push(String(value));
             }
           });
-          dataRows.push(rowData);
+          allDataRows.push(rowData);
         }
       });
 
       const result = await detectColumnsWithDetails(headers);
       const previewData: ParsedRow[] = [];
       
-      dataRows.forEach(row => {
+      // Use first 5 rows for preview
+      allDataRows.slice(0, 5).forEach(row => {
         previewData.push(parseRowData(row, result.mapping));
       });
 
-      // Convert all data rows to the format needed for manual selection
-      const allData: (string | number | null)[][] = dataRows.map(row => 
+      // Convert ALL data rows to the format needed for upload
+      const allData: (string | number | null)[][] = allDataRows.map(row => 
         row.map(cell => cell === null || cell === undefined ? null : String(cell))
       );
 
@@ -273,6 +275,10 @@ export default function BulkUploadModal({
   };
 
   const handleBulkUpload = async () => {
+    console.log('🚀 Starting bulk upload...');
+    console.log('📊 Parsed data:', parsedData);
+    console.log('👤 User:', user);
+    
     if (!parsedData || !user) {
       showError('No data to upload or user not authenticated');
       return;
@@ -310,6 +316,8 @@ export default function BulkUploadModal({
         throw new Error('No restaurant found for the current user');
       }
 
+      console.log('📋 Total rows to process:', parsedData.allData.length);
+      
       // Process all data rows with enhanced validation
       const allParsedRows: ParsedRow[] = [];
       const validationErrors: Array<{ row: number; error: string; data: ParsedRow }> = [];
@@ -328,6 +336,10 @@ export default function BulkUploadModal({
           allParsedRows.push(parsedRow);
         }
       });
+      
+      console.log('✅ Valid rows:', allParsedRows.length);
+      console.log('❌ Validation errors:', validationErrors.length);
+      console.log('📝 Sample valid row:', allParsedRows[0]);
 
       // Filter out rows with missing required data
       const validRows = allParsedRows.filter(row => 
