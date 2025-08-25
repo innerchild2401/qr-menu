@@ -149,7 +149,7 @@ export async function matchColumnsWithAI(headers: string[]): Promise<Record<stri
         
         console.log(`🔍 "${header}" ↔ "${targetMeaning}": ${similarity.toFixed(3)}`);
         
-        if (similarity > bestScore && similarity >= 0.65) {
+        if (similarity > bestScore && similarity >= 0.25) {
           bestScore = similarity;
           bestMatch = targetField;
         }
