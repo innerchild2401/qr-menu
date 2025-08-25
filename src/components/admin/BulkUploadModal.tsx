@@ -14,6 +14,7 @@ import {
 } from '../../utils/columnMapper';
 import { MenuUploader } from '../../services/menuUploader';
 import { downloadMenuTemplate } from '../../utils/templateGenerator';
+import { generateDescriptionsBatch } from '../../lib/ai/generateDescription';
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -51,6 +52,8 @@ export default function BulkUploadModal({
     failed: number;
     failedRows: Array<{ row: number; error: string; data: ParsedRow }>;
   } | null>(null);
+  const [aiDescriptions, setAiDescriptions] = useState<{ [key: string]: string }>({});
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const bulkUploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +135,26 @@ export default function BulkUploadModal({
       setParseProgress(100);
       clearInterval(progressInterval);
       setParsedData(result);
+      
+      // Generate AI descriptions for products
+      if (result.previewData.length > 0) {
+        setIsGeneratingAI(true);
+        try {
+          const productNames = result.previewData.map(row => row.name).filter(name => name.trim());
+          if (productNames.length > 0) {
+            const aiDescriptionsList = await generateDescriptionsBatch(productNames);
+            const aiDescriptionsMap: { [key: string]: string } = {};
+            productNames.forEach((name, index) => {
+              aiDescriptionsMap[name] = aiDescriptionsList[index];
+            });
+            setAiDescriptions(aiDescriptionsMap);
+          }
+        } catch (error) {
+          console.error('Error generating AI descriptions:', error);
+        } finally {
+          setIsGeneratingAI(false);
+        }
+      }
       
       if (result.missingFields.length > 0) {
         setFileError(`Could not automatically detect columns for: ${result.missingFields.join(', ')}. Please check your file format.`);
@@ -341,8 +364,19 @@ export default function BulkUploadModal({
       console.log('❌ Validation errors:', validationErrors.length);
       console.log('📝 Sample valid row:', allParsedRows[0]);
 
+      // Enhance rows with AI descriptions where user descriptions are missing
+      const enhancedRows = allParsedRows.map(row => {
+        if (!row.description || row.description.trim() === '') {
+          const aiDescription = aiDescriptions[row.name];
+          if (aiDescription) {
+            return { ...row, description: aiDescription };
+          }
+        }
+        return row;
+      });
+
       // Filter out rows with missing required data
-      const validRows = allParsedRows.filter(row => 
+      const validRows = enhancedRows.filter(row => 
         row.name.trim() && row.price > 0
       );
 
@@ -617,7 +651,25 @@ export default function BulkUploadModal({
                               {row.category || '-'}
                             </td>
                             <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                              {row.description || '-'}
+                              <div className="space-y-1">
+                                {row.description ? (
+                                  <div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">User Description:</p>
+                                    <p>{row.description}</p>
+                                  </div>
+                                ) : null}
+                                {aiDescriptions[row.name] && (
+                                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded">AI Suggested</span>
+                                      {isGeneratingAI && (
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                                      )}
+                                    </div>
+                                    <p className="text-xs italic text-blue-700 dark:text-blue-300">{aiDescriptions[row.name]}</p>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="px-3 py-2 text-gray-900 dark:text-white font-medium">
                               {row.price > 0 ? `$${row.price.toFixed(2)}` : '-'}

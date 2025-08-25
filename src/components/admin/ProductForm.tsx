@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
+import { generateDescription } from '../../lib/ai/generateDescription';
 
 interface Product {
   id: string;
@@ -62,6 +63,8 @@ export default function ProductForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [aiDescription, setAiDescription] = useState<string>('');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -77,6 +80,24 @@ export default function ProductForm({
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Generate AI description when product name changes
+  const handleNameChange = async (name: string) => {
+    setFormData(prev => ({ ...prev, name }));
+    
+    // Generate AI description if name is not empty and description is empty
+    if (name.trim() && !formData.description.trim() && !editingProduct) {
+      setIsGeneratingAI(true);
+      try {
+        const aiDesc = await generateDescription(name);
+        setAiDescription(aiDesc);
+      } catch (error) {
+        console.error('Error generating AI description:', error);
+      } finally {
+        setIsGeneratingAI(false);
+      }
+    }
+  };
 
   // Initialize form data when editing product changes
   useEffect(() => {
@@ -113,6 +134,8 @@ export default function ProductForm({
       }
     });
     setImagePreview('');
+    setAiDescription('');
+    setIsGeneratingAI(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,7 +256,7 @@ export default function ProductForm({
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => handleNameChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Enter product name"
               required
@@ -286,6 +309,28 @@ export default function ProductForm({
             placeholder="Enter product description"
             rows={3}
           />
+          
+          {/* AI Description Suggestion */}
+          {aiDescription && !editingProduct && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">AI Suggested</span>
+                  {isGeneratingAI && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, description: aiDescription })}
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
+                  Use AI Suggestion
+                </button>
+              </div>
+              <p className="text-sm italic text-blue-700 dark:text-blue-300">{aiDescription}</p>
+            </div>
+          )}
         </div>
 
         {/* Image Upload */}
