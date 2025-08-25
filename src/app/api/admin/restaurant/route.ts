@@ -1,41 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-server';
-import { getCurrentUserAndRestaurant } from '../../../../../lib/currentRestaurant';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+// Helper function to get current user from session
+async function getCurrentUserFromSession() {
+  try {
+    const cookieStore = await cookies();
+    
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      console.log('❌ No authenticated user found in session:', error?.message);
+      return null;
+    }
+
+    console.log('✅ Authenticated user found:', user.email);
+    return user;
+  } catch (error) {
+    console.error('❌ Error getting user from session:', error);
+    return null;
+  }
+}
+
+// Helper function to get user's restaurant using service role
+async function getUserRestaurant(userId: string) {
+  try {
+    console.log(`🔍 Getting restaurant for user: ${userId}`);
+    
+    // First, try to find restaurant through user_restaurants table
+    const { data: userRestaurant, error: urError } = await supabaseAdmin
+      .from('user_restaurants')
+      .select(`
+        restaurant_id,
+        restaurants (*)
+      `)
+      .eq('user_id', userId)
+      .eq('role', 'owner')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!urError && userRestaurant && userRestaurant.restaurants && Array.isArray(userRestaurant.restaurants) && userRestaurant.restaurants.length > 0) {
+      const restaurant = userRestaurant.restaurants[0];
+      console.log('✅ Found restaurant via user_restaurants:', restaurant.name);
+      return restaurant;
+    }
+
+    // Fallback: try to find restaurant by owner_id
+    const { data: ownedRestaurant, error: ownerError } = await supabaseAdmin
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!ownerError && ownedRestaurant) {
+      console.log('✅ Found restaurant via owner_id:', ownedRestaurant.name);
+      return ownedRestaurant;
+    }
+
+    console.log('❌ No restaurant found for user');
+    return null;
+  } catch (error) {
+    console.error('❌ Error getting user restaurant:', error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    console.log('🔍 GET /api/admin/restaurant - Starting request');
     
-    if (error) {
-      if (error === 'Unauthorized') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'Failed to fetch restaurant data' },
-        { status: 500 }
-      );
-    }
-
+    // Get current user from session
+    const user = await getCurrentUserFromSession();
+    
     if (!user) {
+      console.log('❌ Unauthorized: No authenticated user');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Get user's restaurant using service role
+    const restaurant = await getUserRestaurant(user.id);
+    
     if (!restaurant) {
+      console.log('❌ No restaurant found for user');
       return NextResponse.json(
         { error: 'No restaurant found for current user' },
         { status: 404 }
       );
     }
 
+    console.log('✅ Successfully retrieved restaurant:', restaurant.name);
     return NextResponse.json({ restaurant });
   } catch (error) {
-    console.error('Error fetching restaurant data:', error);
+    console.error('❌ Error in GET /api/admin/restaurant:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -45,27 +125,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, error } = await getCurrentUserAndRestaurant();
+    console.log('🔍 POST /api/admin/restaurant - Starting request');
     
-    if (error) {
-      if (error === 'Unauthorized') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'Failed to fetch user data' },
-        { status: 500 }
-      );
-    }
-
+    // Get current user from session
+    const user = await getCurrentUserFromSession();
+    
     if (!user) {
+      console.log('❌ Unauthorized: No authenticated user');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
+
+    console.log('✅ Authenticated user for restaurant creation:', user.email);
 
     // Parse request body
     const { name, address, schedule } = await request.json();
@@ -92,7 +165,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .replace(/(^-|-$)/g, '')
       .substring(0, 50);
 
-    // Create restaurant
+    console.log('🔍 Creating restaurant with data:', { name, slug, owner_id: user.id });
+
+    // Create restaurant using service role
     const { data: newRestaurant, error: createError } = await supabaseAdmin
       .from('restaurants')
       .insert({
@@ -106,12 +181,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (createError) {
-      console.error('Supabase create error:', createError);
+      console.error('❌ Restaurant creation error:', createError);
       return NextResponse.json(
         { error: 'Failed to create restaurant' },
         { status: 500 }
       );
     }
+
+    console.log('✅ Restaurant created successfully:', newRestaurant.name);
 
     // Create user_restaurants relationship
     const { error: relationshipError } = await supabaseAdmin
@@ -123,8 +200,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
     if (relationshipError) {
-      console.error('Failed to create user-restaurant relationship:', relationshipError);
+      console.error('⚠️ Failed to create user-restaurant relationship:', relationshipError);
       // Don't fail the request, but log the error
+    } else {
+      console.log('✅ User-restaurant relationship created');
     }
 
     return NextResponse.json({ 
@@ -132,7 +211,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message: 'Restaurant created successfully'
     });
   } catch (error) {
-    console.error('Error creating restaurant:', error);
+    console.error('❌ Error in POST /api/admin/restaurant:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -142,29 +221,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    console.log('🔍 PUT /api/admin/restaurant - Starting request');
     
-    if (error) {
-      if (error === 'Unauthorized') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'Failed to fetch restaurant data' },
-        { status: 500 }
-      );
-    }
-
+    // Get current user from session
+    const user = await getCurrentUserFromSession();
+    
     if (!user) {
+      console.log('❌ Unauthorized: No authenticated user');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Get user's restaurant using service role
+    const restaurant = await getUserRestaurant(user.id);
+    
     if (!restaurant) {
+      console.log('❌ No restaurant found for user');
       return NextResponse.json(
         { error: 'No restaurant found for current user' },
         { status: 404 }
@@ -182,7 +256,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Update restaurant in Supabase
+    console.log('🔍 Updating restaurant:', restaurant.name);
+
+    // Update restaurant using service role
     const { data, error: updateError } = await supabaseAdmin
       .from('restaurants')
       .update({
@@ -197,19 +273,20 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (updateError) {
-      console.error('Supabase update error:', updateError);
+      console.error('❌ Restaurant update error:', updateError);
       return NextResponse.json(
         { error: 'Failed to update restaurant' },
         { status: 500 }
       );
     }
 
+    console.log('✅ Restaurant updated successfully');
     return NextResponse.json({ 
       restaurant: data,
       message: 'Restaurant updated successfully'
     });
   } catch (error) {
-    console.error('Error updating restaurant data:', error);
+    console.error('❌ Error in PUT /api/admin/restaurant:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
