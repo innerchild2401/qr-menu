@@ -103,7 +103,7 @@ function detectColumnsWithSynonyms(headers: string[]): { mapping: ColumnMapping;
   };
   
   const matches: Record<string, string | null> = {};
-  
+
   headers.forEach((header, index) => {
     // Skip ignored columns
     if (shouldIgnoreColumn(header)) {
