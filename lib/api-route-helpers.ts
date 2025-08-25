@@ -21,26 +21,24 @@ export async function getUserRestaurant(userId: string) {
       .from('user_restaurants')
       .select(`
         role,
-        restaurants (
-          id,
-          slug,
-          name,
-          address,
-          schedule,
-          logo_url,
-          cover_url,
-          created_at,
-          owner_id
-        )
+        restaurant_id
       `)
       .eq('user_id', userId)
       .eq('role', 'owner')
       .single();
 
-    if (!urError && userRestaurant && userRestaurant.restaurants && Array.isArray(userRestaurant.restaurants) && userRestaurant.restaurants.length > 0) {
-      const restaurant = userRestaurant.restaurants[0];
-      console.log('✅ Found restaurant via user_restaurants:', restaurant.name);
-      return restaurant;
+    if (!urError && userRestaurant && userRestaurant.restaurant_id) {
+      // Get the restaurant details using the restaurant_id
+      const { data: restaurant, error: rError } = await supabaseAdmin
+        .from('restaurants')
+        .select('*')
+        .eq('id', userRestaurant.restaurant_id)
+        .single();
+
+      if (!rError && restaurant) {
+        console.log('✅ Found restaurant via user_restaurants:', restaurant.name);
+        return restaurant;
+      }
     }
 
     // Fallback: try to find restaurant via owner_id
