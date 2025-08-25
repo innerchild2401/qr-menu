@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -50,7 +51,7 @@ export default function AdminChecklist() {
         description: 'Verify categories data exists and is accessible',
         status: 'pending',
         action: async () => {
-          const response = await fetch('/api/admin/categories');
+          const response = await authenticatedApiCall('/api/admin/categories');
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
@@ -64,7 +65,7 @@ export default function AdminChecklist() {
         description: 'Verify products data exists and is accessible',
         status: 'pending',
         action: async () => {
-          const response = await fetch('/api/admin/products');
+          const response = await authenticatedApiCall('/api/admin/products');
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
@@ -78,7 +79,7 @@ export default function AdminChecklist() {
         description: 'Verify popups data exists and is accessible',
         status: 'pending',
         action: async () => {
-          const response = await fetch('/api/admin/popups');
+          const response = await authenticatedApiCall('/api/admin/popups');
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }

@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -102,7 +103,7 @@ export default function AdminProducts() {
       setIsLoading(true);
       
       // Load categories first
-      const categoriesResponse = await fetch('/api/admin/categories');
+      const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
       if (categoriesResponse.ok) {
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.categories || []);
@@ -120,7 +121,7 @@ export default function AdminProducts() {
       }
 
       // Load products
-      const productsResponse = await fetch('/api/admin/products');
+      const productsResponse = await authenticatedApiCall('/api/admin/products');
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
         setProducts(productsData.products || []);
@@ -190,12 +191,8 @@ export default function AdminProducts() {
         } : null
       };
 
-      const response = await fetch(url, {
+      const response = await authenticatedApiCallWithBody(url, submitData, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitData),
       });
 
       if (response.ok) {
@@ -239,7 +236,7 @@ export default function AdminProducts() {
     }
 
     try {
-      const response = await fetch(`/api/admin/products/${product.id}`, {
+      const response = await authenticatedApiCall(`/api/admin/products/${product.id}`, {
         method: 'DELETE',
       });
 
@@ -265,7 +262,7 @@ export default function AdminProducts() {
       formData.append('file', file);
       
       // Get restaurant slug for upload path
-      const restaurantResponse = await fetch('/api/admin/me/restaurant');
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
       if (!restaurantResponse.ok) {
         showError('Failed to get restaurant information');
         return;

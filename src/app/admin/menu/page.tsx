@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -46,7 +47,7 @@ export default function AdminMenu() {
       setIsLoading(true);
       
       // Load categories first
-      const categoriesResponse = await fetch('/api/admin/categories');
+      const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
       if (categoriesResponse.ok) {
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.categories || []);
@@ -64,7 +65,7 @@ export default function AdminMenu() {
       }
 
       // Load products
-      const productsResponse = await fetch('/api/admin/products');
+      const productsResponse = await authenticatedApiCall('/api/admin/products');
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
         setProducts(productsData.products || []);

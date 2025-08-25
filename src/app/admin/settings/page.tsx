@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 
 interface Restaurant {
   id: string;
@@ -73,7 +74,7 @@ export default function AdminSettings() {
   const loadRestaurantData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/me/restaurant');
+      const response = await authenticatedApiCall('/api/admin/me/restaurant');
       
       if (response.ok) {
         const data = await response.json();
@@ -112,12 +113,7 @@ export default function AdminSettings() {
     try {
       setIsCreating(true);
       
-      const response = await fetch('/api/admin/restaurant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await authenticatedApiCallWithBody('/api/admin/restaurant', {
           name: createForm.name.trim(),
           address: createForm.address.trim(),
           schedule: {
@@ -129,8 +125,7 @@ export default function AdminSettings() {
             saturday: '9:00 AM - 11:00 PM',
             sunday: '10:00 AM - 9:00 PM'
           }
-        }),
-      });
+        });
 
       if (response.ok) {
         const data = await response.json();
@@ -219,12 +214,8 @@ export default function AdminSettings() {
     try {
       setIsSaving(true);
       
-      const response = await fetch('/api/admin/restaurant', {
+      const response = await authenticatedApiCallWithBody('/api/admin/restaurant', restaurant, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(restaurant),
       });
       
       if (response.ok) {

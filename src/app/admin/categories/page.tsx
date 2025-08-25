@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -32,7 +33,7 @@ export default function AdminCategories() {
   const loadCategories = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/categories');
+      const response = await authenticatedApiCall('/api/admin/categories');
       
       if (response.ok) {
         const data = await response.json();
@@ -102,12 +103,8 @@ export default function AdminCategories() {
       
       const method = editingCategory ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await authenticatedApiCallWithBody(url, formData, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
       });
 
       if (response.ok) {

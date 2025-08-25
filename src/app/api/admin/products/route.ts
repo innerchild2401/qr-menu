@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-server';
-import { getCurrentUserAndRestaurant } from '../../../../../lib/currentRestaurant';
+import { validateUserAndGetRestaurant } from '../../../../../lib/api-route-helpers';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
     
     if (error) {
-      if (error === 'Unauthorized') {
+      if (error === 'Missing user ID in headers') {
         return NextResponse.json(
-          { error: 'Unauthorized' },
+          { error: 'Unauthorized - Missing user ID' },
           { status: 401 }
+        );
+      }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
         );
       }
       return NextResponse.json(
@@ -19,17 +25,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!user) {
+    if (!user || !restaurant) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
-      );
-    }
-
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'No restaurant found for current user' },
-        { status: 404 }
       );
     }
 
@@ -63,13 +62,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
     
     if (error) {
-      if (error === 'Unauthorized') {
+      if (error === 'Missing user ID in headers') {
         return NextResponse.json(
-          { error: 'Unauthorized' },
+          { error: 'Unauthorized - Missing user ID' },
           { status: 401 }
+        );
+      }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
         );
       }
       return NextResponse.json(
@@ -78,17 +83,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!user) {
+    if (!user || !restaurant) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
-      );
-    }
-
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'No restaurant found for current user' },
-        { status: 404 }
       );
     }
 

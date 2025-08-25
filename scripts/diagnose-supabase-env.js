@@ -124,8 +124,7 @@ function checkOptionalVariables(envVars) {
   logSection('Checking Optional Variables');
   
   const optionalVars = [
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL'
+    'NEXT_PUBLIC_APP_URL'
   ];
   
   optionalVars.forEach(varName => {

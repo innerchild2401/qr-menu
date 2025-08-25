@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/Toast';
@@ -30,7 +31,7 @@ export default function AdminQR() {
   const loadQRCodeInfo = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/qr/info');
+      const response = await authenticatedApiCall('/api/admin/qr/info');
       
       if (response.ok) {
         const data = await response.json();
@@ -85,7 +86,7 @@ export default function AdminQR() {
   const generateQRCode = async () => {
     try {
       setIsGenerating(true);
-      const response = await fetch('/api/admin/qr/generate', {
+      const response = await authenticatedApiCall('/api/admin/qr/generate', {
         method: 'POST',
       });
       
@@ -115,7 +116,7 @@ export default function AdminQR() {
   const regenerateQRCode = async () => {
     try {
       setIsRegenerating(true);
-      const response = await fetch('/api/admin/qr/regenerate', {
+      const response = await authenticatedApiCall('/api/admin/qr/regenerate', {
         method: 'POST',
       });
       

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserAndRestaurant } from '../../../../../../lib/currentRestaurant';
+import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
 import { generateAndUploadQRCode, regenerateQRCode } from '../../../../../../lib/qrCodeUtils';
 
 export async function POST(
@@ -8,12 +8,31 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     // Get current user and restaurant using unified resolver
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
     
-    if (error || !user || !restaurant) {
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
+      }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { error: error || 'Unauthorized' },
-        { status: error === 'No restaurant found' ? 404 : 401 }
+        { status: 500 }
+      );
+    }
+
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
@@ -85,12 +104,31 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     // Get current user and restaurant using unified resolver
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
     
-    if (error || !user || !restaurant) {
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
+      }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { error: error || 'Unauthorized' },
-        { status: error === 'No restaurant found' ? 404 : 401 }
+        { status: 500 }
+      );
+    }
+
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 

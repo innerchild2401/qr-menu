@@ -89,7 +89,7 @@ export async function deleteQRCode(storagePath: string): Promise<void> {
  */
 export async function generateAndUploadQRCode(
   restaurantSlug: string,
-  baseUrl: string = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 ): Promise<string> {
   try {
     // Construct menu URL
@@ -122,7 +122,7 @@ export function getQRCodeDownloadUrl(qrCodeUrl: string): string {
 export async function regenerateQRCode(
   restaurantSlug: string,
   existingQRPath?: string,
-  baseUrl: string = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 ): Promise<string> {
   try {
     // Delete existing QR code if path is provided

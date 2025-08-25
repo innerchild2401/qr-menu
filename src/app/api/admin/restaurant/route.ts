@@ -1,108 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-
-// Helper function to get current user from session
-async function getCurrentUserFromSession() {
-  try {
-    const cookieStore = await cookies();
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error || !user) {
-      console.log('❌ No authenticated user found in session:', error?.message);
-      return null;
-    }
-
-    console.log('✅ Authenticated user found:', user.email);
-    return user;
-  } catch (error) {
-    console.error('❌ Error getting user from session:', error);
-    return null;
-  }
-}
-
-// Helper function to get user's restaurant using service role
-async function getUserRestaurant(userId: string) {
-  try {
-    console.log(`🔍 Getting restaurant for user: ${userId}`);
-    
-    // First, try to find restaurant through user_restaurants table
-    const { data: userRestaurant, error: urError } = await supabaseAdmin
-      .from('user_restaurants')
-      .select(`
-        restaurant_id,
-        restaurants (*)
-      `)
-      .eq('user_id', userId)
-      .eq('role', 'owner')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!urError && userRestaurant && userRestaurant.restaurants && Array.isArray(userRestaurant.restaurants) && userRestaurant.restaurants.length > 0) {
-      const restaurant = userRestaurant.restaurants[0];
-      console.log('✅ Found restaurant via user_restaurants:', restaurant.name);
-      return restaurant;
-    }
-
-    // Fallback: try to find restaurant by owner_id
-    const { data: ownedRestaurant, error: ownerError } = await supabaseAdmin
-      .from('restaurants')
-      .select('*')
-      .eq('owner_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!ownerError && ownedRestaurant) {
-      console.log('✅ Found restaurant via owner_id:', ownedRestaurant.name);
-      return ownedRestaurant;
-    }
-
-    console.log('❌ No restaurant found for user');
-    return null;
-  } catch (error) {
-    console.error('❌ Error getting user restaurant:', error);
-    return null;
-  }
-}
+import { getUserFromHeaders, getUserRestaurant } from '../../../../../lib/api-route-helpers';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔍 GET /api/admin/restaurant - Starting request');
     
-    // Get current user from session
-    const user = await getCurrentUserFromSession();
+    const userId = getUserFromHeaders(request);
     
-    if (!user) {
-      console.log('❌ Unauthorized: No authenticated user');
+    if (!userId) {
+      console.log('❌ Unauthorized: Missing user ID in headers');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Missing user ID' },
         { status: 401 }
       );
     }
 
     // Get user's restaurant using service role
-    const restaurant = await getUserRestaurant(user.id);
+    const restaurant = await getUserRestaurant(userId);
     
     if (!restaurant) {
       console.log('❌ No restaurant found for user');
@@ -127,18 +42,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔍 POST /api/admin/restaurant - Starting request');
     
-    // Get current user from session
-    const user = await getCurrentUserFromSession();
+    const userId = getUserFromHeaders(request);
     
-    if (!user) {
-      console.log('❌ Unauthorized: No authenticated user');
+    if (!userId) {
+      console.log('❌ Unauthorized: Missing user ID in headers');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Missing user ID' },
         { status: 401 }
       );
     }
 
-    console.log('✅ Authenticated user for restaurant creation:', user.email);
+    console.log('✅ Authenticated user for restaurant creation:', userId);
 
     // Parse request body
     const { name, address, schedule } = await request.json();
@@ -165,7 +79,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .replace(/(^-|-$)/g, '')
       .substring(0, 50);
 
-    console.log('🔍 Creating restaurant with data:', { name, slug, owner_id: user.id });
+    console.log('🔍 Creating restaurant with data:', { name, slug, owner_id: userId });
 
     // Create restaurant using service role
     const { data: newRestaurant, error: createError } = await supabaseAdmin
@@ -175,7 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         slug,
         address: address.trim(),
         schedule: schedule || {},
-        owner_id: user.id
+        owner_id: userId
       })
       .select()
       .single();
@@ -194,7 +108,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { error: relationshipError } = await supabaseAdmin
       .from('user_restaurants')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         restaurant_id: newRestaurant.id,
         role: 'owner'
       });
@@ -223,19 +137,18 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔍 PUT /api/admin/restaurant - Starting request');
     
-    // Get current user from session
-    const user = await getCurrentUserFromSession();
+    const userId = getUserFromHeaders(request);
     
-    if (!user) {
-      console.log('❌ Unauthorized: No authenticated user');
+    if (!userId) {
+      console.log('❌ Unauthorized: Missing user ID in headers');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Missing user ID' },
         { status: 401 }
       );
     }
 
     // Get user's restaurant using service role
-    const restaurant = await getUserRestaurant(user.id);
+    const restaurant = await getUserRestaurant(userId);
     
     if (!restaurant) {
       console.log('❌ No restaurant found for user');

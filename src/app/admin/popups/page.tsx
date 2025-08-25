@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/auth-supabase';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useToast } from '../../../hooks/useToast';
@@ -64,7 +65,7 @@ export default function AdminPopups() {
   const loadPopups = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/popups');
+      const response = await authenticatedApiCall('/api/admin/popups');
       
       if (response.ok) {
         const data = await response.json();
@@ -141,7 +142,7 @@ export default function AdminPopups() {
       formData.append('file', file);
       
       // Get restaurant slug for upload path
-      const restaurantResponse = await fetch('/api/admin/me/restaurant');
+      const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
       if (!restaurantResponse.ok) {
         showError('Failed to get restaurant information');
         return '';
@@ -218,12 +219,8 @@ export default function AdminPopups() {
       
       const method = editingPopup ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await authenticatedApiCallWithBody(url, popupData, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(popupData),
       });
 
       if (response.ok) {
@@ -265,7 +262,7 @@ export default function AdminPopups() {
     }
 
     try {
-      const response = await fetch(`/api/admin/popups/${popup.id}`, {
+      const response = await authenticatedApiCall(`/api/admin/popups/${popup.id}`, {
         method: 'DELETE',
       });
 
@@ -285,15 +282,11 @@ export default function AdminPopups() {
 
   const toggleActive = async (popup: Popup) => {
     try {
-      const response = await fetch(`/api/admin/popups/${popup.id}`, {
+      const response = await authenticatedApiCallWithBody(`/api/admin/popups/${popup.id}`, {
+        ...popup,
+        active: !popup.active
+      }, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...popup,
-          active: !popup.active
-        }),
       });
 
       if (response.ok) {

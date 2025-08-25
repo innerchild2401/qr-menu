@@ -1,37 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserAndRestaurant } from '../../../../../../lib/currentRestaurant';
+import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { user, restaurant, error } = await getCurrentUserAndRestaurant();
+    console.log('🚀 API Route: /api/admin/me/restaurant called');
     
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+
     if (error) {
-      if (error === 'Unauthorized') {
+      console.log('❌ Error:', error);
+      if (error === 'Missing user ID in headers') {
         return NextResponse.json(
-          { error: 'Unauthorized' },
+          { error: 'Unauthorized - Missing user ID' },
           { status: 401 }
         );
       }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for this user' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Failed to fetch restaurant data' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
 
-    if (!user) {
+    if (!user || !restaurant) {
+      console.log('❌ No user or restaurant found');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    console.log('✅ Successfully returning restaurant data');
     return NextResponse.json({ 
-      user: { id: user.id, email: user.email },
+      user: { id: user.id },
       restaurant 
     });
 
   } catch (error) {
-    console.error('Error in /api/admin/me/restaurant:', error);
+    console.error('❌ Error in /api/admin/me/restaurant:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
