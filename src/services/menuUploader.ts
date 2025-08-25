@@ -45,13 +45,10 @@ export class MenuUploader {
         restaurant_id: this.restaurantId
       }));
 
-      // Upsert products
+      // Insert products (handle duplicates by checking first)
       const { data: productData, error: productError } = await supabase
         .from('products')
-        .upsert(productUpsertData, { 
-          onConflict: 'name,restaurant_id',
-          ignoreDuplicates: false 
-        })
+        .insert(productUpsertData)
         .select('id, name');
 
       if (productError) {
@@ -96,27 +93,53 @@ export class MenuUploader {
       return categoryMap;
     }
 
-    const categoryUpsertData = uniqueCategories.map(categoryName => ({
-      name: categoryName,
-      restaurant_id: this.restaurantId
-    }));
-
-    const { data: categoryData, error: categoryError } = await supabase
+    // First, get existing categories for this restaurant
+    const { data: existingCategories, error: fetchError } = await supabase
       .from('categories')
-      .upsert(categoryUpsertData, { 
-        onConflict: 'name,restaurant_id',
-        ignoreDuplicates: false 
-      })
-      .select('id, name');
+      .select('id, name')
+      .eq('restaurant_id', this.restaurantId);
 
-    if (categoryError) {
-      throw new Error(`Failed to upsert categories: ${categoryError.message}`);
+    if (fetchError) {
+      throw new Error(`Failed to fetch existing categories: ${fetchError.message}`);
     }
 
-    // Create mapping from category name to category id
-    categoryData?.forEach(cat => {
+    // Create a map of existing categories
+    const existingCategoryMap = new Map<string, string>();
+    existingCategories?.forEach(cat => {
+      existingCategoryMap.set(cat.name.toLowerCase(), cat.id);
+    });
+
+    // Filter out categories that already exist
+    const newCategories = uniqueCategories.filter(categoryName => 
+      !existingCategoryMap.has(categoryName.toLowerCase())
+    );
+
+    // Add existing categories to the result map
+    existingCategories?.forEach(cat => {
       categoryMap.set(cat.name, cat.id);
     });
+
+    // Insert new categories if any
+    if (newCategories.length > 0) {
+      const newCategoryData = newCategories.map(categoryName => ({
+        name: categoryName,
+        restaurant_id: this.restaurantId
+      }));
+
+      const { data: insertedCategories, error: insertError } = await supabase
+        .from('categories')
+        .insert(newCategoryData)
+        .select('id, name');
+
+      if (insertError) {
+        throw new Error(`Failed to insert new categories: ${insertError.message}`);
+      }
+
+      // Add new categories to the result map
+      insertedCategories?.forEach(cat => {
+        categoryMap.set(cat.name, cat.id);
+      });
+    }
 
     return categoryMap;
   }
