@@ -69,52 +69,19 @@ interface OrderItem {
   quantity: number;
 }
 
-// Fetch menu data directly from Supabase
+// Fetch menu data from API
 async function getMenuData(slug: string): Promise<MenuData> {
-  const { createClient } = await import('@supabase/supabase-js');
+  const response = await fetch(`/api/menu/${slug}`);
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I';
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-  
-  // Clean the slug
-  const cleanSlug = (slug ?? '').toString().trim();
-  
-  // Get restaurant
-  const { data: restaurant, error: restaurantError } = await supabase
-    .from('restaurants')
-    .select('*')
-    .eq('slug', cleanSlug)
-    .maybeSingle();
-
-  if (restaurantError) {
-    throw new Error(`Database error: ${restaurantError.message}`);
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Restaurant not found');
+    }
+    throw new Error('Failed to load menu data');
   }
 
-  if (!restaurant) {
-    throw new Error('Restaurant not found');
-  }
-
-  // Get categories and products in parallel
-  const [categoriesResult, productsResult] = await Promise.all([
-    supabase
-      .from('categories')
-      .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order'),
-    supabase
-      .from('products')
-      .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .eq('available', true) // Only show available products
-  ]);
-
-  return {
-    restaurant,
-    categories: categoriesResult.data || [],
-    products: productsResult.data || []
-  };
+  const data = await response.json();
+  return data;
 }
 
 export default function MenuPage({ params }: MenuPageProps) {
