@@ -61,8 +61,7 @@ export async function GET(
       supabase
         .from('categories')
         .select('*')
-        .eq('restaurant_id', restaurant.id)
-        .order('created_at'),
+        .eq('restaurant_id', restaurant.id),
       supabase
         .from('products')
         .select('*')
