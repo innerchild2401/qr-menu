@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { layout, typography, spacing, gaps } from '@/lib/design-system';
+import AdminLayout from '@/components/AdminLayout';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Restaurant {
   id: string;
@@ -218,15 +221,10 @@ export default function AdminSettings() {
   // Show create restaurant form if no restaurant exists
   if (hasRestaurant === false) {
     return (
-      <div className={layout.container}>
-        <div className="mb-8">
-          <h1 className={`${typography.h2} mb-2`}>
-            Restaurant Settings
-          </h1>
-          <p className={typography.bodySmall}>
-            Create your first restaurant to get started
-          </p>
-        </div>
+      <AdminLayout 
+        title="Restaurant Settings"
+        description="Create your first restaurant to get started"
+      >
 
         {!showCreateForm ? (
           <div className="text-center py-12">
@@ -251,43 +249,43 @@ export default function AdminSettings() {
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+          <Card className={spacing.md}>
             <h2 className={`${typography.h4} mb-4`}>
               Create Your Restaurant
             </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Restaurant Name *
                 </label>
                 <input
                   type="text"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                   placeholder="Enter restaurant name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Address *
                 </label>
                 <input
                   type="text"
                   value={createForm.address}
                   onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                   placeholder="Enter restaurant address"
                 />
               </div>
               
               <div className="flex space-x-3 pt-4">
-                <button
+                <Button
                   onClick={handleCreateRestaurant}
                   disabled={isCreating}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
+                  className="flex items-center"
                 >
                   {isCreating ? (
                     <>
@@ -297,128 +295,123 @@ export default function AdminSettings() {
                   ) : (
                     'Create Restaurant'
                   )}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => setShowCreateForm(false)}
                   disabled={isCreating}
-                  className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
+          </Card>
         )}
-      </div>
+      </AdminLayout>
     );
   }
 
   if (!restaurant) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">Failed to load restaurant data</p>
-      </div>
+      <AdminLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Failed to load restaurant data</p>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div>
-      
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Restaurant Settings
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Manage your restaurant information and settings
-        </p>
-      </div>
+    <AdminLayout 
+      title="Restaurant Settings"
+      description="Manage your restaurant information and settings"
+    >
 
       {/* Restaurant Info Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={`${spacing.md} mb-6`}>
+        <h2 className={`${typography.h4} mb-4`}>
           Restaurant Information
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Restaurant Name
             </label>
             <input
               type="text"
               value={restaurant.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
               placeholder="Enter restaurant name"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Restaurant Slug
             </label>
             <input
               type="text"
               value={restaurant.slug}
               disabled
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 dark:text-gray-300"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-muted text-muted-foreground"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Slug cannot be changed
             </p>
           </div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Address
             </label>
             <input
               type="text"
               value={restaurant.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
               placeholder="Enter restaurant address"
             />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Google Business Integration Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={`${spacing.md} mb-6`}>
+        <h2 className={`${typography.h4} mb-4`}>
           Google Business Integration
         </h2>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">Google Reviews</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h3 className="font-medium text-foreground">Google Reviews</h3>
+              <p className="text-sm text-muted-foreground">
                 Connect your Google Business account to display real ratings and reviews on your menu
               </p>
             </div>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            <Button
               onClick={() => {
                 // TODO: Implement Google Business OAuth
                 alert('Google Business integration coming soon!');
               }}
             >
               Connect Google Business
-            </button>
+            </Button>
           </div>
           
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-muted-foreground">
             <p>• Display real Google ratings on menu items</p>
             <p>• Show actual review counts</p>
             <p>• Automatically sync with your Google Business profile</p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Schedule Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={`${spacing.md} mb-6`}>
+        <h2 className={`${typography.h4} mb-4`}>
           Operating Hours
         </h2>
         
@@ -428,31 +421,31 @@ export default function AdminSettings() {
             'Friday', 'Saturday', 'Sunday'
           ].map((day) => (
             <div key={day} className="flex items-center space-x-4">
-              <label className="w-20 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="w-20 text-sm font-medium text-foreground">
                 {day}
               </label>
               <input
                 type="text"
                 value={restaurant.schedule?.[day.toLowerCase()] || ''}
                 onChange={(e) => handleScheduleChange(day, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="flex-1 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="e.g., 11:00 AM - 10:00 PM"
               />
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Images Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={`${spacing.md} mb-6`}>
+        <h2 className={`${typography.h4} mb-4`}>
           Restaurant Images
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Logo Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Logo
             </label>
             {logoPreview ? (
@@ -460,7 +453,7 @@ export default function AdminSettings() {
                 <img
                   src={logoPreview}
                   alt="Restaurant logo"
-                  className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
+                  className="w-full h-32 object-cover rounded-lg border-2 border-border"
                 />
                 <button
                   onClick={() => logoInputRef.current?.click()}
@@ -502,7 +495,7 @@ export default function AdminSettings() {
           
           {/* Cover Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Cover Image
             </label>
             {coverPreview ? (
@@ -550,18 +543,18 @@ export default function AdminSettings() {
             />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Save Button */}
-      <div className="sticky bottom-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border">
+      <div className="sticky bottom-4 bg-background rounded-xl shadow-lg p-4 border">
         <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-muted-foreground">
             Changes will be saved to your restaurant profile
           </div>
-          <button
+          <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-lg font-medium transition-colors flex items-center"
+            className="flex items-center"
           >
             {isSaving ? (
               <>
@@ -571,9 +564,9 @@ export default function AdminSettings() {
             ) : (
               'Save All Changes'
             )}
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
