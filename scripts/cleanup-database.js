@@ -27,7 +27,7 @@ async function cleanupDatabase() {
     const { error: productsDeleteError } = await supabase
       .from('products')
       .delete()
-      .neq('id', 0); // Delete all products
+      .gte('id', 0); // Delete all products (gte 0 will match all positive IDs)
     
     if (productsDeleteError) {
       console.error('Error deleting products:', productsDeleteError);
@@ -39,7 +39,7 @@ async function cleanupDatabase() {
     const { error: categoriesDeleteError } = await supabase
       .from('categories')
       .delete()
-      .neq('id', 0); // Delete all categories
+      .gte('id', 0); // Delete all categories
     
     if (categoriesDeleteError) {
       console.error('Error deleting categories:', categoriesDeleteError);
@@ -47,11 +47,23 @@ async function cleanupDatabase() {
       console.log('✅ Categories deleted');
     }
 
-    // Delete restaurants
+    // Delete user_restaurants relationships
+    const { error: userRestaurantsError } = await supabase
+      .from('user_restaurants')
+      .delete()
+      .gte('user_id', '00000000-0000-0000-0000-000000000000'); // Delete all relationships
+    
+    if (userRestaurantsError) {
+      console.error('Error deleting user_restaurants:', userRestaurantsError);
+    } else {
+      console.log('✅ User-restaurant relationships deleted');
+    }
+
+    // Delete restaurants (including existing demo)
     const { error: restaurantsError } = await supabase
       .from('restaurants')
       .delete()
-      .neq('id', 0); // Delete all restaurants
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Delete all restaurants
     
     if (restaurantsError) {
       console.error('Error deleting restaurants:', restaurantsError);
@@ -59,7 +71,19 @@ async function cleanupDatabase() {
       console.log('✅ Restaurants deleted');
     }
 
-    // 2. Create demo restaurant
+    // Delete users (this will also delete auth users)
+    const { error: usersError } = await supabase
+      .from('users')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Delete all users
+    
+    if (usersError) {
+      console.error('Error deleting users:', usersError);
+    } else {
+      console.log('✅ Users deleted');
+    }
+
+    // 2. Create demo restaurant (without owner_id to avoid user dependency)
     console.log('🏪 Creating demo restaurant...');
     
     const demoRestaurant = {
@@ -75,6 +99,7 @@ async function cleanupDatabase() {
         saturday: '10:00 AM - 11:00 PM',
         sunday: '10:00 AM - 9:00 PM'
       }
+      // Note: No owner_id to avoid user dependency
     };
 
     const { data: restaurant, error: restaurantError } = await supabase
