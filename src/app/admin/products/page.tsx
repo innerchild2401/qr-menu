@@ -2,6 +2,9 @@
 
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
+import { typography, spacing } from '@/lib/design-system';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import BulkUploadModal from '../../../components/admin/BulkUploadModal';
 import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
@@ -144,10 +147,10 @@ export default function AdminProducts() {
       <div>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className={`${typography.h2} mb-2`}>
             Product Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={typography.bodySmall}>
             Manage your menu products and their details
           </p>
         </div>
@@ -161,10 +164,10 @@ export default function AdminProducts() {
     <div>
       
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className={`${typography.h2} mb-2`}>
           Product Management
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={typography.bodySmall}>
           Manage your menu products and their details
         </p>
       </div>
@@ -172,48 +175,40 @@ export default function AdminProducts() {
       {/* Add Product Buttons */}
       <div className="mb-6 flex justify-between items-center">
         <div className="flex space-x-3">
-        <button
-            onClick={handleAddNew}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
-        >
+        <Button onClick={handleAddNew} className="flex items-center">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add New Product
-        </button>
+        </Button>
           
-          <button
+          <Button 
             onClick={() => setShowBulkUploadModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
+            variant="outline"
+            className="flex items-center"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             Bulk Upload Menu
-          </button>
+          </Button>
         </div>
 
         <div className="flex space-x-2">
-          <button
+          <Button
             onClick={() => setViewMode('cards')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors ${
-              viewMode === 'cards'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            size="sm"
           >
             Cards
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setViewMode('table')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors ${
-              viewMode === 'table'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
           >
             Table
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -230,8 +225,8 @@ export default function AdminProducts() {
       />
 
       {/* Products List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={spacing.md}>
+        <h2 className={`${typography.h4} mb-4`}>
           Products ({products.length})
         </h2>
         
@@ -242,7 +237,7 @@ export default function AdminProducts() {
           onDelete={handleDelete}
           onAddNew={handleAddNew}
         />
-                </div>
+      </Card>
                 
       {/* Bulk Upload Modal */}
       <BulkUploadModal

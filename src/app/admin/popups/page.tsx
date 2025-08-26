@@ -2,6 +2,9 @@
 
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { typography, spacing } from '@/lib/design-system';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Popup {
   id: string;
@@ -291,33 +294,30 @@ export default function AdminPopups() {
       <div>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className={`${typography.h2} mb-2`}>
             Popup Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={typography.bodySmall}>
             Manage promotional popups for your restaurant
           </p>
         </div>
 
         <div className="text-center py-12">
           <div className="max-w-md mx-auto">
-            <div className="text-gray-400 mb-4">
+            <div className="text-muted-foreground mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h2 className={`${typography.h4} mb-2`}>
               No Restaurant Found
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className={`${typography.bodySmall} mb-6`}>
               You need to create a restaurant first before you can manage popups.
             </p>
-            <button
-              onClick={() => window.location.href = '/admin/settings'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
+            <Button onClick={() => window.location.href = '/admin/settings'}>
               Go to Settings
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -328,31 +328,28 @@ export default function AdminPopups() {
     <div>
       
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className={`${typography.h2} mb-2`}>
           Popup Management
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={typography.bodySmall}>
           Manage promotional popups for your restaurant
         </p>
       </div>
 
       {/* Add Popup Button */}
       <div className="mb-6">
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
-        >
+        <Button onClick={() => setShowForm(true)} className="flex items-center">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add New Popup
-        </button>
+        </Button>
       </div>
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <Card className={`${spacing.md} mb-6`}>
+          <h2 className={`${typography.h4} mb-4`}>
             {editingPopup ? 'Edit Popup' : 'Add New Popup'}
           </h2>
           
@@ -549,12 +546,12 @@ export default function AdminPopups() {
               </button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {/* Popups List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={spacing.md}>
+        <h2 className={`${typography.h4} mb-4`}>
           Popups ({popups.length})
         </h2>
         
@@ -648,7 +645,7 @@ export default function AdminPopups() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
