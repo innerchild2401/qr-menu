@@ -33,12 +33,11 @@ export async function GET(
         .from('categories')
         .select('*')
         .eq('restaurant_id', restaurant.id)
-        .order('sort_order'),
+        .order('created_at'),
       supabaseAdmin
         .from('products')
         .select('*')
         .eq('restaurant_id', restaurant.id)
-        .eq('available', true) // Only show available products
     ]);
 
     if (categoriesResult.error) {

@@ -38,8 +38,6 @@ interface Restaurant {
 interface Category {
   id: string;
   name: string;
-  description: string;
-  sort_order?: number;
 }
 
 interface Product {
@@ -55,7 +53,6 @@ interface Product {
     fat?: string;
   };
   category_id?: string;
-  available?: boolean;
 }
 
 interface MenuData {
@@ -368,11 +365,6 @@ export default function MenuPage({ params }: MenuPageProps) {
                   <h2 className="text-xl font-semibold text-foreground mb-2">
                     {category.name}
                   </h2>
-                  {category.description && (
-                    <p className="text-muted-foreground text-sm">
-                      {category.description}
-                    </p>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {productsByCategory[category.id]?.map((product) => (
