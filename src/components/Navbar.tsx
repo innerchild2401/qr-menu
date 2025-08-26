@@ -5,11 +5,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { QrCode, Menu, X } from 'lucide-react';
 import LoginModal from './LoginModal';
+import SignUpModal from './SignUpModal';
 import { layout } from '@/lib/design-system';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
 
   return (
     <>
@@ -38,9 +40,14 @@ export default function Navbar() {
               >
                 Features
               </Link>
-              <Button variant="outline" onClick={() => setShowLoginModal(true)}>
-                Sign In
-              </Button>
+              <div className="flex items-center space-x-3">
+                <Button variant="outline" onClick={() => setShowLoginModal(true)}>
+                  Sign In
+                </Button>
+                <Button onClick={() => setShowSignUpModal(true)}>
+                  Sign Up
+                </Button>
+              </div>
             </div>
 
             {/* Mobile menu button */}
@@ -73,16 +80,27 @@ export default function Navbar() {
               >
                 Features
               </Link>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowLoginModal(true);
-                  setIsMenuOpen(false);
-                }}
-                className="w-full"
-              >
-                Sign In
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowLoginModal(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowSignUpModal(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  Sign Up
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -92,6 +110,12 @@ export default function Navbar() {
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
+      />
+
+      {/* Sign Up Modal */}
+      <SignUpModal 
+        isOpen={showSignUpModal} 
+        onClose={() => setShowSignUpModal(false)} 
       />
     </>
   );

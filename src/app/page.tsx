@@ -14,43 +14,17 @@ import {
   ArrowRight, 
   CheckCircle
 } from "lucide-react";
-import SignUpModal from "@/components/SignUpModal";
 import { layout, typography, spacing, gaps } from "@/lib/design-system";
 
 export default function Home() {
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
 
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-        {/* Navigation */}
-        <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className={layout.container}>
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <QrCode className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold text-foreground">SmartMenu</span>
-              </div>
-              <div className="hidden md:flex items-center space-x-6">
-                <Link href="/menu/demo" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Demo Menu
-                </Link>
-                <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Features
-                </Link>
-                <Button variant="outline" onClick={() => setShowSignUpModal(true)}>
-                  Sign Up
-                </Button>
-              </div>
-            </div>
-          </div>
-        </nav>
 
         {/* Hero Section */}
         <section className="relative overflow-hidden">
-          <div className={`${layout.container} pt-20 pb-16`}>
+          <div className={`${layout.container} pt-16 pb-16`}>
             <div className="text-center">
               <Badge variant="secondary" className="mb-6">
                 <Sparkles className="w-3 h-3 mr-1" />
@@ -68,9 +42,11 @@ export default function Home() {
               </p>
 
               <div className={`flex flex-col sm:flex-row ${gaps.sm} justify-center items-center mb-12`}>
-                <Button size="lg" onClick={() => setShowSignUpModal(true)} className="text-lg px-8 py-6">
-                  Get Started Free
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                <Button size="lg" asChild className="text-lg px-8 py-6">
+                  <Link href="/admin/settings">
+                    Get Started Free
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Link>
                 </Button>
                 <Button variant="outline" size="lg" asChild className="text-lg px-8 py-6">
                   <Link href="/menu/demo">
@@ -223,9 +199,11 @@ export default function Home() {
             <p className="text-xl text-muted-foreground mb-8">
               Join hundreds of restaurants already using SmartMenu to enhance their customer experience.
             </p>
-            <Button size="lg" onClick={() => setShowSignUpModal(true)} className="text-lg px-8 py-6">
-              Start Your Free Trial
-              <ArrowRight className="ml-2 w-5 h-5" />
+            <Button size="lg" asChild className="text-lg px-8 py-6">
+              <Link href="/admin/settings">
+                Start Your Free Trial
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
             </Button>
           </div>
         </section>
@@ -276,12 +254,6 @@ export default function Home() {
           </div>
         </footer>
       </div>
-      
-      {/* Sign Up Modal */}
-      <SignUpModal 
-        isOpen={showSignUpModal} 
-        onClose={() => setShowSignUpModal(false)} 
-      />
     </>
   );
 }
