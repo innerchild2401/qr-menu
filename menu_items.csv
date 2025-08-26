@@ -1,0 +1,46 @@
+id,category,name,description,calories,protein_g,fat_g,carbs_g,price
+1,Starters / Appetizers,"Bruschetta al Pomodoro","Fresh tomatoes, basil, and garlic on toasted artisan bread with extra virgin olive oil",180,4,8,22,28
+2,Starters / Appetizers,"Carpaccio di Manzo","Thinly sliced raw beef tenderloin with arugula, parmesan shavings, and truffle oil",220,18,12,3,42
+3,Starters / Appetizers,"Mozzarella Caprese","Fresh buffalo mozzarella with vine-ripened tomatoes and aged balsamic reduction",195,12,14,6,35
+4,Starters / Appetizers,"Crispy Calamari","Lightly battered squid rings served with zesty lemon aioli and sweet chili sauce",310,16,18,24,38
+5,Starters / Appetizers,"Wild Mushroom Arancini","Saffron risotto balls stuffed with porcini mushrooms and melted fontina cheese",285,8,12,35,32
+6,Starters / Appetizers,"Prosciutto e Melone","Premium Parma ham wrapped around sweet cantaloupe with fresh mint garnish",165,14,8,12,40
+7,Starters / Appetizers,"Tuna Tartare","Fresh tuna with avocado, sesame oil, and ginger served on crispy wonton chips",245,22,16,8,45
+8,Starters / Appetizers,"Burrata Salad","Creamy burrata cheese with heirloom tomatoes, basil pesto, and aged balsamic",275,10,20,12,38
+9,Main Dishes,"Grilled Salmon Teriyaki","Atlantic salmon glazed with homemade teriyaki sauce, served with jasmine rice and steamed vegetables",580,42,28,45,85
+10,Main Dishes,"Beef Tenderloin Medallions","Premium beef medallions with red wine reduction, truffle mashed potatoes, and seasonal greens",720,48,32,38,120
+11,Main Dishes,"Lobster Linguine","Fresh Maine lobster with house-made linguine in a rich tomato-basil cream sauce",650,38,24,68,95
+12,Main Dishes,"Chicken Marsala","Pan-seared chicken breast in marsala wine sauce with wild mushrooms and creamy polenta",520,36,22,42,65
+13,Main Dishes,"Vegetarian Risotto","Arborio rice with seasonal vegetables, parmesan, and white truffle oil",480,12,18,72,55
+14,Main Dishes,"Duck Confit","Slow-cooked duck leg with crispy skin, served with roasted potatoes and cherry compote",680,44,38,28,88
+15,Main Dishes,"Seafood Paella","Traditional Spanish paella with saffron rice, prawns, mussels, and chorizo",590,34,26,58,78
+16,Main Dishes,"Lamb Rack","Herb-crusted lamb rack with mint jus, roasted root vegetables, and garlic confit",750,52,42,22,110
+17,Main Dishes,"Truffle Pasta","House-made fettuccine with black truffle, parmesan, and aged balsamic reduction",520,16,24,64,72
+18,Main Dishes,"Grilled Sea Bass","Mediterranean sea bass with lemon-herb butter, quinoa pilaf, and grilled asparagus",540,40,26,32,82
+19,Main Dishes,"Wagyu Burger","Premium wagyu beef burger with aged cheddar, caramelized onions, and truffle aioli",680,38,42,48,75
+20,Desserts,"Tiramisu Classico","Traditional Italian dessert with mascarpone cream, coffee-soaked ladyfingers, and cocoa powder",420,8,24,42,35
+21,Desserts,"Chocolate Lava Cake","Warm chocolate cake with molten center, served with vanilla bean ice cream",480,6,28,52,40
+22,Desserts,"Crème Brûlée","Classic vanilla custard with caramelized sugar crust and fresh berries",380,6,22,38,32
+23,Desserts,"Apple Tarte Tatin","Upside-down caramelized apple tart with vanilla ice cream and caramel sauce",520,4,26,58,38
+24,Desserts,"Panna Cotta","Silky vanilla panna cotta with mixed berry compote and mint garnish",340,6,18,36,28
+25,Soft Drinks,"Fresh Orange Juice","Cold-pressed Valencia oranges, served over ice with a slice of orange",120,2,0,28,15
+26,Soft Drinks,"Virgin Mojito","Fresh mint, lime, and sugar with sparkling water and crushed ice",85,0,0,22,18
+27,Soft Drinks,"Berry Smoothie","Mixed berries with Greek yogurt, honey, and almond milk",180,8,4,32,20
+28,Soft Drinks,"Lemonade","House-made lemonade with fresh mint and a hint of lavender",95,0,0,24,12
+29,Soft Drinks,"Iced Tea","Premium black tea with peach and lemon, served with fresh mint",45,0,0,12,14
+30,Soft Drinks,"Coconut Water","Fresh young coconut water with a splash of lime juice",60,1,0,14,16
+31,Soft Drinks,"Green Detox Juice","Spinach, kale, apple, and ginger with a touch of lemon",110,3,0,26,18
+32,Wines,"Château Margaux 2015","Bordeaux Grand Cru Classé, full-bodied with notes of black fruit and tobacco",,,,280
+33,Wines,"Dom Pérignon 2012","Prestige cuvée champagne with fine bubbles and complex aromas",,,,320
+34,Wines,"Barolo Riserva 2016","Aged Nebbiolo with notes of cherry, rose, and truffle",,,,180
+35,Wines,"Sancerre Blanc 2022","Crisp Sauvignon Blanc with citrus and mineral notes",,,,120
+36,Wines,"Pinot Noir Reserve 2020","Elegant red with notes of red berries and subtle oak",,,,95
+37,Spirits & Cocktails,"Classic Martini","Gin or vodka with dry vermouth, served with a twist or olive",,,,35
+38,Spirits & Cocktails,"Old Fashioned","Bourbon with bitters, sugar, and orange peel",,,,38
+39,Spirits & Cocktails,"Negroni","Gin, Campari, and sweet vermouth with orange peel",,,,32
+40,Spirits & Cocktails,"Whiskey Sour","Bourbon with fresh lemon juice and simple syrup",,,,30
+41,Spirits & Cocktails,"Espresso Martini","Vodka with coffee liqueur and fresh espresso",,,,42
+42,Beers,"Craft IPA","Local brewery IPA with citrus hops and balanced bitterness",180,2,0,18,22
+43,Beers,"Belgian Wheat","Traditional wheat beer with notes of banana and clove",150,1,0,15,20
+44,Beers,"Stout Porter","Dark roasted malt with chocolate and coffee notes",220,3,0,22,25
+45,Beers,"Pilsner Lager","Crisp and clean lager with subtle hop character",140,1,0,14,18
