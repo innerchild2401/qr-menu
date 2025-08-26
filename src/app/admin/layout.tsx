@@ -3,6 +3,20 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { 
+  Settings, 
+  FolderOpen, 
+  Package, 
+  QrCode, 
+  MessageSquare, 
+  CheckSquare, 
+  Menu, 
+  LogOut,
+  User,
+  ChevronRight
+} from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
 export default function AdminLayout({
@@ -12,6 +26,7 @@ export default function AdminLayout({
 }) {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,13 +84,23 @@ export default function AdminLayout({
     }
   };
 
+  const navigationItems = [
+    { href: '/admin/settings', icon: Settings, label: 'Settings' },
+    { href: '/admin/categories', icon: FolderOpen, label: 'Categories' },
+    { href: '/admin/products', icon: Package, label: 'Products' },
+    { href: '/admin/menu', icon: Menu, label: 'Menu Preview' },
+    { href: '/admin/popups', icon: MessageSquare, label: 'Popups' },
+    { href: '/admin/qr', icon: QrCode, label: 'QR Codes' },
+    { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
+  ];
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </Card>
       </div>
     );
   }
@@ -85,83 +110,108 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Admin Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Admin Dashboard
-              </h1>
-              
-              {/* Navigation Links */}
-              <div className="hidden md:flex space-x-6">
+    <div className="min-h-screen bg-background">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <QrCode className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-foreground">SmartMenu</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
                 <Link
-                  href="/admin/settings"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  onClick={() => setSidebarOpen(false)}
                 >
-                  Settings
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
                 </Link>
-                <Link
-                  href="/admin/categories"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Categories
-                </Link>
-                <Link
-                  href="/admin/products"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Products
-                </Link>
-                <Link
-                  href="/admin/menu"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Menu
-                </Link>
-                <Link
-                  href="/admin/popups"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Popups
-                </Link>
-                <Link
-                  href="/admin/qr"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  QR Code
-                </Link>
-                <Link
-                  href="/admin/checklist"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Checklist
-                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User section */}
+          <div className="p-4 border-t">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user?.email || 'User'}
+                </p>
               </div>
             </div>
-
-            {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {user?.email || 'User'}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="w-full"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      {/* Main content */}
+      <div className="lg:ml-64">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 bg-white border-b lg:hidden">
+          <div className="flex items-center justify-between p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <QrCode className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-bold text-foreground">SmartMenu</span>
+            </div>
+            <div className="w-10" /> {/* Spacer for centering */}
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
