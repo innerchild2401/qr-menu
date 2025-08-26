@@ -1,10 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
 import BulkUploadModal from '../../../components/admin/BulkUploadModal';
 import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
@@ -33,8 +30,6 @@ interface Category {
 }
 
 export default function AdminProducts() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,28 +41,9 @@ export default function AdminProducts() {
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
 
-  // Load user session
+  // Load data on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadData();
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadData();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    loadData();
   }, []);
 
   const loadData = useCallback(async () => {
@@ -85,7 +61,7 @@ export default function AdminProducts() {
         setProducts([]);
         return;
       } else {
-        showError('Failed to load restaurant data');
+        console.error('Failed to load restaurant data');
         setHasRestaurant(false);
         return;
       }
@@ -96,7 +72,7 @@ export default function AdminProducts() {
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.categories || []);
       } else {
-        showError('Failed to load categories');
+        console.error('Failed to load categories');
       }
 
       // Load products
@@ -105,16 +81,15 @@ export default function AdminProducts() {
         const productsData = await productsResponse.json();
         setProducts(productsData.products || []);
       } else {
-        showError('Failed to load products');
+        console.error('Failed to load products');
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      showError('Error loading data');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, []);
 
   const handleAddNew = () => {
     setEditingProduct(null);
@@ -134,15 +109,14 @@ export default function AdminProducts() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess(data.message);
+        console.log(data.message);
         loadData(); // Reload data
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to delete product');
+        console.error(errorData.error || 'Failed to delete product');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      showError('Error deleting product');
     }
   };
 
@@ -168,7 +142,6 @@ export default function AdminProducts() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -186,7 +159,6 @@ export default function AdminProducts() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -250,11 +222,11 @@ export default function AdminProducts() {
         isOpen={showForm}
         onClose={() => setShowForm(false)}
         onSuccess={handleFormSuccess}
-        showSuccess={showSuccess}
-        showError={showError}
+        showSuccess={(msg) => console.log(msg)}
+        showError={(msg) => console.error(msg)}
         categories={categories}
         editingProduct={editingProduct}
-        user={user}
+        user={null}
       />
 
       {/* Products List */}
@@ -277,9 +249,9 @@ export default function AdminProducts() {
         isOpen={showBulkUploadModal}
         onClose={() => setShowBulkUploadModal(false)}
         onSuccess={handleBulkUploadSuccess}
-        showSuccess={showSuccess}
-        showError={showError}
-        user={user}
+        showSuccess={(msg) => console.log(msg)}
+        showError={(msg) => console.error(msg)}
+        user={null}
       />
     </div>
   );

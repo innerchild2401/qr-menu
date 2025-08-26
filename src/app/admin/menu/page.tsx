@@ -1,10 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
 
 interface Category {
   id: string;
@@ -29,8 +26,6 @@ interface Product {
 }
 
 export default function AdminMenu() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
   const [categories, setCategories] = useState<Category[]>([]);
@@ -57,7 +52,7 @@ export default function AdminMenu() {
         setProducts([]);
         return;
       } else {
-        showError('Failed to load restaurant data');
+        console.error('Failed to load restaurant data');
         setHasRestaurant(false);
         return;
       }
@@ -68,7 +63,7 @@ export default function AdminMenu() {
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.categories || []);
       } else {
-        showError('Failed to load categories');
+        console.error('Failed to load categories');
       }
 
       // Load products
@@ -77,39 +72,19 @@ export default function AdminMenu() {
         const productsData = await productsResponse.json();
         setProducts(productsData.products || []);
       } else {
-        showError('Failed to load products');
+        console.error('Failed to load products');
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      showError('Error loading data');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, []);
 
-  // Load user session and data
+  // Load data on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadData();
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadData();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    loadData();
   }, [loadData]);
 
   // Filter products by selected category
@@ -136,7 +111,6 @@ export default function AdminMenu() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -174,7 +148,6 @@ export default function AdminMenu() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

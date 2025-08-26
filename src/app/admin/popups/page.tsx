@@ -1,11 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
 
 interface Popup {
   id: string;
@@ -34,8 +30,6 @@ interface PopupFormData {
 }
 
 export default function AdminPopups() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
   const [popups, setPopups] = useState<Popup[]>([]);
@@ -76,7 +70,7 @@ export default function AdminPopups() {
         setPopups([]);
         return;
       } else {
-        showError('Failed to load restaurant data');
+        console.error('Failed to load restaurant data');
         setHasRestaurant(false);
         return;
       }
@@ -87,45 +81,19 @@ export default function AdminPopups() {
         const data = await popupsResponse.json();
         setPopups(data.popups || []);
       } else {
-        showError('Failed to load popups');
+        console.error('Failed to load popups');
       }
     } catch (error) {
       console.error('Error loading popups:', error);
-      showError('Error loading popups');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, []);
 
-  // Load user session and popups
+  // Load popups on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadPopups();
-      } else {
-        setHasRestaurant(false);
-        setIsLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadPopups();
-        } else {
-          setHasRestaurant(false);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    loadPopups();
   }, [loadPopups]);
 
   const resetForm = () => {
@@ -154,7 +122,7 @@ export default function AdminPopups() {
       // Get restaurant slug for upload path
       const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
       if (!restaurantResponse.ok) {
-        showError('Failed to get restaurant information');
+        console.error('Failed to get restaurant information');
         return '';
       }
       
@@ -169,16 +137,16 @@ export default function AdminPopups() {
       if (response.ok) {
         const result = await response.json();
         setImagePreview(result.url);
-        showSuccess('Image uploaded successfully');
+        console.log('Image uploaded successfully');
         return result.url;
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to upload image');
+        console.error(errorData.error || 'Failed to upload image');
         return '';
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      showError('Error uploading image');
+      console.error('Error uploading image');
       return '';
     } finally {
       setIsUploadingImage(false);
@@ -189,12 +157,12 @@ export default function AdminPopups() {
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      showError('Popup title is required');
+      console.error('Popup title is required');
       return;
     }
 
     if (!formData.message.trim()) {
-      showError('Popup message is required');
+      console.error('Popup message is required');
       return;
     }
 
@@ -203,7 +171,7 @@ export default function AdminPopups() {
       const startDate = new Date(formData.startAt);
       const endDate = new Date(formData.endAt);
       if (endDate <= startDate) {
-        showError('End date must be after start date');
+        console.error('End date must be after start date');
         return;
       }
     }
@@ -235,16 +203,15 @@ export default function AdminPopups() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess(data.message);
+        console.log(data.message);
         resetForm();
         loadPopups(); // Reload popups
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to save popup');
+        console.error(errorData.error || 'Failed to save popup');
       }
     } catch (error) {
       console.error('Error saving popup:', error);
-      showError('Error saving popup');
     } finally {
       setIsSubmitting(false);
     }
@@ -278,15 +245,14 @@ export default function AdminPopups() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess(data.message);
+        console.log(data.message);
         loadPopups(); // Reload popups
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to delete popup');
+        console.error(errorData.error || 'Failed to delete popup');
       }
     } catch (error) {
       console.error('Error deleting popup:', error);
-      showError('Error deleting popup');
     }
   };
 
@@ -300,15 +266,14 @@ export default function AdminPopups() {
       });
 
       if (response.ok) {
-        showSuccess(`Popup ${!popup.active ? 'activated' : 'deactivated'} successfully`);
+        console.log(`Popup ${!popup.active ? 'activated' : 'deactivated'} successfully`);
         loadPopups(); // Reload popups
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to update popup');
+        console.error(errorData.error || 'Failed to update popup');
       }
     } catch (error) {
       console.error('Error updating popup:', error);
-      showError('Error updating popup');
     }
   };
 
@@ -324,7 +289,6 @@ export default function AdminPopups() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -362,7 +326,6 @@ export default function AdminPopups() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

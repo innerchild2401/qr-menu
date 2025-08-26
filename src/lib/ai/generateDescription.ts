@@ -45,7 +45,6 @@ export async function generateDescription(productName: string): Promise<string> 
 
     // Detect language and create appropriate prompt
     const isRomanianText = isRomanian(productName);
-    const language = isRomanianText ? 'Romanian' : 'English';
     
     const prompt = isRomanianText 
       ? `Scrie o descriere scurtă și atractivă pentru "${productName}" într-un ton prietenos și natural, în limba română.`

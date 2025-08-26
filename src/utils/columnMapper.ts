@@ -162,7 +162,7 @@ export async function detectColumns(headers: string[]): Promise<ColumnMapping> {
   
   // Step 2: Use AI for unmatched fields
   const unmappedFields = Object.entries(synonymResult.mapping)
-    .filter(([_, index]) => index === null)
+    .filter(([, index]) => index === null)
     .map(([field]) => field);
   
   if (DEBUG_MODE) {
@@ -190,7 +190,6 @@ export async function detectColumns(headers: string[]): Promise<ColumnMapping> {
     
     // Merge AI results with synonym results
     const finalMapping = { ...synonymResult.mapping };
-    const aiMatchedCount = Object.values(aiMatches).filter(match => match !== null).length;
     
     headers.forEach((header, index) => {
       const aiMatch = aiMatches[header];
@@ -266,7 +265,7 @@ export async function detectColumnsWithDetails(headers: string[]): Promise<Colum
         }
         
         const missingFields = Object.entries(finalMapping)
-          .filter(([_, index]) => index === null)
+          .filter(([, index]) => index === null)
           .map(([field]) => field);
         
         return {
@@ -289,7 +288,7 @@ export async function detectColumnsWithDetails(headers: string[]): Promise<Colum
   }
   
   const missingFields = Object.entries(synonymResult.mapping)
-    .filter(([_, index]) => index === null)
+    .filter(([, index]) => index === null)
     .map(([field]) => field);
   
   return {

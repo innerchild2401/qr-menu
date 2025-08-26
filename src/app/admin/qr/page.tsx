@@ -1,10 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
 
 interface QRCodeInfo {
   qrCodeUrl?: string;
@@ -18,8 +15,6 @@ interface QRCodeInfo {
 }
 
 export default function AdminQR() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
   const [qrInfo, setQrInfo] = useState<QRCodeInfo | null>(null);
@@ -42,7 +37,7 @@ export default function AdminQR() {
         setQrInfo(null);
         return;
       } else {
-        showError('Failed to load restaurant data');
+        console.error('Failed to load restaurant data');
         setHasRestaurant(false);
         return;
       }
@@ -57,42 +52,16 @@ export default function AdminQR() {
       }
     } catch (error) {
       console.error('Error loading QR code info:', error);
-      showError('Failed to load QR code information');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, []);
 
-  // Load user session and QR code info
+  // Load QR code info on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadQRCodeInfo();
-      } else {
-        setHasRestaurant(false);
-        setIsLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadQRCodeInfo();
-        } else {
-          setHasRestaurant(false);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [loadQRCodeInfo]);
+    loadQRCodeInfo();
+  }, []);
 
   const generateQRCode = async () => {
     try {
@@ -115,10 +84,9 @@ export default function AdminQR() {
         hasQRCode: true
       } : null);
       
-      showSuccess(data.message || 'QR code generated successfully');
+      console.log(data.message || 'QR code generated successfully');
     } catch (error) {
       console.error('Error generating QR code:', error);
-      showError(error instanceof Error ? error.message : 'Failed to generate QR code');
     } finally {
       setIsGenerating(false);
     }
@@ -145,10 +113,9 @@ export default function AdminQR() {
         hasQRCode: true
       } : null);
       
-      showSuccess(data.message || 'QR code regenerated successfully');
+      console.log(data.message || 'QR code regenerated successfully');
     } catch (error) {
       console.error('Error regenerating QR code:', error);
-      showError(error instanceof Error ? error.message : 'Failed to regenerate QR code');
     } finally {
       setIsRegenerating(false);
     }
@@ -156,7 +123,7 @@ export default function AdminQR() {
 
   const downloadQRCode = () => {
     if (!qrInfo?.qrCodeUrl) {
-      showError('No QR code available to download');
+      console.error('No QR code available to download');
       return;
     }
 
@@ -172,10 +139,9 @@ export default function AdminQR() {
       link.click();
       document.body.removeChild(link);
 
-      showSuccess('QR code download started');
+      console.log('QR code download started');
     } catch (error) {
       console.error('Error downloading QR code:', error);
-      showError('Failed to download QR code');
     }
   };
 
@@ -184,10 +150,9 @@ export default function AdminQR() {
     
     try {
       await navigator.clipboard.writeText(qrInfo.menuUrl);
-      showSuccess('Menu URL copied to clipboard');
+      console.log('Menu URL copied to clipboard');
     } catch (error) {
       console.error('Error copying to clipboard:', error);
-      showError('Failed to copy URL to clipboard');
     }
   };
 
@@ -212,7 +177,6 @@ export default function AdminQR() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -250,7 +214,6 @@ export default function AdminQR() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

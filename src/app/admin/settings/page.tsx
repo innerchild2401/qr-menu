@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
-import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 
 interface Restaurant {
@@ -22,7 +19,6 @@ interface CreateRestaurantForm {
 }
 
 export default function AdminSettings() {
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // Form state
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -47,28 +43,9 @@ export default function AdminSettings() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Load user session and restaurant data
+  // Load restaurant data on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadRestaurantData();
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadRestaurantData();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    loadRestaurantData();
   }, []);
 
   const loadRestaurantData = async () => {
@@ -92,12 +69,11 @@ export default function AdminSettings() {
         setHasRestaurant(false);
         setRestaurant(null);
       } else {
-        showError('Failed to load restaurant data');
+        console.error('Failed to load restaurant data');
         setHasRestaurant(false);
       }
     } catch (error) {
       console.error('Error loading restaurant data:', error);
-      showError('Error loading restaurant data');
       setHasRestaurant(false);
     } finally {
       setIsLoading(false);
@@ -106,7 +82,7 @@ export default function AdminSettings() {
 
   const handleCreateRestaurant = async () => {
     if (!createForm.name.trim() || !createForm.address.trim()) {
-      showError('Restaurant name and address are required');
+      console.error('Restaurant name and address are required');
       return;
     }
 
@@ -129,18 +105,17 @@ export default function AdminSettings() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess('Restaurant created successfully!');
+        console.log('Restaurant created successfully!');
         setShowCreateForm(false);
         setCreateForm({ name: '', address: '' });
         // Reload restaurant data
         await loadRestaurantData();
       } else {
         const error = await response.json();
-        showError(error.error || 'Failed to create restaurant');
+        console.error(error.error || 'Failed to create restaurant');
       }
     } catch (error) {
       console.error('Error creating restaurant:', error);
-      showError('Error creating restaurant');
     } finally {
       setIsCreating(false);
     }
@@ -196,13 +171,13 @@ export default function AdminSettings() {
           });
         }
         
-        showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully`);
+        console.log(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully`);
       } else {
         const error = await response.json();
-        showError(error.error || `Failed to upload ${type}`);
+        console.error(error.error || `Failed to upload ${type}`);
       }
     } catch (error) {
-      showError(`Error uploading ${type}`);
+      console.error(`Error uploading ${type}`);
     } finally {
       setUploading(false);
     }
@@ -219,13 +194,13 @@ export default function AdminSettings() {
       });
       
       if (response.ok) {
-        showSuccess('Restaurant settings saved successfully');
+        console.log('Restaurant settings saved successfully');
       } else {
         const error = await response.json();
-        showError(error.error || 'Failed to save settings');
+        console.error(error.error || 'Failed to save settings');
       }
     } catch (error) {
-      showError('Error saving settings');
+      console.error('Error saving settings');
     } finally {
       setIsSaving(false);
     }
@@ -243,7 +218,7 @@ export default function AdminSettings() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
+
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -349,7 +324,6 @@ export default function AdminSettings() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
