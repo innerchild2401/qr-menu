@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import BulkUploadModal from '../../../components/admin/BulkUploadModal';
 import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
@@ -33,6 +34,9 @@ interface Category {
 }
 
 export default function AdminProducts() {
+  
+  // Get authenticated user
+  const { user, isLoading: authLoading } = useAuth();
   
   // State management
   const [products, setProducts] = useState<Product[]>([]);
@@ -133,7 +137,7 @@ export default function AdminProducts() {
     loadData();
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -221,7 +225,7 @@ export default function AdminProducts() {
         showError={(msg) => console.error(msg)}
         categories={categories}
         editingProduct={editingProduct}
-        user={null}
+        user={user}
       />
 
       {/* Products List */}
@@ -246,7 +250,7 @@ export default function AdminProducts() {
         onSuccess={handleBulkUploadSuccess}
         showSuccess={(msg) => console.log(msg)}
         showError={(msg) => console.error(msg)}
-        user={null}
+        user={user}
       />
     </div>
   );

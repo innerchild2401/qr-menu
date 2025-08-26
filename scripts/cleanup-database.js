@@ -71,7 +71,7 @@ async function cleanupDatabase() {
       console.log('✅ Restaurants deleted');
     }
 
-    // Delete users (this will also delete auth users)
+    // Delete users from public.users table
     const { error: usersError } = await supabase
       .from('users')
       .delete()
@@ -81,6 +81,28 @@ async function cleanupDatabase() {
       console.error('Error deleting users:', usersError);
     } else {
       console.log('✅ Users deleted');
+    }
+
+    // Delete auth users (this is the actual authentication users)
+    console.log('🗑️  Deleting auth users...');
+    const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
+    
+    if (authUsersError) {
+      console.error('Error listing auth users:', authUsersError);
+    } else {
+      console.log(`Found ${authUsers.users.length} auth users to delete`);
+      
+      // Delete each auth user
+      for (const user of authUsers.users) {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+        if (deleteError) {
+          console.error(`Error deleting auth user ${user.email}:`, deleteError);
+        } else {
+          console.log(`✅ Deleted auth user: ${user.email}`);
+        }
+      }
+      
+      console.log('✅ Auth users deleted');
     }
 
     // 2. Create demo restaurant (without owner_id to avoid user dependency)
