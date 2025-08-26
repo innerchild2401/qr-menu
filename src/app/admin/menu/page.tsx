@@ -14,6 +14,7 @@ import {
   Package,
   List
 } from 'lucide-react';
+import { layout, typography, spacing, gaps } from '@/lib/design-system';
 
 interface Category {
   id: string;
@@ -199,13 +200,12 @@ export default function AdminMenu() {
   // Show message if no restaurant exists
   if (hasRestaurant === false) {
     return (
-      <div>
-        
+      <div className={layout.container}>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className={`${typography.h2} mb-2`}>
             Menu Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={typography.bodySmall}>
             Manage your restaurant menu items and categories
           </p>
         </div>
@@ -217,10 +217,10 @@ export default function AdminMenu() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h2 className={`${typography.h4} mb-2`}>
               No Restaurant Found
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className={`${typography.bodySmall} mb-6`}>
               You need to create a restaurant first before you can manage your menu.
             </p>
             <button
@@ -236,19 +236,18 @@ export default function AdminMenu() {
   }
 
   return (
-    <div>
-      
+    <div className={layout.container}>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className={`${typography.h2} mb-2`}>
           Menu Management
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={typography.bodySmall}>
           Manage your restaurant menu items and categories
         </p>
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div className={`mb-6 flex flex-wrap ${gaps.sm}`}>
         <button
           onClick={() => window.location.href = '/admin/categories'}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
@@ -275,12 +274,12 @@ export default function AdminMenu() {
       </div>
 
       {/* Menu Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6">
+      <div className={`grid grid-cols-1 md:grid-cols-3 ${gaps.md} mb-8`}>
+        <Card className={spacing.md}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Categories</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{categories.length}</p>
+              <p className={typography.bodySmall}>Total Categories</p>
+              <p className="text-2xl font-bold text-foreground">{categories.length}</p>
             </div>
             <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
               <List className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -288,11 +287,11 @@ export default function AdminMenu() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className={spacing.md}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{products.length}</p>
+              <p className={typography.bodySmall}>Total Products</p>
+              <p className="text-2xl font-bold text-foreground">{products.length}</p>
             </div>
             <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
               <Package className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -300,10 +299,10 @@ export default function AdminMenu() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className={spacing.md}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Visible Products</p>
+              <p className={typography.bodySmall}>Visible Products</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {products.filter(p => p.available !== false).length}
               </p>
@@ -445,26 +444,26 @@ export default function AdminMenu() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-600">
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Category</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Price</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Visibility</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Actions</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Visibility</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700">
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                  <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="py-3 px-4 text-foreground font-medium">
                       {product.name}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                    <td className="py-3 px-4 text-muted-foreground">
                       {getCategoryName(product.category_id)}
                     </td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                    <td className="py-3 px-4 text-foreground font-medium">
                       ${product.price.toFixed(2)}
                     </td>
                     <td className="py-3 px-4">
@@ -474,7 +473,7 @@ export default function AdminMenu() {
                           onCheckedChange={() => toggleProductVisibility(product.id, product.available !== false)}
                           disabled={isUpdatingVisibility === product.id}
                         />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="text-sm text-muted-foreground">
                           {product.available !== false ? 'Visible' : 'Hidden'}
                         </span>
                       </div>
@@ -483,13 +482,13 @@ export default function AdminMenu() {
                       <div className="flex space-x-2">
                         <button 
                           onClick={() => window.location.href = `/admin/products?edit=${product.id}`}
-                          className="text-blue-600 hover:text-blue-700 text-sm"
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                         >
                           Edit
                         </button>
                         <button 
                           onClick={() => window.location.href = `/admin/products`}
-                          className="text-red-600 hover:text-red-700 text-sm"
+                          className="text-red-600 hover:text-red-700 text-sm font-medium"
                         >
                           Delete
                         </button>

@@ -15,6 +15,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import SignUpModal from "@/components/SignUpModal";
+import { layout, typography, spacing, gaps } from "@/lib/design-system";
 
 export default function Home() {
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -24,7 +25,7 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         {/* Navigation */}
         <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={layout.container}>
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -49,14 +50,14 @@ export default function Home() {
 
         {/* Hero Section */}
         <section className="relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+          <div className={`${layout.container} pt-20 pb-16`}>
             <div className="text-center">
               <Badge variant="secondary" className="mb-6">
                 <Sparkles className="w-3 h-3 mr-1" />
                 AI-Powered Menu Management
               </Badge>
               
-              <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6">
+              <h1 className={`${typography.h1} mb-6`}>
                 Transform Your
                 <span className="text-primary block">Restaurant Menu</span>
               </h1>
@@ -66,7 +67,7 @@ export default function Home() {
                 and seamless management. Elevate your dining experience with SmartMenu.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+              <div className={`flex flex-col sm:flex-row ${gaps.sm} justify-center items-center mb-12`}>
                 <Button size="lg" onClick={() => setShowSignUpModal(true)} className="text-lg px-8 py-6">
                   Get Started Free
                   <ArrowRight className="ml-2 w-5 h-5" />
@@ -94,10 +95,10 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="features" className={`${layout.section} bg-white`}>
+          <div className={layout.container}>
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-foreground mb-4">
+              <h2 className={`${typography.h2} mb-4`}>
                 Everything You Need to Succeed
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -105,8 +106,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <div className={`grid grid-cols-1 md:grid-cols-3 ${gaps.lg}`}>
+              <Card className={`${layout.card} ${layout.cardHover}`}>
                 <CardHeader className="text-center">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <QrCode className="w-6 h-6 text-primary" />
@@ -134,7 +135,7 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className={`${layout.card} ${layout.cardHover}`}>
                 <CardHeader className="text-center">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Brain className="w-6 h-6 text-green-600" />
@@ -162,7 +163,7 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className={`${layout.card} ${layout.cardHover}`}>
                 <CardHeader className="text-center">
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Settings className="w-6 h-6 text-purple-600" />
@@ -194,9 +195,9 @@ export default function Home() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-20 bg-gradient-to-r from-primary to-blue-600">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        <section className={`${layout.section} bg-gradient-to-r from-primary to-blue-600`}>
+          <div className={layout.container}>
+            <div className={`grid grid-cols-1 md:grid-cols-3 ${gaps.lg} text-center`}>
               <div className="text-white">
                 <div className="text-4xl font-bold mb-2">500+</div>
                 <div className="text-blue-100">Restaurants Trust Us</div>

@@ -18,6 +18,7 @@ import {
   X,
   Check
 } from 'lucide-react';
+import { layout, typography, spacing, gaps } from '@/lib/design-system';
 
 interface MenuPageProps {
   params: Promise<{
@@ -294,7 +295,7 @@ export default function MenuPage({ params }: MenuPageProps) {
 
         {/* Restaurant Info */}
         <div className="relative bg-white border-b">
-          <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className={`${layout.containerSmall} py-6`}>
             <div className="flex items-start space-x-4">
               {restaurant.logo_url && (
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
@@ -308,7 +309,7 @@ export default function MenuPage({ params }: MenuPageProps) {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                <h1 className={`${typography.h3} mb-2`}>
                   {restaurant.name}
                 </h1>
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
@@ -340,7 +341,7 @@ export default function MenuPage({ params }: MenuPageProps) {
 
       {/* Sticky Category Navigation */}
       <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className={`${layout.containerSmall} py-4`}>
           <div className="flex items-center space-x-2 category-scroll pb-2">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
@@ -366,17 +367,17 @@ export default function MenuPage({ params }: MenuPageProps) {
       </div>
 
       {/* Menu Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className={`${layout.containerSmall} py-6`}>
         {selectedCategory === 'all' ? (
           <div className="space-y-6">
             {categoriesWithProducts.map((category) => (
               <div key={category.id}>
                 <div className="mb-4">
-                  <h2 className="text-xl font-semibold text-foreground mb-2">
+                  <h2 className={`${typography.h4} mb-2`}>
                     {category.name}
                   </h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.sm}`}>
                   {productsByCategory[category.id]?.map((product) => (
                     <ProductCard 
                       key={product.id} 
@@ -393,10 +394,10 @@ export default function MenuPage({ params }: MenuPageProps) {
             {/* Uncategorized products */}
             {productsByCategory['uncategorized'] && (
               <div>
-                <h2 className="text-xl font-semibold text-foreground mb-4">
+                <h2 className={`${typography.h4} mb-4`}>
                   Other Items
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.sm}`}>
                   {productsByCategory['uncategorized'].map((product) => (
                     <ProductCard 
                       key={product.id} 
@@ -412,7 +413,7 @@ export default function MenuPage({ params }: MenuPageProps) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.sm}`}>
             {filteredProducts.map((product) => (
               <ProductCard 
                 key={product.id} 

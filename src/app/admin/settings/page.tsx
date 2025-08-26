@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
+import { layout, typography, spacing, gaps } from '@/lib/design-system';
 
 interface Restaurant {
   id: string;
@@ -217,14 +218,12 @@ export default function AdminSettings() {
   // Show create restaurant form if no restaurant exists
   if (hasRestaurant === false) {
     return (
-      <div>
-
-        
+      <div className={layout.container}>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className={`${typography.h2} mb-2`}>
             Restaurant Settings
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={typography.bodySmall}>
             Create your first restaurant to get started
           </p>
         </div>
@@ -237,10 +236,10 @@ export default function AdminSettings() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h2 className={`${typography.h4} mb-2`}>
                 No Restaurant Found
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className={`${typography.bodySmall} mb-6`}>
                 You don&apos;t have a restaurant set up yet. Create your first restaurant to get started.
               </p>
               <button
@@ -253,7 +252,7 @@ export default function AdminSettings() {
           </div>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            <h2 className={`${typography.h4} mb-4`}>
               Create Your Restaurant
             </h2>
             
