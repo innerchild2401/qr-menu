@@ -183,7 +183,7 @@ export default function ProductForm({
         description: formData.description.trim(),
         price: parseFloat(formData.price),
         category_id: formData.category_id || null,
-        image: imagePreview || null,
+        image_url: imagePreview || null,
         nutrition: formData.nutrition.calories || formData.nutrition.protein || formData.nutrition.carbs || formData.nutrition.fat ? {
           calories: formData.nutrition.calories ? parseInt(formData.nutrition.calories) : null,
           protein: formData.nutrition.protein || null,

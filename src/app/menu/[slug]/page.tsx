@@ -249,7 +249,7 @@ export default function MenuPage({ params }: MenuPageProps) {
       
       {/* Restaurant Header */}
       <div className="relative">
-        {restaurant.cover_url && (
+        {restaurant.cover_url ? (
           <div className="h-48 md:h-64 relative overflow-hidden">
             <Image
               src={restaurant.cover_url}
@@ -260,10 +260,14 @@ export default function MenuPage({ params }: MenuPageProps) {
             />
             <div className="absolute inset-0 bg-black/20" />
           </div>
+        ) : (
+          <div className="h-32 md:h-40 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+            <div className="absolute inset-0 bg-black/10" />
+          </div>
         )}
         
-        {/* Home button - refreshes current page */}
-        <div className="absolute top-4 left-4 z-10">
+        {/* Action Buttons - positioned to avoid overlap with restaurant info */}
+        <div className="absolute top-4 left-4 right-4 z-10 flex justify-between">
           <Button 
             variant="secondary" 
             size="sm" 
@@ -273,10 +277,7 @@ export default function MenuPage({ params }: MenuPageProps) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Home
           </Button>
-        </div>
 
-        {/* My Order button */}
-        <div className="absolute top-4 right-4 z-10">
           <Button 
             variant="secondary" 
             size="sm" 
@@ -293,11 +294,11 @@ export default function MenuPage({ params }: MenuPageProps) {
           </Button>
         </div>
 
-        {/* Restaurant Info */}
+        {/* Restaurant Info - with proper spacing for mobile */}
         <div className="relative bg-white border-b">
           <div className={`${layout.containerSmall} py-6`}>
             <div className="flex items-start space-x-4">
-              {restaurant.logo_url && (
+              {restaurant.logo_url ? (
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
                   <Image
                     src={restaurant.logo_url}
@@ -307,22 +308,30 @@ export default function MenuPage({ params }: MenuPageProps) {
                     className="w-full h-full object-cover"
                   />
                 </div>
+              ) : (
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 border-4 border-white shadow-lg flex-shrink-0 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg md:text-xl">
+                    {restaurant.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <h1 className={`${typography.h3} mb-2`}>
                   {restaurant.name}
                 </h1>
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-sm text-muted-foreground mb-3">
+                  {restaurant.address && (
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                      <span className="truncate">{restaurant.address}</span>
+                    </div>
+                  )}
                   <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {restaurant.address}
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
+                    <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
                     Open Now
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {/* TODO: Show real Google ratings when connected */}
                   <Badge variant="secondary">
                     <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />

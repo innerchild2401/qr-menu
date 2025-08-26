@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useToast } from '../../../hooks/useToast';
+import { ToastContainer } from '../../../components/Toast';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
@@ -22,6 +24,9 @@ interface CreateRestaurantForm {
 }
 
 export default function AdminSettings() {
+  
+  // Toast notifications
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // Form state
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -168,10 +173,29 @@ export default function AdminSettings() {
         
         // Update restaurant state
         if (restaurant) {
-          setRestaurant({
+          const updatedRestaurant = {
             ...restaurant,
             [type === 'logo' ? 'logo_url' : 'cover_url']: result.url
-          });
+          };
+          setRestaurant(updatedRestaurant);
+          
+          // Automatically save the updated restaurant data to database
+          try {
+            const saveResponse = await authenticatedApiCallWithBody('/api/admin/restaurant', updatedRestaurant, {
+              method: 'PUT',
+            });
+            
+            if (saveResponse.ok) {
+              console.log(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded and saved successfully`);
+              showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded and saved successfully`);
+            } else {
+              console.error(`Failed to save ${type} URL to database`);
+              showError(`Failed to save ${type} URL to database`);
+            }
+          } catch (saveError) {
+            console.error(`Error saving ${type} URL:`, saveError);
+            showError(`Error saving ${type} URL`);
+          }
         }
         
         console.log(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully`);
@@ -198,12 +222,15 @@ export default function AdminSettings() {
       
       if (response.ok) {
         console.log('Restaurant settings saved successfully');
+        showSuccess('Restaurant settings saved successfully');
       } else {
         const error = await response.json();
         console.error(error.error || 'Failed to save settings');
+        showError(error.error || 'Failed to save settings');
       }
     } catch (error) {
       console.error('Error saving settings');
+      showError('Error saving settings');
     } finally {
       setIsSaving(false);
     }
@@ -326,6 +353,18 @@ export default function AdminSettings() {
 
   return (
     <div>
+      <ToastContainer 
+        toasts={toasts.map(toast => ({
+          id: toast.id,
+          type: toast.type,
+          title: toast.type === 'success' ? 'Success' : toast.type === 'error' ? 'Error' : 'Info',
+          message: toast.message,
+          duration: toast.duration,
+          onClose: removeToast
+        }))} 
+        onClose={removeToast} 
+      />
+      
       {/* Page Header */}
       <div className="mb-6">
         <h1 className={`${typography.h2} mb-2`}>
