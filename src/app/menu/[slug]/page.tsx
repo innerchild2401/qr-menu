@@ -38,6 +38,8 @@ interface Restaurant {
 interface Category {
   id: string;
   name: string;
+  sort_order?: number;
+  created_at?: string;
 }
 
 interface Product {
@@ -53,6 +55,9 @@ interface Product {
     fat?: string;
   };
   category_id?: string;
+  available?: boolean;
+  sort_order?: number;
+  created_at?: string;
 }
 
 interface MenuData {
