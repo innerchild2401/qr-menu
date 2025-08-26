@@ -14,8 +14,7 @@ import {
   Package,
   List
 } from 'lucide-react';
-import { layout, typography, spacing, gaps } from '@/lib/design-system';
-import AdminLayout from '@/components/AdminLayout';
+import { typography, spacing, gaps } from '@/lib/design-system';
 
 interface Category {
   id: string;
@@ -201,37 +200,38 @@ export default function AdminMenu() {
   // Show message if no restaurant exists
   if (hasRestaurant === false) {
     return (
-      <AdminLayout 
-        title="Menu Management"
-        description="Manage your restaurant menu items and categories"
-      >
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <div className="text-muted-foreground mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <h2 className={`${typography.h4} mb-2`}>
-              No Restaurant Found
-            </h2>
-            <p className={`${typography.bodySmall} mb-6`}>
-              You need to create a restaurant first before you can manage your menu.
-            </p>
-            <Button onClick={() => window.location.href = '/admin/settings'}>
-              Go to Settings
-            </Button>
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto">
+          <div className="text-muted-foreground mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
+          <h2 className={`${typography.h4} mb-2`}>
+            No Restaurant Found
+          </h2>
+          <p className={`${typography.bodySmall} mb-6`}>
+            You need to create a restaurant first before you can manage your menu.
+          </p>
+          <Button onClick={() => window.location.href = '/admin/settings'}>
+            Go to Settings
+          </Button>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout 
-      title="Menu Management"
-      description="Manage your restaurant menu items and categories"
-    >
+    <div>
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className={`${typography.h2} mb-2`}>
+          Menu Management
+        </h1>
+        <p className={typography.bodySmall}>
+          Manage your restaurant menu items and categories
+        </p>
+      </div>
 
       {/* Quick Actions */}
       <div className={`mb-6 flex flex-wrap ${gaps.sm}`}>
@@ -512,6 +512,6 @@ export default function AdminMenu() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 }

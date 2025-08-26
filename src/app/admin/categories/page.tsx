@@ -2,6 +2,9 @@
 
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
+import { typography, spacing } from '@/lib/design-system';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Category {
   id: string;
@@ -154,33 +157,30 @@ export default function AdminCategories() {
       <div>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className={`${typography.h2} mb-2`}>
             Category Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className={typography.bodySmall}>
             Manage your menu categories and their organization
           </p>
         </div>
 
         <div className="text-center py-12">
           <div className="max-w-md mx-auto">
-            <div className="text-gray-400 mb-4">
+            <div className="text-muted-foreground mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h2 className={`${typography.h4} mb-2`}>
               No Restaurant Found
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className={`${typography.bodySmall} mb-6`}>
               You need to create a restaurant first before you can manage categories.
             </p>
-            <button
-              onClick={() => window.location.href = '/admin/settings'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
+            <Button onClick={() => window.location.href = '/admin/settings'}>
               Go to Settings
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -191,54 +191,51 @@ export default function AdminCategories() {
     <div>
       
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className={`${typography.h2} mb-2`}>
           Category Management
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={typography.bodySmall}>
           Manage your menu categories and their organization
         </p>
       </div>
 
       {/* Add Category Button */}
       <div className="mb-6">
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
-        >
+        <Button onClick={() => setShowAddForm(true)} className="flex items-center">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add New Category
-        </button>
+        </Button>
       </div>
 
       {/* Add/Edit Form */}
       {showAddForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <Card className={`${spacing.md} mb-6`}>
+          <h2 className={`${typography.h4} mb-4`}>
             {editingCategory ? 'Edit Category' : 'Add New Category'}
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Category Name *
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Enter category name"
                 required
               />
             </div>
             
             <div className="flex space-x-3 pt-4">
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
+                className="flex items-center"
               >
                 {isSubmitting ? (
                   <>
@@ -248,73 +245,70 @@ export default function AdminCategories() {
                 ) : (
                   editingCategory ? 'Update Category' : 'Create Category'
                 )}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={resetForm}
                 disabled={isSubmitting}
-                className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {/* Categories List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <Card className={spacing.md}>
+        <h2 className={`${typography.h4} mb-4`}>
           Categories ({categories.length})
         </h2>
         
         {categories.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-gray-400 mb-4">
+            <div className="text-muted-foreground mb-4">
               <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               No categories found. Create your first category to get started.
             </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
+            <Button onClick={() => setShowAddForm(true)}>
               Add First Category
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Created</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">Actions</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-foreground">Created</th>
+                  <th className="text-right py-3 px-4 font-medium text-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.map((category) => (
-                  <tr key={category.id} className="border-b border-gray-100 dark:border-gray-700">
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                  <tr key={category.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="py-3 px-4 text-foreground font-medium">
                       {category.name}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                    <td className="py-3 px-4 text-muted-foreground">
                       {new Date(category.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(category)}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          className="text-primary hover:text-primary/80 text-sm font-medium"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(category)}
-                          className="text-red-600 hover:text-red-700 text-sm font-medium"
+                          className="text-destructive hover:text-destructive/80 text-sm font-medium"
                         >
                           Delete
                         </button>
@@ -326,7 +320,7 @@ export default function AdminCategories() {
             </table>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
-import { layout, typography, spacing, gaps } from '@/lib/design-system';
-import AdminLayout from '@/components/AdminLayout';
+import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -221,10 +220,16 @@ export default function AdminSettings() {
   // Show create restaurant form if no restaurant exists
   if (hasRestaurant === false) {
     return (
-      <AdminLayout 
-        title="Restaurant Settings"
-        description="Create your first restaurant to get started"
-      >
+      <div>
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className={`${typography.h2} mb-2`}>
+            Restaurant Settings
+          </h1>
+          <p className={typography.bodySmall}>
+            Create your first restaurant to get started
+          </p>
+        </div>
 
         {!showCreateForm ? (
           <div className="text-center py-12">
@@ -307,25 +312,29 @@ export default function AdminSettings() {
             </div>
           </Card>
         )}
-      </AdminLayout>
+      </div>
     );
   }
 
   if (!restaurant) {
     return (
-      <AdminLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Failed to load restaurant data</p>
-        </div>
-      </AdminLayout>
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Failed to load restaurant data</p>
+      </div>
     );
   }
 
   return (
-    <AdminLayout 
-      title="Restaurant Settings"
-      description="Manage your restaurant information and settings"
-    >
+    <div>
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className={`${typography.h2} mb-2`}>
+          Restaurant Settings
+        </h1>
+        <p className={typography.bodySmall}>
+          Manage your restaurant information and settings
+        </p>
+      </div>
 
       {/* Restaurant Info Card */}
       <Card className={`${spacing.md} mb-6`}>
@@ -567,6 +576,6 @@ export default function AdminSettings() {
           </Button>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
