@@ -4,32 +4,10 @@ import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-he
 
 export async function PUT(request: NextRequest) {
   try {
-    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    const { user, restaurant } = await validateUserAndGetRestaurant(request);
     
-    if (error) {
-      if (error === 'Missing user ID in headers') {
-        return NextResponse.json(
-          { error: 'Unauthorized - Missing user ID' },
-          { status: 401 }
-        );
-      }
-      if (error === 'No restaurant found for user') {
-        return NextResponse.json(
-          { error: 'No restaurant found for current user' },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'Failed to fetch restaurant data' },
-        { status: 500 }
-      );
-    }
-
     if (!user || !restaurant) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -48,18 +26,24 @@ export async function PUT(request: NextRequest) {
         .eq('restaurant_id', restaurant.id);
 
       if (updateError) {
-        console.error('Error updating category sort order:', updateError);
-        return NextResponse.json({ error: 'Failed to update category order' }, { status: 500 });
+        console.error('Error updating category sort_order:', updateError);
+        return NextResponse.json({ 
+          error: 'Failed to update category order',
+          details: updateError.message 
+        }, { status: 500 });
       }
     }
 
     return NextResponse.json({ 
-      message: 'Categories reordered successfully',
+      message: 'Categories reordered successfully', 
       categories 
     });
 
   } catch (error) {
     console.error('Error reordering categories:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

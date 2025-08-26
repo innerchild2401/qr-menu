@@ -224,6 +224,11 @@ export default function MenuPage({ params }: MenuPageProps) {
     return acc;
   }, {} as Record<string, Product[]>);
 
+  // Filter categories to only show those with products
+  const categoriesWithProducts = categories.filter(category => 
+    productsByCategory[category.id] && productsByCategory[category.id].length > 0
+  );
+
   // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all' 
     ? products 
@@ -331,22 +336,22 @@ export default function MenuPage({ params }: MenuPageProps) {
       {/* Sticky Category Navigation */}
       <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center space-x-2 category-scroll pb-2">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedCategory('all')}
-              className="flex-shrink-0"
+              className="flex-shrink-0 whitespace-nowrap"
             >
               All Items
             </Button>
-            {categories.map((category) => (
+            {categoriesWithProducts.map((category) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className="flex-shrink-0"
+                className="flex-shrink-0 whitespace-nowrap"
               >
                 {category.name}
               </Button>
@@ -359,7 +364,7 @@ export default function MenuPage({ params }: MenuPageProps) {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {selectedCategory === 'all' ? (
           <div className="space-y-6">
-            {categories.map((category) => (
+            {categoriesWithProducts.map((category) => (
               <div key={category.id}>
                 <div className="mb-4">
                   <h2 className="text-xl font-semibold text-foreground mb-2">

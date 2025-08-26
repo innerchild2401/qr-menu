@@ -61,7 +61,8 @@ export async function GET(
       supabase
         .from('categories')
         .select('*')
-        .eq('restaurant_id', restaurant.id),
+        .eq('restaurant_id', restaurant.id)
+        .order('sort_order', { ascending: true }),
       supabase
         .from('products')
         .select('*')
