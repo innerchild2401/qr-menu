@@ -110,7 +110,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -120,7 +120,7 @@ export default function AdminLayout({
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:relative lg:inset-auto ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
@@ -186,7 +186,7 @@ export default function AdminLayout({
       </div>
 
       {/* Main content */}
-      <div className="lg:ml-64">
+      <div className="flex-1 flex flex-col">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white border-b lg:hidden">
           <div className="flex items-center justify-between p-4">
@@ -208,7 +208,7 @@ export default function AdminLayout({
         </div>
 
         {/* Page content */}
-        <main className="min-h-screen bg-gray-50">
+        <main className="flex-1 bg-gray-50">
           <div className="p-6">
             {children}
           </div>
