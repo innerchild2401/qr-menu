@@ -209,7 +209,7 @@ export default function AdminLayout({
 
         {/* Page content */}
         <main className="min-h-screen bg-gray-50">
-          <div className="p-6 pt-8">
+          <div className="p-6">
             {children}
           </div>
         </main>
