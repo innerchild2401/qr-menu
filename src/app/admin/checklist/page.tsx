@@ -3,8 +3,7 @@
 import { supabase } from '@/lib/auth-supabase';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '../../../hooks/useToast';
-import { ToastContainer } from '../../../components/Toast';
+
 
 interface ChecklistItem {
   id: string;
@@ -17,8 +16,6 @@ interface ChecklistItem {
 }
 
 export default function AdminChecklist() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State management
   const [isRunningAll, setIsRunningAll] = useState(false);
@@ -161,39 +158,12 @@ export default function AdminChecklist() {
     ]);
   }, []);
 
-  // Load user session and initialize checklist
+  // Initialize checklist on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        setHasRestaurant(true);
-        initializeChecklist();
-      } else {
-        setHasRestaurant(false);
-      }
-      setIsLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          setHasRestaurant(true);
-          if (checklist.length === 0) {
-            initializeChecklist();
-          }
-        } else {
-          setHasRestaurant(false);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [initializeChecklist, checklist.length]);
+    setHasRestaurant(true);
+    initializeChecklist();
+    setIsLoading(false);
+  }, [initializeChecklist]);
 
   const runSingleCheck = async (itemId: string) => {
     const item = checklist.find(item => item.id === itemId);
@@ -265,7 +235,6 @@ export default function AdminChecklist() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -303,7 +272,6 @@ export default function AdminChecklist() {
 
   return (
     <div>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

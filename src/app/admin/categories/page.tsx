@@ -27,7 +27,7 @@ export default function AdminCategories() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '' });
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
 
   const loadCategories = useCallback(async () => {
@@ -68,26 +68,7 @@ export default function AdminCategories() {
 
   // Load categories on mount
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        loadCategories();
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadCategories();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    loadCategories();
   }, [loadCategories]);
 
   const resetForm = () => {
