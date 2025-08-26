@@ -7,6 +7,7 @@ import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-he
 import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import PDFMenuGenerator from '../../../components/admin/PDFMenuGenerator';
 
 interface Restaurant {
   id: string;
@@ -46,6 +47,9 @@ export default function AdminSettings() {
     name: '',
     address: ''
   });
+  
+  // PDF Menu Generator state
+  const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -591,6 +595,31 @@ export default function AdminSettings() {
             />
           </div>
         </div>
+      </Card>
+
+      {/* PDF Menu Generator */}
+      <Card className={spacing.md}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className={`${typography.h4} mb-2`}>Menu Tools</h3>
+            <p className={typography.bodySmall}>
+              Generate beautiful PDF menus for your restaurant
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowPDFGenerator(!showPDFGenerator)}
+            variant="outline"
+          >
+            {showPDFGenerator ? 'Hide' : 'Show'} PDF Generator
+          </Button>
+        </div>
+        
+        {showPDFGenerator && (
+          <PDFMenuGenerator 
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
       </Card>
 
       {/* Save Button */}
