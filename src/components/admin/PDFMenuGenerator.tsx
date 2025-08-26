@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MenuPDFGenerator, RestaurantInfo } from '../../lib/pdf/menuGenerator';
+import { ProfessionalMenuPDFGenerator, RestaurantInfo, MenuTheme, MENU_THEMES, selectThemeForRestaurant } from '../../lib/pdf/menuGenerator';
 import { ClassifiedItem, organizeMenuItems, getCategoryDisplayName, getCategoryOrder } from '../../lib/ai/menuClassifier';
 import { authenticatedApiCall } from '../../../lib/api-helpers';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { typography, spacing } from '@/lib/design-system';
 
 interface PDFMenuGeneratorProps {
@@ -22,6 +23,7 @@ interface MenuItem {
   price: number;
   category_id?: string;
   nutrition?: Record<string, unknown>;
+  image_url?: string;
 }
 
 interface Restaurant {
@@ -31,6 +33,8 @@ interface Restaurant {
   phone?: string;
   website?: string;
   logo_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
 }
 
 export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGeneratorProps) {
@@ -44,7 +48,12 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
   // PDF options
   const [includeDescriptions, setIncludeDescriptions] = useState(true);
   const [includeNutrition, setIncludeNutrition] = useState(false);
+  const [includeImages, setIncludeImages] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
+  
+  // Theme selection
+  const [selectedTheme, setSelectedTheme] = useState<MenuTheme | null>(null);
+  const [aiSuggestedThemes, setAiSuggestedThemes] = useState<MenuTheme[]>([]);
   
   // Category reordering
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
@@ -62,6 +71,24 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
       if (restaurantResponse.ok) {
         const restaurantData = await restaurantResponse.json();
         setRestaurant(restaurantData.restaurant);
+        
+        // Generate AI-suggested themes
+        const restaurantInfo: RestaurantInfo = {
+          name: restaurantData.restaurant.name,
+          address: restaurantData.restaurant.address,
+          phone: restaurantData.restaurant.phone,
+          website: restaurantData.restaurant.website,
+          logo_url: restaurantData.restaurant.logo_url,
+          primary_color: restaurantData.restaurant.primary_color,
+          secondary_color: restaurantData.restaurant.secondary_color
+        };
+        
+        const suggestedTheme = selectThemeForRestaurant(restaurantInfo);
+        setSelectedTheme(suggestedTheme);
+        
+        // Generate 3-4 theme suggestions
+        const suggestions = generateThemeSuggestions(restaurantInfo);
+        setAiSuggestedThemes(suggestions);
       }
       
       // Load menu items
@@ -83,29 +110,71 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
     }
   };
 
+  const generateThemeSuggestions = (restaurant: RestaurantInfo): MenuTheme[] => {
+    const suggestions = [];
+    
+    // Always include the AI-selected theme
+    const aiTheme = selectThemeForRestaurant(restaurant);
+    suggestions.push(aiTheme);
+    
+    // Add 2-3 additional themes based on restaurant characteristics
+    const name = restaurant.name.toLowerCase();
+    const isFineDining = name.includes('restaurant') || name.includes('bistro');
+    const isCasual = name.includes('cafe') || name.includes('bar');
+    const isItalian = name.includes('italian') || name.includes('pizza');
+    const isAsian = name.includes('asian') || name.includes('chinese');
+    
+    if (isFineDining && aiTheme.id !== 'luxury') {
+      suggestions.push(MENU_THEMES.find(t => t.id === 'luxury')!);
+    }
+    if (isItalian && aiTheme.id !== 'rustic') {
+      suggestions.push(MENU_THEMES.find(t => t.id === 'rustic')!);
+    }
+    if (isAsian && aiTheme.id !== 'minimal') {
+      suggestions.push(MENU_THEMES.find(t => t.id === 'minimal')!);
+    }
+    if (isCasual && aiTheme.id !== 'modern') {
+      suggestions.push(MENU_THEMES.find(t => t.id === 'modern')!);
+    }
+    
+    // Fill remaining slots with other themes
+    const usedIds = suggestions.map(t => t.id);
+    const remainingThemes = MENU_THEMES.filter(t => !usedIds.includes(t.id));
+    
+    while (suggestions.length < 4 && remainingThemes.length > 0) {
+      suggestions.push(remainingThemes.shift()!);
+    }
+    
+    return suggestions;
+  };
+
   const generatePreview = async () => {
-    if (!restaurant || menuItems.length === 0) {
-      showError('No restaurant or menu items available');
+    if (!restaurant || menuItems.length === 0 || !selectedTheme) {
+      showError('No restaurant, menu items, or theme available');
       return;
     }
 
     try {
       setIsGenerating(true);
       
-      const generator = new MenuPDFGenerator();
+      const generator = new ProfessionalMenuPDFGenerator(selectedTheme);
       const restaurantInfo: RestaurantInfo = {
         name: restaurant.name,
         address: restaurant.address,
         phone: restaurant.phone,
         website: restaurant.website,
-        logo_url: restaurant.logo_url
+        logo_url: restaurant.logo_url,
+        primary_color: restaurant.primary_color,
+        secondary_color: restaurant.secondary_color
       };
       
       const options = {
         restaurant: restaurantInfo,
         items: menuItems as ClassifiedItem[],
+        theme: selectedTheme,
         includeDescriptions,
         includeNutrition,
+        includeImages,
         customOrder: customOrder.length > 0 ? customOrder : undefined
       };
       
@@ -113,7 +182,7 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
       const dataUrl = generator.getDataURL();
       setPreviewUrl(dataUrl);
       
-      showSuccess('Menu preview generated successfully');
+      showSuccess('Professional menu preview generated successfully');
     } catch (error) {
       console.error('Error generating preview:', error);
       showError('Failed to generate menu preview');
@@ -123,28 +192,32 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
   };
 
   const downloadPDF = async () => {
-    if (!restaurant || menuItems.length === 0) {
-      showError('No restaurant or menu items available');
+    if (!restaurant || menuItems.length === 0 || !selectedTheme) {
+      showError('No restaurant, menu items, or theme available');
       return;
     }
 
     try {
       setIsGenerating(true);
       
-      const generator = new MenuPDFGenerator();
+      const generator = new ProfessionalMenuPDFGenerator(selectedTheme);
       const restaurantInfo: RestaurantInfo = {
         name: restaurant.name,
         address: restaurant.address,
         phone: restaurant.phone,
         website: restaurant.website,
-        logo_url: restaurant.logo_url
+        logo_url: restaurant.logo_url,
+        primary_color: restaurant.primary_color,
+        secondary_color: restaurant.secondary_color
       };
       
       const options = {
         restaurant: restaurantInfo,
         items: menuItems as ClassifiedItem[],
+        theme: selectedTheme,
         includeDescriptions,
         includeNutrition,
+        includeImages,
         customOrder: customOrder.length > 0 ? customOrder : undefined
       };
       
@@ -152,7 +225,7 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
       const filename = `${restaurant.name.replace(/[^a-zA-Z0-9]/g, '_')}_menu_${new Date().toISOString().split('T')[0]}.pdf`;
       generator.download(filename);
       
-      showSuccess('PDF menu downloaded successfully');
+      showSuccess('Professional PDF menu downloaded successfully');
     } catch (error) {
       console.error('Error downloading PDF:', error);
       showError('Failed to download PDF menu');
@@ -181,11 +254,60 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className={`${typography.h3} mb-2`}>AI PDF Menu Generator</h2>
+        <h2 className={`${typography.h3} mb-2`}>Professional AI PDF Menu Generator</h2>
         <p className={typography.bodySmall}>
-          Generate beautiful, print-ready PDF menus for your restaurant using AI-powered categorization
+          Generate stunning, print-ready PDF menus with AI-powered themes and professional design
         </p>
       </div>
+
+      {/* AI Theme Selection */}
+      <Card className={spacing.md}>
+        <h3 className={`${typography.h4} mb-4`}>AI Theme Selection</h3>
+        <p className={`${typography.bodySmall} mb-4`}>
+          Choose from AI-suggested themes based on your restaurant's style and cuisine
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {aiSuggestedThemes.map((theme) => (
+            <div
+              key={theme.id}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedTheme?.id === theme.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedTheme(theme)}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">{getThemeIcon(theme.id)}</div>
+                <div className="font-medium text-sm">{theme.name}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {getThemeDescription(theme.id)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-4">
+          <Label className="text-sm font-medium">Or choose a custom theme:</Label>
+          <Select value={selectedTheme?.id} onValueChange={(value: string) => {
+            const theme = MENU_THEMES.find(t => t.id === value);
+            if (theme) setSelectedTheme(theme);
+          }}>
+            <SelectTrigger className="mt-2">
+              <SelectValue placeholder="Select theme" />
+            </SelectTrigger>
+            <SelectContent>
+              {MENU_THEMES.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {theme.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </Card>
 
       {/* Options Card */}
       <Card className={spacing.md}>
@@ -214,6 +336,17 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
                 onCheckedChange={setIncludeNutrition}
               />
             </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="images" className="text-sm font-medium">
+                Include Item Images
+              </Label>
+              <Switch
+                id="images"
+                checked={includeImages}
+                onCheckedChange={setIncludeImages}
+              />
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -230,6 +363,13 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
                 {Object.keys(organizedItems).length} categories detected
               </p>
             </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Selected Theme</Label>
+              <p className="text-sm text-gray-600 mt-1">
+                {selectedTheme?.name} - {getThemeDescription(selectedTheme?.id || '')}
+              </p>
+            </div>
           </div>
         </div>
       </Card>
@@ -238,7 +378,7 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
       <Card className={spacing.md}>
         <h3 className={`${typography.h4} mb-4`}>Category Order</h3>
         <p className={`${typography.bodySmall} mb-4`}>
-          Drag and drop categories to reorder them in your PDF menu
+          Reorder categories to customize your menu layout
         </p>
         
         <div className="space-y-2">
@@ -252,11 +392,14 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="text-sm font-medium">
-                    {getCategoryDisplayName(category)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {items.length} item{items.length !== 1 ? 's' : ''}
+                  <div className="text-lg">{getCategoryIcon(category)}</div>
+                  <div>
+                    <div className="text-sm font-medium">
+                      {getCategoryDisplayName(category)}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {items.length} item{items.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </div>
                 
@@ -288,12 +431,12 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
 
       {/* Actions */}
       <Card className={spacing.md}>
-        <h3 className={`${typography.h4} mb-4`}>Generate Menu</h3>
+        <h3 className={`${typography.h4} mb-4`}>Generate Professional Menu</h3>
         
         <div className="flex space-x-4">
           <Button
             onClick={generatePreview}
-            disabled={isGenerating || menuItems.length === 0}
+            disabled={isGenerating || menuItems.length === 0 || !selectedTheme}
             className="flex items-center"
           >
             {isGenerating ? (
@@ -308,7 +451,7 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
           
           <Button
             onClick={downloadPDF}
-            disabled={isGenerating || menuItems.length === 0}
+            disabled={isGenerating || menuItems.length === 0 || !selectedTheme}
             variant="outline"
             className="flex items-center"
           >
@@ -345,6 +488,7 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Object.entries(organizedItems).map(([category, items]) => (
             <div key={category} className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-2xl mb-2">{getCategoryIcon(category)}</div>
               <div className="text-lg font-semibold">{items.length}</div>
               <div className="text-sm text-gray-600">
                 {getCategoryDisplayName(category)}
@@ -355,4 +499,41 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
       </Card>
     </div>
   );
+}
+
+// Helper functions
+function getThemeIcon(themeId: string): string {
+  const icons = {
+    minimal: '⚪',
+    rustic: '🌿',
+    luxury: '👑',
+    modern: '⚡'
+  };
+  return icons[themeId as keyof typeof icons] || '📋';
+}
+
+function getThemeDescription(themeId: string): string {
+  const descriptions = {
+    minimal: 'Clean & Simple',
+    rustic: 'Warm & Organic',
+    luxury: 'Elegant & Premium',
+    modern: 'Contemporary & Bold'
+  };
+  return descriptions[themeId as keyof typeof descriptions] || 'Professional';
+}
+
+function getCategoryIcon(category: string): string {
+  const icons = {
+    starters: '🥗',
+    main_courses: '🍽️',
+    desserts: '🍰',
+    soft_drinks: '🥤',
+    hot_beverages: '☕',
+    cocktails: '🍸',
+    spirits: '🥃',
+    wines: '🍷',
+    beers: '🍺',
+    others: '📋'
+  };
+  return icons[category as keyof typeof icons] || '📋';
 }
