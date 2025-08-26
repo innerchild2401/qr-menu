@@ -37,7 +37,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .from('categories')
       .select('*')
       .eq('restaurant_id', restaurant.id)
-      .order('id', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (categoriesError) {
       console.error('Supabase error:', categoriesError);

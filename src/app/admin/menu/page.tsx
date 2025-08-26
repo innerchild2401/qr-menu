@@ -131,6 +131,8 @@ export default function AdminMenu() {
           id: cat.id,
           sort_order: cat.sort_order
         }))
+      }, {
+        method: 'PUT'
       });
 
       if (!response.ok) {
@@ -152,6 +154,8 @@ export default function AdminMenu() {
     try {
       const response = await authenticatedApiCallWithBody(`/api/admin/products/${productId}/visibility`, {
         available: !currentAvailable
+      }, {
+        method: 'PUT'
       });
 
       if (response.ok) {
