@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   QrCode,
   ShoppingCart,
-  X
+  X,
+  Check
 } from 'lucide-react';
 
 interface MenuPageProps {
@@ -38,7 +39,7 @@ interface Category {
   id: string;
   name: string;
   description: string;
-  order: number;
+  sort_order?: number;
 }
 
 interface Product {
@@ -53,7 +54,7 @@ interface Product {
     carbs?: string;
     fat?: string;
   };
-  categoryId?: string;
+  category_id?: string;
   available?: boolean;
 }
 
@@ -124,14 +125,17 @@ export default function MenuPage({ params }: MenuPageProps) {
   const [order, setOrder] = useState<OrderItem[]>([]);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
+  const [showAddedToast, setShowAddedToast] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMenuData = async () => {
       try {
         const { slug } = await params;
         const data = await getMenuData(slug);
+        console.log('Loaded menu data:', data); // Debug log
         setMenuData(data);
       } catch (err) {
+        console.error('Error loading menu data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load menu');
       } finally {
         setIsLoading(false);
@@ -171,6 +175,10 @@ export default function MenuPage({ params }: MenuPageProps) {
         return [...prevOrder, { product, quantity: 1 }];
       }
     });
+    
+    // Show toast notification
+    setShowAddedToast(product.id);
+    setTimeout(() => setShowAddedToast(null), 2000);
   };
 
   const removeFromOrder = (productId: string) => {
@@ -212,8 +220,6 @@ export default function MenuPage({ params }: MenuPageProps) {
     });
   };
 
-
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -246,7 +252,7 @@ export default function MenuPage({ params }: MenuPageProps) {
 
   // Group products by category
   const productsByCategory = products.reduce((acc, product) => {
-    const categoryId = product.categoryId || 'uncategorized';
+    const categoryId = product.category_id || 'uncategorized';
     if (!acc[categoryId]) {
       acc[categoryId] = [];
     }
@@ -257,7 +263,9 @@ export default function MenuPage({ params }: MenuPageProps) {
   // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all' 
     ? products 
-    : products.filter(product => product.categoryId === selectedCategory);
+    : products.filter(product => product.category_id === selectedCategory);
+
+  const totalItems = order.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -299,9 +307,9 @@ export default function MenuPage({ params }: MenuPageProps) {
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
             My Order
-            {order.length > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                {order.reduce((total, item) => total + item.quantity, 0)}
+            {totalItems > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
+                {totalItems}
               </Badge>
             )}
           </Button>
@@ -403,6 +411,7 @@ export default function MenuPage({ params }: MenuPageProps) {
                       onAddToOrder={addToOrder}
                       isExpanded={expandedDescriptions.has(product.id)}
                       onToggleDescription={() => toggleDescription(product.id)}
+                      showAddedToast={showAddedToast === product.id}
                     />
                   ))}
                 </div>
@@ -422,6 +431,7 @@ export default function MenuPage({ params }: MenuPageProps) {
                       onAddToOrder={addToOrder}
                       isExpanded={expandedDescriptions.has(product.id)}
                       onToggleDescription={() => toggleDescription(product.id)}
+                      showAddedToast={showAddedToast === product.id}
                     />
                   ))}
                 </div>
@@ -437,6 +447,7 @@ export default function MenuPage({ params }: MenuPageProps) {
                 onAddToOrder={addToOrder}
                 isExpanded={expandedDescriptions.has(product.id)}
                 onToggleDescription={() => toggleDescription(product.id)}
+                showAddedToast={showAddedToast === product.id}
               />
             ))}
           </div>
@@ -514,19 +525,29 @@ function ProductCard({
   product, 
   onAddToOrder, 
   isExpanded, 
-  onToggleDescription 
+  onToggleDescription,
+  showAddedToast
 }: { 
   product: Product; 
   onAddToOrder: (product: Product) => void;
   isExpanded: boolean;
   onToggleDescription: () => void;
+  showAddedToast: boolean;
 }) {
   const description = product.description || '';
   const shouldTruncate = description.length > 100;
   const displayDescription = isExpanded ? description : description.slice(0, 100);
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-80 flex flex-col">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-80 flex flex-col relative">
+      {/* Added to Order Toast */}
+      {showAddedToast && (
+        <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 animate-in slide-in-from-top-2">
+          <Check className="w-3 h-3" />
+          <span>Added!</span>
+        </div>
+      )}
+      
       {/* Product Image */}
       {product.image_url && (
         <div className="w-full h-32 relative">
@@ -592,7 +613,11 @@ function ProductCard({
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
             <Share2 className="w-4 h-4" />
           </Button>
-          <Button size="sm" onClick={() => onAddToOrder(product)}>
+          <Button 
+            size="sm" 
+            onClick={() => onAddToOrder(product)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             Add to Order
           </Button>
         </div>
