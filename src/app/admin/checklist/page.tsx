@@ -238,7 +238,7 @@ export default function AdminChecklist() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={typography.h1}>
             System Checklist
           </h1>
@@ -273,7 +273,7 @@ export default function AdminChecklist() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className={typography.h1}>
           System Checklist
         </h1>

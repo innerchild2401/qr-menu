@@ -180,7 +180,7 @@ export default function AdminQR() {
   if (hasRestaurant === false) {
     return (
       <div>
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={typography.h1}>
             QR Code Management
           </h1>
@@ -215,7 +215,7 @@ export default function AdminQR() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className={typography.h1}>
           QR Code Management
         </h1>

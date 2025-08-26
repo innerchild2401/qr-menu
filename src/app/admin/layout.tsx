@@ -208,8 +208,10 @@ export default function AdminLayout({
         </div>
 
         {/* Page content */}
-        <main className="p-6">
-          {children}
+        <main className="min-h-screen bg-gray-50">
+          <div className="p-6 pt-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

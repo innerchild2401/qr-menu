@@ -224,7 +224,7 @@ export default function AdminMenu() {
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className={`${typography.h2} mb-2`}>
           Menu Management
         </h1>

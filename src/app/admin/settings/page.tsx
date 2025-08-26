@@ -222,7 +222,7 @@ export default function AdminSettings() {
     return (
       <div>
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={`${typography.h2} mb-2`}>
             Restaurant Settings
           </h1>
@@ -327,7 +327,7 @@ export default function AdminSettings() {
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className={`${typography.h2} mb-2`}>
           Restaurant Settings
         </h1>

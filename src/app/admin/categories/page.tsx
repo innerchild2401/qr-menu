@@ -156,7 +156,7 @@ export default function AdminCategories() {
     return (
       <div>
         
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={`${typography.h2} mb-2`}>
             Category Management
           </h1>
@@ -190,7 +190,7 @@ export default function AdminCategories() {
   return (
     <div>
       
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className={`${typography.h2} mb-2`}>
           Category Management
         </h1>
