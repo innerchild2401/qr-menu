@@ -384,6 +384,39 @@ export default function AdminSettings() {
         </div>
       </div>
 
+      {/* Google Business Integration Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Google Business Integration
+        </h2>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-white">Google Reviews</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Connect your Google Business account to display real ratings and reviews on your menu
+              </p>
+            </div>
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              onClick={() => {
+                // TODO: Implement Google Business OAuth
+                alert('Google Business integration coming soon!');
+              }}
+            >
+              Connect Google Business
+            </button>
+          </div>
+          
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <p>• Display real Google ratings on menu items</p>
+            <p>• Show actual review counts</p>
+            <p>• Automatically sync with your Google Business profile</p>
+          </div>
+        </div>
+      </div>
+
       {/* Schedule Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">

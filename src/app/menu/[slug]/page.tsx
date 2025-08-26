@@ -287,13 +287,16 @@ export default function MenuPage({ params }: MenuPageProps) {
           </div>
         )}
         
-        {/* Back button */}
+        {/* Home button - refreshes current page */}
         <div className="absolute top-4 left-4 z-10">
-          <Button variant="secondary" size="sm" asChild className="bg-white/90 backdrop-blur-sm">
-            <Link href="/">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Link>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="bg-white/90 backdrop-blur-sm"
+            onClick={() => window.location.reload()}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Home
           </Button>
         </div>
 
@@ -345,6 +348,7 @@ export default function MenuPage({ params }: MenuPageProps) {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
+                  {/* TODO: Show real Google ratings when connected */}
                   <Badge variant="secondary">
                     <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
                     4.8 (120 reviews)
