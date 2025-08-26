@@ -2,7 +2,9 @@
 
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import { useState, useEffect, useCallback } from 'react';
-import { typography, spacing, Card, Button } from '@/lib/design-system';
+import { typography, spacing } from '@/lib/design-system';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface QRCodeInfo {
   qrCodeUrl?: string;
