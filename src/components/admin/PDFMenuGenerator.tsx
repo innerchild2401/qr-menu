@@ -25,6 +25,9 @@ interface MenuItem {
   category_id?: string;
   nutrition?: Record<string, unknown>;
   image_url?: string;
+  categories?: {
+    name: string;
+  };
 }
 
 interface Restaurant {
@@ -105,8 +108,16 @@ export default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene
         const itemsData = await itemsResponse.json();
         setMenuItems(itemsData.products || []);
         
-        // Organize items by AI classification
-        const organized = organizeMenuItems(itemsData.products || []);
+        // Create a mapping of category IDs to category names
+        const categoryMap: Record<string, string> = {};
+        itemsData.products?.forEach((item: MenuItem) => {
+          if (item.category_id && item.categories?.name) {
+            categoryMap[item.category_id] = item.categories.name;
+          }
+        });
+        
+        // Organize items by AI classification using database categories
+        const organized = organizeMenuItems(itemsData.products || [], categoryMap);
         setOrganizedItems(organized);
         setCategoryOrder(getCategoryOrder());
         

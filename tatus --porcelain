@@ -1,0 +1,342 @@
+warning: in the working copy of 'scripts/setup-pdfdemo-user.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/admin/PDFMenuGenerator.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/ai/menuClassifier.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/scripts/setup-pdfdemo-user.js b/scripts/setup-pdfdemo-user.js[m
+[1mindex 139320d..308e45b 100644[m
+[1m--- a/scripts/setup-pdfdemo-user.js[m
+[1m+++ b/scripts/setup-pdfdemo-user.js[m
+[36m@@ -18,50 +18,53 @@[m [masync function setupPdfDemoUser() {[m
+   console.log('🚀 Setting up PDF Demo User...\n');[m
+ [m
+   try {[m
+[31m-    // Step 1: Check if user already exists[m
+[31m-    console.log('1️⃣ Checking if demo user already exists...');[m
+[31m-    const { data: existingUser, error: existingError } = await supabase.auth.admin.getUserByEmail(DEMO_EMAIL);[m
+[31m-    [m
+[31m-    if (existingUser.user) {[m
+[31m-      console.log('⚠️  Demo user already exists, proceeding with restaurant setup...');[m
+[31m-    } else {[m
+[31m-      // Step 2: Create auth user[m
+[31m-      console.log('2️⃣ Creating auth user...');[m
+[31m-      const { data: authData, error: authError } = await supabase.auth.signUp({[m
+[31m-        email: DEMO_EMAIL,[m
+[31m-        password: DEMO_PASSWORD,[m
+[31m-        options: {[m
+[31m-          data: {[m
+[31m-            full_name: DEMO_FULL_NAME,[m
+[31m-          }[m
+[32m+[m[32m    // Step 1: Create auth user (or sign in if exists)[m
+[32m+[m[32m    console.log('1️⃣ Creating auth user...');[m
+[32m+[m[32m    const { data: authData, error: authError } = await supabase.auth.signUp({[m
+[32m+[m[32m      email: DEMO_EMAIL,[m
+[32m+[m[32m      password: DEMO_PASSWORD,[m
+[32m+[m[32m      options: {[m
+[32m+[m[32m        data: {[m
+[32m+[m[32m          full_name: DEMO_FULL_NAME,[m
+         }[m
+[31m-      });[m
+[31m-[m
+[31m-      if (authError) {[m
+[31m-        console.error('❌ Auth signup error:', authError);[m
+[31m-        return;[m
+       }[m
+[32m+[m[32m    });[m
+ [m
+[31m-      if (!authData.user) {[m
+[31m-        console.error('❌ No user data received from signup');[m
+[32m+[m[32m    if (authError) {[m
+[32m+[m[32m      // If user already exists, try to sign in[m
+[32m+[m[32m      if (authError.message.includes('already registered')) {[m
+[32m+[m[32m        console.log('⚠️  User already exists, signing in...');[m
+[32m+[m[32m        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({[m
+[32m+[m[32m          email: DEMO_EMAIL,[m
+[32m+[m[32m          password: DEMO_PASSWORD[m
+[32m+[m[32m        });[m
+[32m+[m[41m        [m
+[32m+[m[32m        if (signInError) {[m
+[32m+[m[32m          console.error('❌ Sign in error:', signInError);[m
+[32m+[m[32m          return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+[32m+[m[32m        console.log('✅ Signed in successfully');[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        console.error('❌ Auth signup error:', authError);[m
+         return;[m
+       }[m
+[31m-[m
+[32m+[m[32m    } else if (authData.user) {[m
+       console.log('✅ Auth user created successfully:', authData.user.id);[m
+     }[m
+ [m
+[31m-    // Step 3: Get user ID (either existing or new)[m
+[31m-    let userId;[m
+[31m-    if (existingUser?.user) {[m
+[31m-      userId = existingUser.user.id;[m
+[31m-    } else {[m
+[31m-      const { data: userData } = await supabase.auth.getUser();[m
+[31m-      userId = userData.user.id;[m
+[32m+[m[32m    // Step 2: Get current user[m
+[32m+[m[32m    const { data: { user }, error: userError } = await supabase.auth.getUser();[m
+[32m+[m[32m    if (userError || !user) {[m
+[32m+[m[32m      console.error('❌ Failed to get user:', userError);[m
+[32m+[m[32m      return;[m
+     }[m
+[32m+[m[41m    [m
+[32m+[m[32m    const userId = user.id;[m
+ [m
+[31m-    // Step 4: Create user record in public.users if needed[m
+[32m+[m[32m    // Step 3: Create user record in public.users if needed[m
+     console.log('3️⃣ Ensuring user record exists...');[m
+[31m-    const { data: userRecord, error: userError } = await supabase[m
+[32m+[m[32m    const { data: userRecord, error: userRecordError } = await supabase[m
+       .from('users')[m
+       .select('id, email, full_name')[m
+       .eq('id', userId)[m
+[36m@@ -86,7 +89,7 @@[m [masync function setupPdfDemoUser() {[m
+       console.log('✅ User record already exists');[m
+     }[m
+ [m
+[31m-    // Step 5: Create restaurant[m
+[32m+[m[32m    // Step 4: Create restaurant[m
+     console.log('4️⃣ Creating restaurant...');[m
+     const generateSlug = (name) => {[m
+       return name[m
+[36m@@ -97,32 +100,44 @@[m [masync function setupPdfDemoUser() {[m
+ [m
+     const restaurantSlug = generateSlug(DEMO_RESTAURANT_NAME);[m
+     [m
+[31m-    const { data: restaurant, error: restaurantError } = await supabase[m
+[32m+[m[32m    let { data: restaurant, error: restaurantError } = await supabase[m
+       .from('restaurants')[m
+       .insert({[m
+         name: DEMO_RESTAURANT_NAME,[m
+         slug: restaurantSlug,[m
+[31m-        user_id: userId,[m
+[31m-        description: 'Demo restaurant for PDF menu generation testing',[m
+[32m+[m[32m        owner_id: userId,[m
+         address: 'Demo Address, Demo City',[m
+[31m-        phone: '+40 123 456 789',[m
+[31m-        website: 'https://myprecious.demo',[m
+         logo_url: null,[m
+[31m-        cover_image_url: null,[m
+[31m-        theme: 'modern',[m
+[31m-        is_active: true[m
+[32m+[m[32m        cover_url: null[m
+       })[m
+       .select()[m
+       .single();[m
+ [m
+     if (restaurantError) {[m
+[31m-      console.error('❌ Failed to create restaurant:', restaurantError);[m
+[31m-      return;[m
+[32m+[m[32m      if (restaurantError.code === '23505') {[m
+[32m+[m[32m        console.log('⚠️  Restaurant already exists, getting existing restaurant...');[m
+[32m+[m[32m        const { data: existingRestaurant, error: getError } = await supabase[m
+[32m+[m[32m          .from('restaurants')[m
+[32m+[m[32m          .select('*')[m
+[32m+[m[32m          .eq('slug', restaurantSlug)[m
+[32m+[m[32m          .single();[m
+[32m+[m[41m        [m
+[32m+[m[32m        if (getError) {[m
+[32m+[m[32m          console.error('❌ Failed to get existing restaurant:', getError);[m
+[32m+[m[32m          return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+[32m+[m[32m        restaurant = existingRestaurant;[m
+[32m+[m[32m        console.log('✅ Using existing restaurant:', restaurant.id);[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        console.error('❌ Failed to create restaurant:', restaurantError);[m
+[32m+[m[32m        return;[m
+[32m+[m[32m      }[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m      console.log('✅ Restaurant created successfully:', restaurant.id);[m
+     }[m
+ [m
+[31m-    console.log('✅ Restaurant created successfully:', restaurant.id);[m
+[31m-[m
+[31m-    // Step 6: Create categories[m
+[32m+[m[32m    // Step 5: Create categories[m
+     console.log('5️⃣ Creating categories...');[m
+     const categories = [[m
+       'Starters / Appetizers',[m
+[36m@@ -141,9 +156,7 @@[m [masync function setupPdfDemoUser() {[m
+         .from('categories')[m
+         .insert({[m
+           name: categoryName,[m
+[31m-          restaurant_id: restaurant.id,[m
+[31m-          display_order: categories.indexOf(categoryName) + 1,[m
+[31m-          is_active: true[m
+[32m+[m[32m          restaurant_id: restaurant.id[m
+         })[m
+         .select()[m
+         .single();[m
+[36m@@ -157,7 +170,7 @@[m [masync function setupPdfDemoUser() {[m
+       console.log(`✅ Category created: ${categoryName} (ID: ${category.id})`);[m
+     }[m
+ [m
+[31m-    // Step 7: Read and parse CSV file[m
+[32m+[m[32m    // Step 6: Read and parse CSV file[m
+     console.log('6️⃣ Reading CSV file...');[m
+     const csvPath = path.join(__dirname, '..', 'menu_items.csv');[m
+     [m
+[36m@@ -173,7 +186,7 @@[m [masync function setupPdfDemoUser() {[m
+ [m
+     console.log(`✅ CSV file loaded with ${dataLines.length} items`);[m
+ [m
+[31m-    // Step 8: Upload products[m
+[32m+[m[32m    // Step 7: Upload products[m
+     console.log('7️⃣ Uploading products...');[m
+     let uploadedCount = 0;[m
+ [m
+[36m@@ -213,19 +226,21 @@[m [masync function setupPdfDemoUser() {[m
+       const price = parseFloat(product.price) || 0;[m
+ [m
+       // Prepare product data[m
+[32m+[m[32m      const nutrition = {[m
+[32m+[m[32m        calories: product.calories ? parseInt(product.calories) : null,[m
+[32m+[m[32m        protein_g: product.protein_g ? parseFloat(product.protein_g) : null,[m
+[32m+[m[32m        fat_g: product.fat_g ? parseFloat(product.fat_g) : null,[m
+[32m+[m[32m        carbs_g: product.carbs_g ? parseFloat(product.carbs_g) : null[m
+[32m+[m[32m      };[m
+[32m+[m
+       const productData = {[m
+         name: product.name,[m
+         description: product.description,[m
+         price: price,[m
+         category_id: categoryIds[product.category],[m
+         restaurant_id: restaurant.id,[m
+[31m-        calories: product.calories ? parseInt(product.calories) : null,[m
+[31m-        protein_g: product.protein_g ? parseFloat(product.protein_g) : null,[m
+[31m-        fat_g: product.fat_g ? parseFloat(product.fat_g) : null,[m
+[31m-        carbs_g: product.carbs_g ? parseFloat(product.carbs_g) : null,[m
+[31m-        image_url: null,[m
+[31m-        is_available: true,[m
+[31m-        is_featured: false[m
+[32m+[m[32m        nutrition: nutrition,[m
+[32m+[m[32m        image_url: null[m
+       };[m
+ [m
+       const { error: productError } = await supabase[m
+[1mdiff --git a/src/components/admin/PDFMenuGenerator.tsx b/src/components/admin/PDFMenuGenerator.tsx[m
+[1mindex 75fc45b..1816c88 100644[m
+[1m--- a/src/components/admin/PDFMenuGenerator.tsx[m
+[1m+++ b/src/components/admin/PDFMenuGenerator.tsx[m
+[36m@@ -25,6 +25,9 @@[m [minterface MenuItem {[m
+   category_id?: string;[m
+   nutrition?: Record<string, unknown>;[m
+   image_url?: string;[m
+[32m+[m[32m  categories?: {[m
+[32m+[m[32m    name: string;[m
+[32m+[m[32m  };[m
+ }[m
+ [m
+ interface Restaurant {[m
+[36m@@ -105,8 +108,16 @@[m [mexport default function PDFMenuGenerator({ showSuccess, showError }: PDFMenuGene[m
+         const itemsData = await itemsResponse.json();[m
+         setMenuItems(itemsData.products || []);[m
+         [m
+[31m-        // Organize items by AI classification[m
+[31m-        const organized = organizeMenuItems(itemsData.products || []);[m
+[32m+[m[32m        // Create a mapping of category IDs to category names[m
+[32m+[m[32m        const categoryMap: Record<string, string> = {};[m
+[32m+[m[32m        itemsData.products?.forEach((item: MenuItem) => {[m
+[32m+[m[32m          if (item.category_id && item.categories?.name) {[m
+[32m+[m[32m            categoryMap[item.category_id] = item.categories.name;[m
+[32m+[m[32m          }[m
+[32m+[m[32m        });[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Organize items by AI classification using database categories[m
+[32m+[m[32m        const organized = organizeMenuItems(itemsData.products || [], categoryMap);[m
+         setOrganizedItems(organized);[m
+         setCategoryOrder(getCategoryOrder());[m
+         [m
+[1mdiff --git a/src/lib/ai/menuClassifier.ts b/src/lib/ai/menuClassifier.ts[m
+[1mindex 908cd8e..9e42f78 100644[m
+[1m--- a/src/lib/ai/menuClassifier.ts[m
+[1m+++ b/src/lib/ai/menuClassifier.ts[m
+[36m@@ -18,74 +18,108 @@[m [mexport interface ClassifiedItem extends MenuItem {[m
+   isBeverage: boolean;[m
+ }[m
+ [m
+[31m-// Food-related keywords[m
+[31m-const FOOD_KEYWORDS = [[m
+[31m-  'dish', 'plate', 'meal', 'food', 'cuisine', 'dish', 'entree', 'main',[m
+[31m-  'appetizer', 'starter', 'salad', 'soup', 'pasta', 'rice', 'meat',[m
+[31m-  'chicken', 'beef', 'pork', 'fish', 'seafood', 'vegetable', 'dessert',[m
+[31m-  'cake', 'pie', 'ice cream', 'burger', 'pizza', 'sandwich', 'wrap',[m
+[31m-  'taco', 'burrito', 'sushi', 'steak', 'grilled', 'fried', 'baked',[m
+[31m-  'roasted', 'sauteed', 'braised', 'curry', 'stew', 'casserole'[m
+[31m-];[m
+[31m-[m
+[31m-// Beverage-related keywords[m
+[31m-const BEVERAGE_KEYWORDS = [[m
+[31m-  'drink', 'beverage', 'juice', 'soda', 'water', 'coffee', 'tea',[m
+[31m-  'milk', 'smoothie', 'shake', 'lemonade', 'iced tea', 'hot chocolate',[m
+[31m-  'espresso', 'latte', 'cappuccino', 'mocha', 'americano', 'frappe'[m
+[31m-];[m
+[31m-[m
+[31m-// Alcoholic beverage keywords[m
+[31m-const ALCOHOLIC_KEYWORDS = [[m
+[31m-  'wine', 'beer', 'spirit', 'cocktail', 'vodka', 'whiskey', 'whisky',[m
+[31m-  'rum', 'gin', 'tequila', 'brandy', 'cognac', 'liqueur', 'sherry',[m
+[31m-  'port', 'champagne', 'prosecco', 'martini', 'margarita', 'mojito',[m
+[31m-  'daiquiri', 'negroni', 'old fashioned', 'manhattan', 'cosmopolitan',[m
+[31m-  'bloody mary', 'moscow mule', 'gin tonic', 'rum coke', 'whiskey sour',[m
+[31m-  'sangria', 'mimosa', 'bellini', 'spritz', 'aperol', 'campari'[m
+[31m-];[m
+[31m-[m
+[31m-// Category mapping for better organization[m
+[32m+[m[32m// Simple category mapping based on database categories[m
+ const CATEGORY_MAPPING = {[m
+[31m-  // Food categories[m
+[31m-  'starters': ['appetizer', 'starter', 'salad', 'soup', 'bruschetta', 'tapas'],[m
+[31m-  'main_courses': ['main', 'entree', 'dish', 'plate', 'meal', 'grilled', 'roasted'],[m
+[31m-  'desserts': ['dessert', 'cake', 'pie', 'ice cream', 'sweet', 'pastry', 'tiramisu'],[m
+[31m-  [m
+[31m-  // Beverage categories[m
+[31m-  'soft_drinks': ['juice', 'soda', 'water', 'lemonade', 'iced tea', 'smoothie'],[m
+[31m-  'hot_beverages': ['coffee', 'tea', 'espresso', 'latte', 'cappuccino', 'hot chocolate'],[m
+[31m-  'cocktails': ['cocktail', 'martini', 'margarita', 'mojito', 'daiquiri', 'negroni'],[m
+[31m-  'spirits': ['vodka', 'whiskey', 'rum', 'gin', 'tequila', 'brandy', 'cognac'],[m
+[31m-  'wines': ['wine', 'champagne', 'prosecco', 'sherry', 'port', 'sangria'],[m
+[31m-  'beers': ['beer', 'ale', 'lager', 'stout', 'ipa', 'pilsner'][m
+[32m+[m[32m  // Database category names to AI category names[m
+[32m+[m[32m  'Starters / Appetizers': 'starters',[m
+[32m+[m[32m  'Main Dishes': 'main_courses',[m[41m [m
+[32m+[m[32m  'Desserts': 'desserts',[m
+[32m+[m[32m  'Soft Drinks': 'soft_drinks',[m
+[32m+[m[32m  'Wines': 'wines',[m
+[32m+[m[32m  'Spirits & Cocktails': 'cocktails',[m
+[32m+[m[32m  'Beers': 'beers'[m
+ };[m
+ [m
+[31m-export function classifyMenuItem(item: MenuItem): ClassifiedItem {[m
+[32m+[m[32m// Reverse mapping for display names[m
+[32m+[m[32mconst AI_TO_DISPLAY_MAPPING = {[m
+[32m+[m[32m  'starters': 'Starters & Appetizers',[m
+[32m+[m[32m  'main_courses': 'Main Courses',[m
+[32m+[m[32m  'desserts': 'Desserts',[m
+[32m+[m[32m  'soft_drinks': 'Soft Drinks',[m
+[32m+[m[32m  'wines': 'Wines',[m
+[32m+[m[32m  'cocktails': 'Spirits & Cocktails',[m
+[32m+[m[32m  'beers': 'Beers',[m
+[32m+[m[32m  'others': 'Others'[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mexport function classifyMenuItem(item: MenuItem, databaseCategory?: string): ClassifiedItem {[m
+   const name = item.name.toLowerCase();[m
+   const description = (item.description || '').toLowerCase();[m
+   const fullText = `${name} ${description}`;[m
+   [m
+[31m-  // Calculate confidence scores[m
+[31m-  const foodScore = calculateKeywordScore(fullText, FOOD_KEYWORDS);[m
+[31m-  const beverageScore = calculateKeywordScore(fullText, BEVERAGE_KEYWORDS);[m
+[31m-  const alcoholicScore = calculateKeywordScore(fullText, ALCOHOLIC_KEYWORDS);[m
+[32m+[m[32m  // If we have a database category, use it directly[m
+[32m+[m[32m  if (databaseCategory && CATEGORY_MAPPING[databaseCategory as keyof typeof CATEGORY_MAPPING]) {[m
+[32m+[m[32m    const aiCategory = CATEGORY_MAPPING[databaseCategory as keyof typeof CATEGORY_MAPPING];[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Determine if alcoholic based on category and item name[m
+[32m+[m[32m    const isAlcoholic = databaseCategory === 'Wines' ||[m[41m [m
+[32m+[m[32m                       databaseCategory === 'Spirits & Cocktails' ||[m[41m [m
+[32m+[m[32m                       database

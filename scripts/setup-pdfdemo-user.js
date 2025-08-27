@@ -18,50 +18,53 @@ async function setupPdfDemoUser() {
   console.log('🚀 Setting up PDF Demo User...\n');
 
   try {
-    // Step 1: Check if user already exists
-    console.log('1️⃣ Checking if demo user already exists...');
-    const { data: existingUser, error: existingError } = await supabase.auth.admin.getUserByEmail(DEMO_EMAIL);
-    
-    if (existingUser.user) {
-      console.log('⚠️  Demo user already exists, proceeding with restaurant setup...');
-    } else {
-      // Step 2: Create auth user
-      console.log('2️⃣ Creating auth user...');
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-        options: {
-          data: {
-            full_name: DEMO_FULL_NAME,
-          }
+    // Step 1: Create auth user (or sign in if exists)
+    console.log('1️⃣ Creating auth user...');
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+      options: {
+        data: {
+          full_name: DEMO_FULL_NAME,
         }
-      });
+      }
+    });
 
-      if (authError) {
+    if (authError) {
+      // If user already exists, try to sign in
+      if (authError.message.includes('already registered')) {
+        console.log('⚠️  User already exists, signing in...');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD
+        });
+        
+        if (signInError) {
+          console.error('❌ Sign in error:', signInError);
+          return;
+        }
+        
+        console.log('✅ Signed in successfully');
+      } else {
         console.error('❌ Auth signup error:', authError);
         return;
       }
-
-      if (!authData.user) {
-        console.error('❌ No user data received from signup');
-        return;
-      }
-
+    } else if (authData.user) {
       console.log('✅ Auth user created successfully:', authData.user.id);
     }
 
-    // Step 3: Get user ID (either existing or new)
-    let userId;
-    if (existingUser?.user) {
-      userId = existingUser.user.id;
-    } else {
-      const { data: userData } = await supabase.auth.getUser();
-      userId = userData.user.id;
+    // Step 2: Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('❌ Failed to get user:', userError);
+      return;
     }
+    
+    const userId = user.id;
 
-    // Step 4: Create user record in public.users if needed
+    // Step 3: Create user record in public.users if needed
     console.log('3️⃣ Ensuring user record exists...');
-    const { data: userRecord, error: userError } = await supabase
+    const { data: userRecord, error: userRecordError } = await supabase
       .from('users')
       .select('id, email, full_name')
       .eq('id', userId)
@@ -86,7 +89,7 @@ async function setupPdfDemoUser() {
       console.log('✅ User record already exists');
     }
 
-    // Step 5: Create restaurant
+    // Step 4: Create restaurant
     console.log('4️⃣ Creating restaurant...');
     const generateSlug = (name) => {
       return name
@@ -97,32 +100,44 @@ async function setupPdfDemoUser() {
 
     const restaurantSlug = generateSlug(DEMO_RESTAURANT_NAME);
     
-    const { data: restaurant, error: restaurantError } = await supabase
+    let { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .insert({
         name: DEMO_RESTAURANT_NAME,
         slug: restaurantSlug,
-        user_id: userId,
-        description: 'Demo restaurant for PDF menu generation testing',
+        owner_id: userId,
         address: 'Demo Address, Demo City',
-        phone: '+40 123 456 789',
-        website: 'https://myprecious.demo',
         logo_url: null,
-        cover_image_url: null,
-        theme: 'modern',
-        is_active: true
+        cover_url: null
       })
       .select()
       .single();
 
     if (restaurantError) {
-      console.error('❌ Failed to create restaurant:', restaurantError);
-      return;
+      if (restaurantError.code === '23505') {
+        console.log('⚠️  Restaurant already exists, getting existing restaurant...');
+        const { data: existingRestaurant, error: getError } = await supabase
+          .from('restaurants')
+          .select('*')
+          .eq('slug', restaurantSlug)
+          .single();
+        
+        if (getError) {
+          console.error('❌ Failed to get existing restaurant:', getError);
+          return;
+        }
+        
+        restaurant = existingRestaurant;
+        console.log('✅ Using existing restaurant:', restaurant.id);
+      } else {
+        console.error('❌ Failed to create restaurant:', restaurantError);
+        return;
+      }
+    } else {
+      console.log('✅ Restaurant created successfully:', restaurant.id);
     }
 
-    console.log('✅ Restaurant created successfully:', restaurant.id);
-
-    // Step 6: Create categories
+    // Step 5: Create categories
     console.log('5️⃣ Creating categories...');
     const categories = [
       'Starters / Appetizers',
@@ -141,9 +156,7 @@ async function setupPdfDemoUser() {
         .from('categories')
         .insert({
           name: categoryName,
-          restaurant_id: restaurant.id,
-          display_order: categories.indexOf(categoryName) + 1,
-          is_active: true
+          restaurant_id: restaurant.id
         })
         .select()
         .single();
@@ -157,7 +170,7 @@ async function setupPdfDemoUser() {
       console.log(`✅ Category created: ${categoryName} (ID: ${category.id})`);
     }
 
-    // Step 7: Read and parse CSV file
+    // Step 6: Read and parse CSV file
     console.log('6️⃣ Reading CSV file...');
     const csvPath = path.join(__dirname, '..', 'menu_items.csv');
     
@@ -173,7 +186,7 @@ async function setupPdfDemoUser() {
 
     console.log(`✅ CSV file loaded with ${dataLines.length} items`);
 
-    // Step 8: Upload products
+    // Step 7: Upload products
     console.log('7️⃣ Uploading products...');
     let uploadedCount = 0;
 
@@ -213,19 +226,21 @@ async function setupPdfDemoUser() {
       const price = parseFloat(product.price) || 0;
 
       // Prepare product data
+      const nutrition = {
+        calories: product.calories ? parseInt(product.calories) : null,
+        protein_g: product.protein_g ? parseFloat(product.protein_g) : null,
+        fat_g: product.fat_g ? parseFloat(product.fat_g) : null,
+        carbs_g: product.carbs_g ? parseFloat(product.carbs_g) : null
+      };
+
       const productData = {
         name: product.name,
         description: product.description,
         price: price,
         category_id: categoryIds[product.category],
         restaurant_id: restaurant.id,
-        calories: product.calories ? parseInt(product.calories) : null,
-        protein_g: product.protein_g ? parseFloat(product.protein_g) : null,
-        fat_g: product.fat_g ? parseFloat(product.fat_g) : null,
-        carbs_g: product.carbs_g ? parseFloat(product.carbs_g) : null,
-        image_url: null,
-        is_available: true,
-        is_featured: false
+        nutrition: nutrition,
+        image_url: null
       };
 
       const { error: productError } = await supabase
