@@ -247,8 +247,9 @@ export default function MenuPage({ params }: MenuPageProps) {
       {/* Promo Popup */}
       <PromoPopup slug={restaurant.slug} />
       
-      {/* Restaurant Header */}
+      {/* Restaurant Header - Facebook Mobile Profile Style */}
       <div className="relative">
+        {/* Cover Photo */}
         {restaurant.cover_url ? (
           <div className="h-48 md:h-64 relative overflow-hidden">
             <Image
@@ -261,12 +262,12 @@ export default function MenuPage({ params }: MenuPageProps) {
             <div className="absolute inset-0 bg-black/20" />
           </div>
         ) : (
-          <div className="h-32 md:h-40 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+          <div className="h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 relative">
             <div className="absolute inset-0 bg-black/10" />
           </div>
         )}
         
-        {/* Action Buttons - positioned to avoid overlap with restaurant info */}
+        {/* Action Buttons - positioned to avoid overlap with logo */}
         <div className="absolute top-4 left-4 right-4 z-10 flex justify-between">
           <Button 
             variant="secondary" 
@@ -294,54 +295,56 @@ export default function MenuPage({ params }: MenuPageProps) {
           </Button>
         </div>
 
-        {/* Restaurant Info - with proper spacing for mobile */}
+        {/* Circular Logo - Facebook Style Overlap */}
+        <div className="absolute left-6 bottom-0 transform translate-y-1/2 z-20">
+          {restaurant.logo_url ? (
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-shrink-0">
+              <Image
+                src={restaurant.logo_url}
+                alt={`${restaurant.name} logo`}
+                width={112}
+                height={112}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-4 border-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-shrink-0 flex items-center justify-center">
+              <span className="text-white font-bold text-2xl md:text-3xl">
+                {restaurant.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Restaurant Info - with proper spacing for overlapping logo */}
         <div className="relative bg-white border-b">
-          <div className={`${layout.containerSmall} py-6`}>
-            <div className="flex items-start space-x-4">
-              {restaurant.logo_url ? (
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
-                  <Image
-                    src={restaurant.logo_url}
-                    alt={`${restaurant.name} logo`}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 border-4 border-white shadow-lg flex-shrink-0 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg md:text-xl">
-                    {restaurant.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h1 className={`${typography.h3} mb-2`}>
-                  {restaurant.name}
-                </h1>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-sm text-muted-foreground mb-3">
-                  {restaurant.address && (
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                      <span className="truncate">{restaurant.address}</span>
-                    </div>
-                  )}
+          <div className={`${layout.containerSmall} pt-16 pb-6`}>
+            <div className="flex-1 min-w-0">
+              <h1 className={`${typography.h3} mb-2`}>
+                {restaurant.name}
+              </h1>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-sm text-muted-foreground mb-3">
+                {restaurant.address && (
                   <div className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
-                    Open Now
+                    <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span className="truncate">{restaurant.address}</span>
                   </div>
+                )}
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
+                  Open Now
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* TODO: Show real Google ratings when connected */}
-                  <Badge variant="secondary">
-                    <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                    4.8 (120 reviews)
-                  </Badge>
-                  <Badge variant="outline">
-                    <QrCode className="w-3 h-3 mr-1" />
-                    Digital Menu
-                  </Badge>
-                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* TODO: Show real Google ratings when connected */}
+                <Badge variant="secondary">
+                  <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                  4.8 (120 reviews)
+                </Badge>
+                <Badge variant="outline">
+                  <QrCode className="w-3 h-3 mr-1" />
+                  Digital Menu
+                </Badge>
               </div>
             </div>
           </div>
