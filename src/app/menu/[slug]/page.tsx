@@ -522,7 +522,7 @@ function ProductCard({
   const displayDescription = isExpanded ? description : description.slice(0, 60);
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-36 flex flex-row relative">
+    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-36'} flex flex-col`}>
       {/* Added to Order Toast */}
       {showAddedToast && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 animate-in slide-in-from-top-2">
@@ -531,41 +531,13 @@ function ProductCard({
         </div>
       )}
       
-      {/* Product Image with Gradient Overlay */}
-      {product.image_url && (
-        <div className="w-36 h-36 relative flex-shrink-0">
-          <Image
-            src={product.image_url}
-            alt={product.name}
-            fill
-            className="object-cover"
-          />
-          {/* Gradient overlay for smooth transition to text */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
-        </div>
-      )}
-      
-      {/* Product Info */}
-      <div className="flex-1 p-4 flex flex-col min-w-0">
-        {/* Header with name and price */}
-        <div className="flex items-start justify-between mb-2">
+      {/* Header with name and price - at the top */}
+      <div className="p-4 pb-2">
+        <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground text-lg mb-1 line-clamp-1">
               {product.name}
             </h3>
-            <div className="text-muted-foreground text-sm mb-2">
-              {displayDescription}
-              {shouldTruncate && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-blue-600 hover:text-blue-700 ml-1 underline"
-                  onClick={onToggleDescription}
-                >
-                  {isExpanded ? 'Less' : 'More'}
-                </Button>
-              )}
-            </div>
           </div>
           <div className="ml-4 flex-shrink-0">
             <div className="text-lg font-bold text-primary">
@@ -573,41 +545,72 @@ function ProductCard({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Nutrition Info - pinned to bottom */}
-        <div className="mt-auto">
-          {product.nutrition && (
-            <div className="mb-2 p-2 bg-muted/50 rounded-md">
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {product.nutrition.calories && (
-                  <span className="font-medium">{product.nutrition.calories} cal</span>
-                )}
-                {product.nutrition.protein && (
-                  <span>P: {product.nutrition.protein}g</span>
-                )}
-                {product.nutrition.carbs && (
-                  <span>C: {product.nutrition.carbs}g</span>
-                )}
-                {product.nutrition.fat && (
-                  <span>F: {product.nutrition.fat}g</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
-              <Share2 className="w-4 h-4" />
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => onAddToOrder(product)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Add to Order
-            </Button>
+      {/* Product Image with Gradient Overlay - below title/price */}
+      {product.image_url && (
+        <div className="px-4 pb-2">
+          <div className="w-full h-32 relative rounded-lg overflow-hidden">
+            <Image
+              src={product.image_url}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+            {/* Gradient overlay for smooth transition to text */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
           </div>
+        </div>
+      )}
+      
+      {/* Description */}
+      <div className="px-4 pb-2">
+        <div className="text-muted-foreground text-sm">
+          {displayDescription}
+          {shouldTruncate && (
+            <button
+              className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
+              onClick={onToggleDescription}
+            >
+              {isExpanded ? 'Less' : 'More'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Nutrition Info and Actions - pinned to bottom */}
+      <div className="px-4 pb-4 mt-auto">
+        {product.nutrition && (
+          <div className="mb-3 p-2 bg-muted/50 rounded-md">
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              {product.nutrition.calories && (
+                <span className="font-medium">{product.nutrition.calories} cal</span>
+              )}
+              {product.nutrition.protein && (
+                <span>P: {product.nutrition.protein}g</span>
+              )}
+              {product.nutrition.carbs && (
+                <span>C: {product.nutrition.carbs}g</span>
+              )}
+              {product.nutrition.fat && (
+                <span>F: {product.nutrition.fat}g</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
+            <Share2 className="w-4 h-4" />
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={() => onAddToOrder(product)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Add to Order
+          </Button>
         </div>
       </div>
     </Card>
