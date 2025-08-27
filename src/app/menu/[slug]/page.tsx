@@ -549,40 +549,52 @@ function ProductCard({
 
       {/* Middle Section: Image + Description */}
       <div className="px-4 pb-2">
-        <div className="flex gap-3">
-          {/* Image Square - Left Column */}
-          <div className="flex-shrink-0">
-            <div className="w-24 h-24 relative rounded-lg overflow-hidden bg-muted">
-              {product.image_url && (
-                <>
-                  <Image
-                    src={product.image_url}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-                  {/* Gradient overlay for smooth transition to text */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
-                </>
-              )}
+        {product.image_url ? (
+          /* Layout with image */
+          <div className="flex gap-3">
+            {/* Image Square - Left Column */}
+            <div className="flex-shrink-0">
+              <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-muted">
+                <Image
+                  src={product.image_url}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                />
+                {/* Gradient overlay for smooth transition to text */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
+              </div>
+            </div>
+            
+            {/* Description - Right Column */}
+            <div className="flex-1 min-w-0">
+              <div className="text-muted-foreground text-sm">
+                {displayDescription}
+                {shouldTruncate && (
+                  <button
+                    className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
+                    onClick={onToggleDescription}
+                  >
+                    {isExpanded ? 'Less' : 'More'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-          
-          {/* Description - Right Column */}
-          <div className="flex-1 min-w-0">
-            <div className="text-muted-foreground text-sm">
-              {displayDescription}
-              {shouldTruncate && (
-                <button
-                  className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
-                  onClick={onToggleDescription}
-                >
-                  {isExpanded ? 'Less' : 'More'}
-                </button>
-              )}
-            </div>
+        ) : (
+          /* Layout without image - full width description */
+          <div className="text-muted-foreground text-sm">
+            {displayDescription}
+            {shouldTruncate && (
+              <button
+                className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
+                onClick={onToggleDescription}
+              >
+                {isExpanded ? 'Less' : 'More'}
+              </button>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Nutrition Info and Actions - pinned to bottom */}
