@@ -522,7 +522,7 @@ function ProductCard({
   const displayDescription = isExpanded ? description : description.slice(0, 60);
 
   return (
-    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-44'} flex flex-col`}>
+    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-48'} flex flex-col`}>
       {/* Added to Order Toast */}
       {showAddedToast && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 animate-in slide-in-from-top-2">
@@ -619,10 +619,7 @@ function ProductCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
-            <Share2 className="w-4 h-4" />
-          </Button>
+        <div className="flex justify-end">
           <Button 
             size="sm" 
             onClick={() => onAddToOrder(product)}
