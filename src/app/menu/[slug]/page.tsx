@@ -522,7 +522,7 @@ function ProductCard({
   const displayDescription = isExpanded ? description : description.slice(0, 60);
 
   return (
-    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-36'} flex flex-col`}>
+    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-44'} flex flex-col`}>
       {/* Added to Order Toast */}
       {showAddedToast && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 animate-in slide-in-from-top-2">
