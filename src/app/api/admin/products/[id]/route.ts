@@ -36,7 +36,7 @@ export async function PUT(
     }
 
     // Parse request body
-    const { name, description, price, category_id, image, nutrition } = await request.json();
+    const { name, description, price, category_id, image_url, nutrition } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -63,7 +63,7 @@ export async function PUT(
         description: description?.trim() || null,
         price: price,
         category_id: category_id || null,
-        image_url: image || null,
+        image_url: image_url || null,
         nutrition: nutrition || null
       })
       .eq('id', id)

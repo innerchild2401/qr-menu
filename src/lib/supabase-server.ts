@@ -82,6 +82,7 @@ export const STORAGE_BUCKETS = {
   LOGOS: 'logos',
   COVERS: 'covers',
   PRODUCTS: 'products',
+  CATEGORIES: 'categories',
   POPUPS: 'popups',
   QR_CODES: 'qr_codes',
 } as const;

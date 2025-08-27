@@ -91,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Parse request body
-    const { name, description, price, image, nutrition, category_id } = await request.json();
+    const { name, description, price, image_url, nutrition, category_id } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         name: name.trim(),
         description: description?.trim() || '',
         price: price,
-        image_url: image || null,
+        image_url: image_url || null,
         nutrition: nutrition || null
       })
       .select()
