@@ -247,6 +247,42 @@ export default function MenuPage({ params }: MenuPageProps) {
       {/* Promo Popup */}
       <PromoPopup slug={restaurant.slug} />
       
+      {/* Sticky Top Navbar */}
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
+        <div className={`${layout.containerSmall} py-3`}>
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              onClick={() => {
+                if (confirm('Are you sure you want to leave this restaurant? You\'ll be taken to SmartMenu\'s digital menu creation service.')) {
+                  window.location.href = '/';
+                }
+              }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Home
+            </Button>
+
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="rounded-lg shadow-sm hover:shadow-md transition-shadow bg-blue-600 hover:bg-blue-700 relative"
+              onClick={() => setShowOrderSummary(true)}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              My Order
+              {totalItems > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
+                  {totalItems}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+      
       {/* Restaurant Header - Facebook Mobile Profile Style */}
       <div className="relative">
         {/* Cover Photo Container */}
@@ -289,34 +325,6 @@ export default function MenuPage({ params }: MenuPageProps) {
             )}
           </div>
         </div>
-        
-        {/* Action Buttons - positioned to avoid overlap with logo */}
-        <div className="absolute top-4 left-4 right-4 z-10 flex justify-between">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-white/90 backdrop-blur-sm"
-            onClick={() => window.location.reload()}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Home
-          </Button>
-
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-white/90 backdrop-blur-sm relative"
-            onClick={() => setShowOrderSummary(true)}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            My Order
-            {totalItems > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
-                {totalItems}
-              </Badge>
-            )}
-          </Button>
-        </div>
 
         {/* Restaurant Info - with proper spacing for overlapping logo */}
         <div className="relative bg-white border-b">
@@ -354,7 +362,7 @@ export default function MenuPage({ params }: MenuPageProps) {
       </div>
 
       {/* Sticky Category Navigation */}
-      <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
+      <div className="sticky top-14 z-40 bg-white border-b shadow-sm">
         <div className={`${layout.containerSmall} py-4`}>
           <div className="flex items-center space-x-2 category-scroll pb-2">
             <Button
