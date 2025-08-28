@@ -604,34 +604,37 @@ function ProductCard({
 
       {/* Nutrition Info and Actions - pinned to bottom */}
       <div className="px-4 pb-4 mt-auto">
-        {product.nutrition && (
-          <div className="mb-3 p-2 bg-muted/50 rounded-md">
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              {product.nutrition.calories && (
-                <span className="font-medium">{product.nutrition.calories} cal</span>
-              )}
-              {product.nutrition.protein && (
-                <span>P: {product.nutrition.protein}g</span>
-              )}
-              {product.nutrition.carbs && (
-                <span>C: {product.nutrition.carbs}g</span>
-              )}
-              {product.nutrition.fat && (
-                <span>F: {product.nutrition.fat}g</span>
-              )}
+        <div className="flex items-center justify-between gap-3">
+          {/* Nutrition Info - Left Side */}
+          {product.nutrition && (
+            <div className="flex-1 p-2 bg-muted/50 rounded-md">
+              <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                {product.nutrition.calories && (
+                  <span className="font-medium">{product.nutrition.calories} cal</span>
+                )}
+                {product.nutrition.protein && (
+                  <span>P: {product.nutrition.protein}g</span>
+                )}
+                {product.nutrition.carbs && (
+                  <span>C: {product.nutrition.carbs}g</span>
+                )}
+                {product.nutrition.fat && (
+                  <span>F: {product.nutrition.fat}g</span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Actions */}
-        <div className="flex justify-end">
-          <Button 
-            size="sm" 
-            onClick={() => onAddToOrder(product)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Add to Order
-          </Button>
+          {/* Add to Order Button - Right Side */}
+          <div className="flex-shrink-0">
+            <Button 
+              size="sm" 
+              onClick={() => onAddToOrder(product)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Add to Order
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
