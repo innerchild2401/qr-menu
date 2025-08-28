@@ -296,7 +296,7 @@ export default function MenuPage({ params }: MenuPageProps) {
         </div>
 
         {/* Circular Logo - Facebook Style Overlap */}
-        <div className="absolute left-6 bottom-0 transform translate-y-1/2 z-20">
+        <div className="absolute left-6 -bottom-12 md:-bottom-14 z-20">
           {restaurant.logo_url ? (
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-shrink-0">
               <Image
@@ -318,7 +318,7 @@ export default function MenuPage({ params }: MenuPageProps) {
 
         {/* Restaurant Info - with proper spacing for overlapping logo */}
         <div className="relative bg-white border-b">
-          <div className={`${layout.containerSmall} pt-16 pb-6`}>
+          <div className={`${layout.containerSmall} pt-20 pb-6`}>
             <div className="flex-1 min-w-0">
               <h1 className={`${typography.h3} mb-2`}>
                 {restaurant.name}
