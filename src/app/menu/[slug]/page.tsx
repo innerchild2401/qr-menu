@@ -19,6 +19,7 @@ import {
   Check
 } from 'lucide-react';
 import { layout, typography, spacing, gaps } from '@/lib/design-system';
+import { OrderProvider, useOrder } from '@/contexts/OrderContext';
 
 interface MenuPageProps {
   params: Promise<{
@@ -87,13 +88,12 @@ async function getMenuData(slug: string): Promise<MenuData> {
   return data;
 }
 
-export default function MenuPage({ params }: MenuPageProps) {
+function MenuPageContent({ params }: MenuPageProps) {
   const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [order, setOrder] = useState<OrderItem[]>([]);
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const { order, setOrder, showOrderSummary, setShowOrderSummary } = useOrder();
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [showAddedToast, setShowAddedToast] = useState<string | null>(null);
 
@@ -247,42 +247,6 @@ export default function MenuPage({ params }: MenuPageProps) {
       {/* Promo Popup */}
       <PromoPopup slug={restaurant.slug} />
       
-      {/* Sticky Top Navbar */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
-        <div className={`${layout.containerSmall} py-3`}>
-          <div className="flex items-center justify-between">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-lg shadow-sm hover:shadow-md transition-shadow"
-              onClick={() => {
-                if (confirm('Are you sure you want to leave this restaurant? You\'ll be taken to SmartMenu\'s digital menu creation service.')) {
-                  window.location.href = '/';
-                }
-              }}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Home
-            </Button>
-
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="rounded-lg shadow-sm hover:shadow-md transition-shadow bg-blue-600 hover:bg-blue-700 relative"
-              onClick={() => setShowOrderSummary(true)}
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              My Order
-              {totalItems > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
-                  {totalItems}
-                </Badge>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-      
       {/* Restaurant Header - Facebook Mobile Profile Style */}
       <div className="relative">
         {/* Cover Photo Container */}
@@ -362,7 +326,7 @@ export default function MenuPage({ params }: MenuPageProps) {
       </div>
 
       {/* Sticky Category Navigation */}
-      <div className="sticky top-14 z-40 bg-white border-b shadow-sm">
+      <div className="sticky top-16 z-40 bg-white border-b shadow-sm">
         <div className={`${layout.containerSmall} py-4`}>
           <div className="flex items-center space-x-2 category-scroll pb-2">
             <Button
@@ -646,5 +610,14 @@ function ProductCard({
         </div>
       </div>
     </Card>
+  );
+}
+
+// Wrapper component that provides the OrderProvider
+export default function MenuPage({ params }: MenuPageProps) {
+  return (
+    <OrderProvider>
+      <MenuPageContent params={params} />
+    </OrderProvider>
   );
 }
