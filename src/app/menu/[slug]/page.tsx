@@ -251,7 +251,7 @@ export default function MenuPage({ params }: MenuPageProps) {
       <div className="relative">
         {/* Cover Photo */}
         {restaurant.cover_url ? (
-          <div className="h-48 md:h-64 relative overflow-hidden">
+          <div className="h-36 md:h-40 relative overflow-hidden">
             <Image
               src={restaurant.cover_url}
               alt={restaurant.name}
@@ -262,7 +262,7 @@ export default function MenuPage({ params }: MenuPageProps) {
             <div className="absolute inset-0 bg-black/20" />
           </div>
         ) : (
-          <div className="h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+          <div className="h-36 md:h-40 bg-gradient-to-r from-blue-500 to-purple-600 relative">
             <div className="absolute inset-0 bg-black/10" />
           </div>
         )}
@@ -296,7 +296,7 @@ export default function MenuPage({ params }: MenuPageProps) {
         </div>
 
         {/* Circular Logo - Facebook Style Overlap */}
-        <div className="absolute left-6 -bottom-12 md:-bottom-14 z-20">
+        <div className="absolute left-6 -bottom-8 md:-bottom-10 z-20">
           {restaurant.logo_url ? (
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-shrink-0">
               <Image
@@ -318,7 +318,7 @@ export default function MenuPage({ params }: MenuPageProps) {
 
         {/* Restaurant Info - with proper spacing for overlapping logo */}
         <div className="relative bg-white border-b">
-          <div className={`${layout.containerSmall} pt-20 pb-6`}>
+          <div className={`${layout.containerSmall} pt-16 pb-6`}>
             <div className="flex-1 min-w-0">
               <h1 className={`${typography.h3} mb-2`}>
                 {restaurant.name}
