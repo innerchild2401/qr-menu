@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
-import RestaurantNavbar from './RestaurantNavbar';
 
 export default function ConditionalNavbar() {
   const pathname = usePathname();
@@ -12,9 +11,9 @@ export default function ConditionalNavbar() {
     return null;
   }
   
-  // Use special navbar for restaurant menu pages
+  // Don't render Navbar on restaurant menu pages (it will be rendered inside the page)
   if (pathname?.startsWith('/menu/')) {
-    return <RestaurantNavbar />;
+    return null;
   }
   
   return <Navbar />;

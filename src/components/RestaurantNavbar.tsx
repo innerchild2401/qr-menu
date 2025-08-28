@@ -7,18 +7,7 @@ import { layout } from '@/lib/design-system';
 import { useOrder } from '@/contexts/OrderContext';
 
 export default function RestaurantNavbar() {
-  // Try to use the order context, but provide fallbacks if not available
-  let totalItems = 0;
-  let setShowOrderSummary = (show: boolean) => {};
-
-  try {
-    const orderContext = useOrder();
-    totalItems = orderContext.totalItems;
-    setShowOrderSummary = orderContext.setShowOrderSummary;
-  } catch (error) {
-    // Context not available, use fallback values
-    console.log('OrderContext not available, using fallback values');
-  }
+  const { totalItems, setShowOrderSummary } = useOrder();
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();

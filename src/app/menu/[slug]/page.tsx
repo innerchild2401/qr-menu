@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { layout, typography, spacing, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
+import RestaurantNavbar from '@/components/RestaurantNavbar';
 
 interface MenuPageProps {
   params: Promise<{
@@ -244,6 +245,9 @@ function MenuPageContent({ params }: MenuPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Restaurant Navbar - rendered inside the page where context is available */}
+      <RestaurantNavbar />
+      
       {/* Promo Popup */}
       <PromoPopup slug={restaurant.slug} />
       
