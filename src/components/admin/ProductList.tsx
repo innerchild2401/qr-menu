@@ -148,66 +148,105 @@ export default function ProductList({
     );
   }
 
-  // Card view
+  // Card view - matching restaurant menu page design
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product) => (
         <div
           key={product.id}
-          className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow"
+          className="overflow-hidden hover:shadow-lg transition-all duration-300 h-48 flex flex-col border border-gray-200 dark:border-gray-600 rounded-lg"
         >
-          <div className="aspect-w-16 aspect-h-9 mb-4">
+          {/* Header with name and price - at the top */}
+          <div className="p-4 pb-2">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground text-lg line-clamp-1">
+                  {product.name}
+                </h3>
+              </div>
+              <div className="ml-4 flex-shrink-0">
+                <div className="text-lg font-bold text-primary">
+                  ${product.price.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Section: Image + Description */}
+          <div className="px-4 pb-2">
             {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-32 object-cover rounded-lg"
-              />
+              /* Layout with image */
+              <div className="flex gap-3">
+                {/* Image Square - Left Column */}
+                <div className="flex-shrink-0">
+                  <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Gradient overlay for smooth transition to text */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
+                  </div>
+                </div>
+                
+                {/* Description - Right Column */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-muted-foreground text-sm">
+                    {product.description ? (
+                      product.description.length > 60 ? 
+                        `${product.description.slice(0, 60)}...` : 
+                        product.description
+                    ) : (
+                      <span className="text-gray-400 italic">No description</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              /* Layout without image - full width description */
+              <div className="text-muted-foreground text-sm">
+                {product.description ? (
+                  product.description.length > 60 ? 
+                    `${product.description.slice(0, 60)}...` : 
+                    product.description
+                ) : (
+                  <span className="text-gray-400 italic">No description</span>
+                )}
               </div>
             )}
           </div>
-          
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {product.name}
-            </h3>
-            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-              ${product.price.toFixed(2)}
-            </span>
-          </div>
-          
-          {product.description && (
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-          
-          {product.categories?.name && (
-            <div className="mb-3">
-              <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full text-xs">
-                {product.categories.name}
-              </span>
+
+          {/* Category and Actions - pinned to bottom */}
+          <div className="px-4 pb-4 mt-auto">
+            <div className="flex items-center justify-between gap-3">
+              {/* Category Info - Left Side */}
+              <div className="flex-1">
+                {product.categories?.name && (
+                  <div className="p-2 bg-muted/50 rounded-md">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {product.categories.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons - Right Side */}
+              <div className="flex-shrink-0 flex gap-2">
+                <button
+                  onClick={() => onEdit(product)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(product)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          )}
-          
-          <div className="flex space-x-2">
-            <button
-              onClick={() => onEdit(product)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDelete(product)}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              Delete
-            </button>
           </div>
         </div>
       ))}

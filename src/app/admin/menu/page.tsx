@@ -12,7 +12,8 @@ import {
   GripVertical,
   Settings,
   Package,
-  List
+  List,
+  Move
 } from 'lucide-react';
 import { typography, spacing, gaps } from '@/lib/design-system';
 
@@ -50,6 +51,7 @@ export default function AdminMenu() {
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isReordering, setIsReordering] = useState(false);
+  const [isReorderingProducts, setIsReorderingProducts] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState<string | null>(null);
 
   // Feature flag for advanced menu management
@@ -143,6 +145,66 @@ export default function AdminMenu() {
       }
     } catch (error) {
       console.error('Error reordering categories:', error);
+      // Revert on error
+      loadData();
+    }
+  };
+
+  // Reorder products within a category
+  const reorderProduct = async (productId: string, direction: 'up' | 'down') => {
+    const currentIndex = filteredProducts.findIndex(prod => prod.id === productId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= filteredProducts.length) return;
+
+    const newProducts = [...filteredProducts];
+    const [movedProduct] = newProducts.splice(currentIndex, 1);
+    newProducts.splice(newIndex, 0, movedProduct);
+
+    // Update sort_order for all products in the category
+    const updatedProducts = newProducts.map((prod, index) => ({
+      ...prod,
+      sort_order: index
+    }));
+
+    // Update the products state with new order
+    setProducts(prevProducts => {
+      const otherProducts = prevProducts.filter(p => 
+        selectedCategory === 'all' ? true : p.category_id === selectedCategory
+      );
+      const updatedOtherProducts = otherProducts.map(p => {
+        const updatedProduct = updatedProducts.find(up => up.id === p.id);
+        return updatedProduct || p;
+      });
+      
+      return prevProducts.map(p => {
+        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+          const updatedProduct = updatedProducts.find(up => up.id === p.id);
+          return updatedProduct || p;
+        }
+        return p;
+      });
+    });
+
+    try {
+      // Update the sort order in the database
+      const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
+        products: updatedProducts.map(prod => ({
+          id: prod.id,
+          sort_order: prod.sort_order
+        }))
+      }, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) {
+        console.error('Failed to reorder products');
+        // Revert on error
+        loadData();
+      }
+    } catch (error) {
+      console.error('Error reordering products:', error);
       // Revert on error
       loadData();
     }
@@ -402,6 +464,13 @@ export default function AdminMenu() {
                 </option>
               ))}
             </select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsReorderingProducts(!isReorderingProducts)}
+            >
+              {isReorderingProducts ? 'Done Reordering' : 'Reorder Products'}
+            </Button>
             <button
               onClick={() => window.location.href = '/admin/products'}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -434,6 +503,9 @@ export default function AdminMenu() {
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-600">
+                  {isReorderingProducts && (
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Order</th>
+                  )}
                   <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
                   <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
@@ -442,8 +514,35 @@ export default function AdminMenu() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, index) => (
                   <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    {isReorderingProducts && (
+                      <td className="py-3 px-4">
+                        <div className="flex items-center space-x-2">
+                          <Move className="w-4 h-4 text-gray-400" />
+                          <div className="flex flex-col">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => reorderProduct(product.id, 'up')}
+                              disabled={index === 0}
+                              className="h-6 w-6 p-0"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => reorderProduct(product.id, 'down')}
+                              disabled={index === filteredProducts.length - 1}
+                              className="h-6 w-6 p-0"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </td>
+                    )}
                     <td className="py-3 px-4 text-foreground font-medium">
                       {product.name}
                     </td>

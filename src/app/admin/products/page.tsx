@@ -47,6 +47,7 @@ export default function AdminProducts() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Load data on mount
   useEffect(() => {
@@ -137,6 +138,11 @@ export default function AdminProducts() {
     loadData();
   };
 
+  // Filter products based on selected category
+  const filteredProducts = selectedCategory === 'all' 
+    ? products 
+    : products.filter(product => product.category_id === selectedCategory);
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -176,7 +182,7 @@ export default function AdminProducts() {
         </p>
       </div>
 
-      {/* Add Product Buttons */}
+      {/* Add Product Buttons and Filters */}
       <div className="mb-6 flex justify-between items-center">
         <div className="flex space-x-3">
         <Button onClick={handleAddNew} className="flex items-center">
@@ -216,6 +222,34 @@ export default function AdminProducts() {
         </div>
       </div>
 
+      {/* Category Filter */}
+      <div className="mb-6">
+        <div className="flex items-center space-x-3">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Category:</span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('all')}
+              className="text-xs"
+            >
+              All Products
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category.id)}
+                className="text-xs"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Product Form */}
       <ProductForm
         isOpen={showForm}
@@ -231,11 +265,11 @@ export default function AdminProducts() {
       {/* Products List */}
       <Card className={spacing.md}>
         <h2 className={`${typography.h4} mb-4`}>
-          Products ({products.length})
+          Products ({filteredProducts.length} of {products.length})
         </h2>
         
         <ProductList
-          products={products}
+          products={filteredProducts}
           viewMode={viewMode}
           onEdit={handleEdit}
           onDelete={handleDelete}
