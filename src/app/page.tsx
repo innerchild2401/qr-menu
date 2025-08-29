@@ -28,23 +28,22 @@ export default function Home() {
             <div className="text-center">
               <Badge variant="secondary" className="mb-6">
                 <Sparkles className="w-3 h-3 mr-1" />
-                AI-Powered Menu Management
+                Upload. Customize. Sell.
               </Badge>
               
               <h1 className={`${typography.h1} mb-6`}>
-                Transform Your
-                <span className="text-primary block">Restaurant Menu</span>
+                The Fastest Way to Get
+                <span className="text-primary block">Your Digital Menu Live</span>
               </h1>
               
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
-                Create stunning digital menus with AI-powered descriptions, QR code generation, 
-                and seamless management. Elevate your dining experience with SmartMenu.
+                Upload. Customize. Sell. Turn your paper menu into an interactive QR experience in 5 minutes.
               </p>
 
               <div className={`flex flex-col sm:flex-row ${gaps.sm} justify-center items-center mb-12`}>
                 <Button size="lg" asChild className="text-lg px-8 py-6">
                   <Link href="/admin/settings">
-                    Get Started Free
+                    Start Free
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                 </Button>
@@ -75,10 +74,10 @@ export default function Home() {
           <div className={layout.container}>
             <div className="text-center mb-16">
               <h2 className={`${typography.h2} mb-4`}>
-                Everything You Need to Succeed
+                How It Works
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Powerful features designed to streamline your restaurant operations and enhance customer experience.
+                Three simple steps to get your digital menu live and driving sales.
               </p>
             </div>
 
@@ -88,24 +87,24 @@ export default function Home() {
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <QrCode className="w-6 h-6 text-primary" />
                   </div>
-                  <CardTitle>QR Code Menus</CardTitle>
+                  <CardTitle>Step 1: Upload</CardTitle>
                   <CardDescription>
-                    Generate beautiful QR codes for instant menu access. No more printing costs or outdated menus.
+                    Upload your .xls or .csv menu — no fixed structure required. Ready in 5 clicks.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Instant menu updates
+                      Bulk uploads in seconds
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Contactless ordering
+                      Drag, drop, done
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Analytics tracking
+                      No fixed structure required
                     </li>
                   </ul>
                 </CardContent>
@@ -116,24 +115,24 @@ export default function Home() {
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Brain className="w-6 h-6 text-green-600" />
                   </div>
-                  <CardTitle>AI Descriptions</CardTitle>
+                  <CardTitle>Step 2: Customize</CardTitle>
                   <CardDescription>
-                    Automatically generate compelling product descriptions in multiple languages with AI assistance.
+                    Customize and reorder products easily — highlight what matters most.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Multi-language support
+                      Total control over product order
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      SEO-optimized content
+                      Easy drag & drop reordering
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Customizable tone
+                      Highlight your best sellers
                     </li>
                   </ul>
                 </CardContent>
@@ -144,24 +143,24 @@ export default function Home() {
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Settings className="w-6 h-6 text-purple-600" />
                   </div>
-                  <CardTitle>Admin Dashboard</CardTitle>
+                  <CardTitle>Step 3: Sell</CardTitle>
                   <CardDescription>
-                    Complete control over your menu with an intuitive admin panel. Manage products, categories, and more.
+                    Use popups to promote specials, events, or discounts directly in your QR menu.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Real-time updates
+                      Built-in marketing with engaging popups
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Bulk operations
+                      Promote specials and events
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      Performance insights
+                      Drive more sales with targeted offers
                     </li>
                   </ul>
                 </CardContent>
@@ -175,16 +174,16 @@ export default function Home() {
           <div className={layout.container}>
             <div className={`grid grid-cols-1 md:grid-cols-3 ${gaps.lg} text-center`}>
               <div className="text-white">
-                <div className="text-4xl font-bold mb-2">500+</div>
-                <div className="text-blue-100">Restaurants Trust Us</div>
+                <div className="text-4xl font-bold mb-2">5</div>
+                <div className="text-blue-100">Minutes to Live</div>
               </div>
               <div className="text-white">
-                <div className="text-4xl font-bold mb-2">10K+</div>
-                <div className="text-blue-100">QR Codes Generated</div>
+                <div className="text-4xl font-bold mb-2">0</div>
+                <div className="text-blue-100">Coding Required</div>
               </div>
               <div className="text-white">
-                <div className="text-4xl font-bold mb-2">99.9%</div>
-                <div className="text-blue-100">Uptime Guarantee</div>
+                <div className="text-4xl font-bold mb-2">100%</div>
+                <div className="text-blue-100">Customer Focused</div>
               </div>
             </div>
           </div>
@@ -194,14 +193,14 @@ export default function Home() {
         <section className="py-20 bg-white">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold text-foreground mb-4">
-              Ready to Transform Your Menu?
+              Ready to launch your QR menu?
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join hundreds of restaurants already using SmartMenu to enhance their customer experience.
+              No coding. No stress. Just customers.
             </p>
             <Button size="lg" asChild className="text-lg px-8 py-6">
               <Link href="/admin/settings">
-                Start Your Free Trial
+                Start Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
