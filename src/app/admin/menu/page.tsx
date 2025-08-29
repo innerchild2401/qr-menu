@@ -389,10 +389,10 @@ export default function AdminMenu() {
     }
   };
 
-  // Reorder products within a category
+  // Reorder product within its category
   const reorderProduct = async (productId: string, direction: 'up' | 'down') => {
     console.log('🔄 Starting product reorder:', { productId, direction, selectedCategory });
-    
+
     const currentIndex = filteredProducts.findIndex(prod => prod.id === productId);
     if (currentIndex === -1) {
       console.log('❌ Product not found in filtered products');
@@ -421,91 +421,69 @@ export default function AdminMenu() {
 
     // Update the products state with new order
     setProducts(prevProducts => {
+      let updatedProducts;
+      
       if (selectedCategory === 'all') {
         // When viewing all products, update sort_order for all products
-        const updated = prevProducts.map(p => {
+        updatedProducts = prevProducts.map(p => {
           const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
           return updatedProduct || p;
         });
-        console.log('🔄 Updated all products state:', updated.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
-        return updated;
+        console.log('🔄 Updated all products state:', updatedProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
       } else {
         // When viewing a specific category, only update products in that category
-        const updated = prevProducts.map(p => {
+        updatedProducts = prevProducts.map(p => {
           if (p.category_id === selectedCategory) {
             const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
             return updatedProduct || p;
           }
           return p;
         });
-        console.log('🔄 Updated category products state:', updated.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
-        return updated;
+        console.log('🔄 Updated category products state:', updatedProducts.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
       }
-    });
-
-    try {
-      // Update the sort order in the database
-      let allProductsToUpdate;
       
-      if (selectedCategory === 'all') {
-        // When viewing all products, send all products with updated sort_order
-        allProductsToUpdate = products.map(p => {
-          const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
-          return {
-            id: p.id,
-            sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
-          };
-        });
-      } else {
-        // When viewing a specific category, send all products but only update sort_order for that category
-        allProductsToUpdate = products.map(p => {
-          if (p.category_id === selectedCategory) {
-            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
-            return {
-              id: p.id,
-              sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
-            };
-          }
-          return {
-            id: p.id,
-            sort_order: p.sort_order || 0
-          };
-        });
-      }
-
-      console.log('📤 Sending to API:', allProductsToUpdate);
-
-      const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
-        products: allProductsToUpdate
-      }, {
-        method: 'PUT'
-      });
-
-      console.log('📥 API response:', { ok: response.ok, status: response.status });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Failed to reorder products:', { status: response.status, error: errorText });
-        // Revert on error
-        loadData();
-      } else {
-        console.log('✅ Product reordering successful!');
+      // Use the updated products for the API call
+      setTimeout(() => {
+        const allProductsToUpdate = updatedProducts.map(p => ({
+          id: p.id,
+          sort_order: p.sort_order || 0
+        }));
         
-        // Log the current state to verify the order
-        setTimeout(() => {
-          const currentFilteredProducts = selectedCategory === 'all' 
-            ? products 
-            : products.filter(product => product.category_id === selectedCategory);
-          console.log('🔍 Current filtered products after reorder:', 
-            currentFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order }))
-          );
-        }, 100);
-      }
-    } catch (error) {
-      console.error('❌ Error reordering products:', error);
-      // Revert on error
-      loadData();
-    }
+        console.log('📤 Sending to API:', allProductsToUpdate);
+        
+        authenticatedApiCallWithBody('/api/admin/products/reorder', {
+          products: allProductsToUpdate
+        }, {
+          method: 'PUT'
+        }).then(response => {
+          console.log('📥 API response:', { ok: response.ok, status: response.status });
+          
+          if (!response.ok) {
+            response.text().then(errorText => {
+              console.error('❌ Failed to reorder products:', { status: response.status, error: errorText });
+              loadData();
+            });
+          } else {
+            console.log('✅ Product reordering successful!');
+            
+            // Log the current state to verify the order
+            setTimeout(() => {
+              const currentFilteredProducts = selectedCategory === 'all' 
+                ? updatedProducts 
+                : updatedProducts.filter(product => product.category_id === selectedCategory);
+              console.log('🔍 Current filtered products after reorder:', 
+                currentFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order }))
+              );
+            }, 100);
+          }
+        }).catch(error => {
+          console.error('❌ Error reordering products:', error);
+          loadData();
+        });
+      }, 0);
+      
+      return updatedProducts;
+    });
   };
 
   // Toggle product visibility
