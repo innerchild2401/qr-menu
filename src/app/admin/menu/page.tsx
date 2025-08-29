@@ -363,93 +363,218 @@ export default function AdminMenu() {
         </Card>
       </div>
 
-      {/* Categories Management */}
+      {/* Categories and Products Management */}
       <Card className="p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Categories Order
+            {selectedCategory === 'all' ? 'Categories Order' : `Products in ${getCategoryName(selectedCategory)}`}
           </h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsReordering(!isReordering)}
-          >
-            {isReordering ? 'Done Reordering' : 'Reorder Categories'}
-          </Button>
+          <div className="flex items-center space-x-2">
+            {selectedCategory === 'all' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsReordering(!isReordering)}
+              >
+                {isReordering ? 'Done Reordering' : 'Reorder Categories'}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  ← Back to Categories
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsReorderingProducts(!isReorderingProducts)}
+                >
+                  {isReorderingProducts ? 'Done Reordering' : 'Reorder Products'}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
         
-        {categories.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-gray-400 mb-4">
-              <List className="w-12 h-12 mx-auto" />
+        {selectedCategory === 'all' ? (
+          // Categories view
+          categories.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-4">
+                <List className="w-12 h-12 mx-auto" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                No categories found. Create your first category to get started.
+              </p>
+              <button
+                onClick={() => window.location.href = '/admin/categories'}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Create Category
+              </button>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              No categories found. Create your first category to get started.
-            </p>
-            <button
-              onClick={() => window.location.href = '/admin/categories'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Create Category
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {categories.map((category, index) => {
-              const categoryProducts = products.filter(product => product.category_id === category.id);
-              return (
-                <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <div className="flex items-center space-x-3">
-                    {isReordering && (
-                      <GripVertical className="w-4 h-4 text-gray-400" />
-                    )}
-                    <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">{category.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {categoryProducts.length} items
-                      </p>
+          ) : (
+            <div className="space-y-2">
+              {categories.map((category, index) => {
+                const categoryProducts = products.filter(product => product.category_id === category.id);
+                return (
+                  <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex items-center space-x-3">
+                      {isReordering && (
+                        <GripVertical className="w-4 h-4 text-gray-400" />
+                      )}
+                      <div>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{category.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {categoryProducts.length} items
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {isReordering && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => reorderCategory(category.id, 'up')}
+                            disabled={index === 0}
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => reorderCategory(category.id, 'down')}
+                            disabled={index === categories.length - 1}
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => setSelectedCategory(category.id)}
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                      >
+                        View Items →
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {isReordering && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => reorderCategory(category.id, 'up')}
-                          disabled={index === 0}
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => reorderCategory(category.id, 'down')}
-                          disabled={index === categories.length - 1}
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </Button>
-                      </>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          // Products view for selected category
+          filteredProducts.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-4">
+                <Package className="w-12 h-12 mx-auto" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                No products in this category.
+              </p>
+              <button
+                onClick={() => window.location.href = '/admin/products'}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Add Product
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-600">
+                    {isReorderingProducts && (
+                      <th className="text-left py-3 px-4 font-medium text-foreground">Order</th>
                     )}
-                    <button 
-                      onClick={() => setSelectedCategory(category.id)}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
-                    >
-                      View Items →
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Visibility</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((product, index) => (
+                    <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                      {isReorderingProducts && (
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <Move className="w-4 h-4 text-gray-400" />
+                            <div className="flex flex-col">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => reorderProduct(product.id, 'up')}
+                                disabled={index === 0}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => reorderProduct(product.id, 'down')}
+                                disabled={index === filteredProducts.length - 1}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      )}
+                      <td className="py-3 px-4 text-foreground font-medium">
+                        {product.name}
+                      </td>
+                      <td className="py-3 px-4 text-foreground font-medium">
+                        ${product.price.toFixed(2)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={product.available !== false}
+                            onCheckedChange={() => toggleProductVisibility(product.id, product.available !== false)}
+                            disabled={isUpdatingVisibility === product.id}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {product.available !== false ? 'Visible' : 'Hidden'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => window.location.href = `/admin/products?edit=${product.id}`}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => window.location.href = `/admin/products`}
+                            className="text-red-600 hover:text-red-700 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </Card>
 
-      {/* Products List */}
+      {/* All Products Overview */}
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Menu Items
+            All Menu Items
           </h2>
           <div className="flex items-center space-x-4">
             <select
@@ -464,13 +589,6 @@ export default function AdminMenu() {
                 </option>
               ))}
             </select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsReorderingProducts(!isReorderingProducts)}
-            >
-              {isReorderingProducts ? 'Done Reordering' : 'Reorder Products'}
-            </Button>
             <button
               onClick={() => window.location.href = '/admin/products'}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -480,16 +598,13 @@ export default function AdminMenu() {
           </div>
         </div>
         
-        {filteredProducts.length === 0 ? (
+        {products.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-400 mb-4">
               <Package className="w-12 h-12 mx-auto" />
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {selectedCategory === 'all' 
-                ? 'No products found. Create your first product to get started.'
-                : 'No products in this category.'
-              }
+              No products found. Create your first product to get started.
             </p>
             <button
               onClick={() => window.location.href = '/admin/products'}
@@ -503,9 +618,6 @@ export default function AdminMenu() {
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-600">
-                  {isReorderingProducts && (
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Order</th>
-                  )}
                   <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
                   <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
@@ -514,35 +626,8 @@ export default function AdminMenu() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((product, index) => (
+                {products.map((product) => (
                   <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                    {isReorderingProducts && (
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Move className="w-4 h-4 text-gray-400" />
-                          <div className="flex flex-col">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => reorderProduct(product.id, 'up')}
-                              disabled={index === 0}
-                              className="h-6 w-6 p-0"
-                            >
-                              <ChevronUp className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => reorderProduct(product.id, 'down')}
-                              disabled={index === filteredProducts.length - 1}
-                              className="h-6 w-6 p-0"
-                            >
-                              <ChevronDown className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </td>
-                    )}
                     <td className="py-3 px-4 text-foreground font-medium">
                       {product.name}
                     </td>
