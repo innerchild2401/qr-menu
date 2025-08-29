@@ -361,7 +361,7 @@ function MenuPageContent({ params }: MenuPageProps) {
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleCategoryChange('all')}
-              className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit"
+              className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit focus:ring-0 focus:outline-none"
             >
               All Items
             </Button>
@@ -371,7 +371,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleCategoryChange(category.id)}
-                className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit"
+                className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit focus:ring-0 focus:outline-none"
               >
                 {category.name}
               </Button>
@@ -546,7 +546,7 @@ function ProductCard({
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 mb-1">
-              <h3 className="font-semibold text-foreground text-lg line-clamp-1">
+              <h3 className={`font-semibold text-foreground text-lg ${!isExpanded ? 'line-clamp-1' : ''}`}>
                 {product.name}
               </h3>
               {/* Product Attribute Icons */}
@@ -627,7 +627,7 @@ function ProductCard({
           {/* Nutrition Info - Left Side */}
           {product.nutrition && (
             <div className="flex-1 p-2 bg-muted/50 rounded-md">
-              <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+              <div className={`flex flex-wrap gap-1.5 text-xs text-muted-foreground ${!isExpanded ? 'line-clamp-1' : ''}`}>
                 {product.nutrition.calories && (
                   <span className="font-medium">{product.nutrition.calories} {getNutritionLabel('calories', restaurant.nutrition_language)}</span>
                 )}
