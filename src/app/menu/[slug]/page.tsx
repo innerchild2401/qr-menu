@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Share2, 
   Star, 
@@ -108,6 +108,7 @@ function MenuPageContent({ params }: MenuPageProps) {
   const { order, setOrder, showOrderSummary, setShowOrderSummary } = useOrder();
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [showAddedToast, setShowAddedToast] = useState<string | null>(null);
+  const menuContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadMenuData = async () => {
@@ -200,6 +201,18 @@ function MenuPageContent({ params }: MenuPageProps) {
       }
       return newSet;
     });
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    
+    // Reset scroll position to top with smooth scrolling
+    if (menuContentRef.current) {
+      menuContentRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
   };
 
   if (isLoading) {
@@ -343,12 +356,12 @@ function MenuPageContent({ params }: MenuPageProps) {
       {/* Sticky Category Navigation */}
       <div className="sticky top-16 z-40 bg-white border-b shadow-sm">
         <div className={`${layout.containerSmall} py-4`}>
-          <div className="flex items-center space-x-2 category-scroll pb-2">
+          <div className="flex items-center space-x-3 category-scroll pb-2 px-1">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedCategory('all')}
-              className="flex-shrink-0 whitespace-nowrap"
+              onClick={() => handleCategoryChange('all')}
+              className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit"
             >
               All Items
             </Button>
@@ -357,8 +370,8 @@ function MenuPageContent({ params }: MenuPageProps) {
                 key={category.id}
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setSelectedCategory(category.id)}
-                className="flex-shrink-0 whitespace-nowrap"
+                onClick={() => handleCategoryChange(category.id)}
+                className="flex-shrink-0 whitespace-nowrap px-4 py-2 min-w-fit"
               >
                 {category.name}
               </Button>
@@ -368,7 +381,7 @@ function MenuPageContent({ params }: MenuPageProps) {
       </div>
 
       {/* Menu Content */}
-      <div className={`${layout.containerSmall} py-6`}>
+      <div ref={menuContentRef} className={`${layout.containerSmall} py-6`}>
         {selectedCategory === 'all' ? (
           <div className="space-y-6">
             {categoriesWithProducts.map((category) => (

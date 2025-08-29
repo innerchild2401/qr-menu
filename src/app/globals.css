@@ -114,6 +114,9 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
+  /* Ensure buttons are not clipped */
+  padding: 2px 0;
+  margin: -2px 0;
 }
 
 .category-scroll::-webkit-scrollbar {
@@ -145,4 +148,14 @@ body {
   .category-scroll:hover::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
   }
+}
+
+/* Ensure category buttons are fully visible when selected */
+.category-scroll button {
+  position: relative;
+  z-index: 1;
+}
+
+.category-scroll button[data-state="default"] {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
