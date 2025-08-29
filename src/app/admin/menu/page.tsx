@@ -402,26 +402,42 @@ export default function AdminMenu() {
     newProducts.splice(newIndex, 0, movedProduct);
 
     // Update sort_order for all products in the category
-    const updatedProducts = newProducts.map((prod, index) => ({
+    const updatedFilteredProducts = newProducts.map((prod, index) => ({
       ...prod,
       sort_order: index
     }));
 
-    // Update the products state with new order - simplified logic
+    // Update the products state with new order - maintain sort_order for all products
     setProducts(prevProducts => {
       return prevProducts.map(p => {
-        const updatedProduct = updatedProducts.find(up => up.id === p.id);
-        return updatedProduct || p;
+        // If this product is in the filtered category, update its sort_order
+        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+          const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+          return updatedProduct || p;
+        }
+        // Keep other products unchanged
+        return p;
       });
     });
 
     try {
-      // Update the sort order in the database
+      // Update the sort order in the database - send all products with their current sort_order
+      const allProductsToUpdate = products.map(p => {
+        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+          const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+          return {
+            id: p.id,
+            sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
+          };
+        }
+        return {
+          id: p.id,
+          sort_order: p.sort_order || 0
+        };
+      });
+
       const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
-        products: updatedProducts.map(prod => ({
-          id: prod.id,
-          sort_order: prod.sort_order
-        }))
+        products: allProductsToUpdate
       }, {
         method: 'PUT'
       });
@@ -525,25 +541,42 @@ export default function AdminMenu() {
       const newIndex = filteredProducts.findIndex(prod => prod.id === over?.id);
 
       const newProducts = arrayMove(filteredProducts, oldIndex, newIndex);
-      const updatedProducts = newProducts.map((prod, index) => ({
+      const updatedFilteredProducts = newProducts.map((prod, index) => ({
         ...prod,
         sort_order: index
       }));
 
-      // Update the products state with new order - simplified logic
+      // Update the products state with new order - maintain sort_order for all products
       setProducts(prevProducts => {
         return prevProducts.map(p => {
-          const updatedProduct = updatedProducts.find(up => up.id === p.id);
-          return updatedProduct || p;
+          // If this product is in the filtered category, update its sort_order
+          if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+            return updatedProduct || p;
+          }
+          // Keep other products unchanged
+          return p;
         });
       });
 
       try {
+        // Update the sort order in the database - send all products with their current sort_order
+        const allProductsToUpdate = products.map(p => {
+          if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+            return {
+              id: p.id,
+              sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
+            };
+          }
+          return {
+            id: p.id,
+            sort_order: p.sort_order || 0
+          };
+        });
+
         const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
-          products: updatedProducts.map(prod => ({
-            id: prod.id,
-            sort_order: prod.sort_order
-          }))
+          products: allProductsToUpdate
         }, {
           method: 'PUT'
         });
