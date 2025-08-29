@@ -3,29 +3,32 @@ import { supabaseAdmin } from '../../../lib/supabase-server';
 
 export async function GET(): Promise<NextResponse> {
   try {
-    // Try to get products with sort_order to see if the column exists
-    const { data: products, error: productsError } = await supabaseAdmin
+    // Simple test - just try to get one product
+    const { data, error } = await supabaseAdmin
       .from('products')
-      .select('id, name, sort_order, available')
-      .limit(2);
+      .select('id, name')
+      .limit(1);
 
-    // Try to get categories with sort_order to see if the column exists
-    const { data: categories, error: categoriesError } = await supabaseAdmin
-      .from('categories')
-      .select('id, name, sort_order')
-      .limit(2);
+    if (error) {
+      return NextResponse.json({
+        error: 'Database error',
+        message: error.message,
+        code: error.code
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
-      products: products || [],
-      categories: categories || [],
-      productsError: productsError?.message || null,
-      categoriesError: categoriesError?.message || null,
-      hasSortOrderColumns: !productsError && !categoriesError
+      success: true,
+      data: data || [],
+      message: 'Database connection successful'
     });
   } catch (error) {
-    console.error('Error testing schema:', error);
+    console.error('Error in test-schema:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

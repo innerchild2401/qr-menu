@@ -391,11 +391,21 @@ export default function AdminMenu() {
 
   // Reorder products within a category
   const reorderProduct = async (productId: string, direction: 'up' | 'down') => {
+    console.log('🔄 Starting product reorder:', { productId, direction, selectedCategory });
+    
     const currentIndex = filteredProducts.findIndex(prod => prod.id === productId);
-    if (currentIndex === -1) return;
+    if (currentIndex === -1) {
+      console.log('❌ Product not found in filtered products');
+      return;
+    }
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= filteredProducts.length) return;
+    if (newIndex < 0 || newIndex >= filteredProducts.length) {
+      console.log('❌ Invalid new index:', newIndex);
+      return;
+    }
+
+    console.log('📊 Reorder indices:', { currentIndex, newIndex, totalProducts: filteredProducts.length });
 
     const newProducts = [...filteredProducts];
     const [movedProduct] = newProducts.splice(currentIndex, 1);
@@ -407,34 +417,63 @@ export default function AdminMenu() {
       sort_order: index
     }));
 
-    // Update the products state with new order - maintain sort_order for all products
+    console.log('📝 Updated filtered products:', updatedFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+
+    // Update the products state with new order
     setProducts(prevProducts => {
-      return prevProducts.map(p => {
-        // If this product is in the filtered category, update its sort_order
-        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+      if (selectedCategory === 'all') {
+        // When viewing all products, update sort_order for all products
+        const updated = prevProducts.map(p => {
           const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
           return updatedProduct || p;
-        }
-        // Keep other products unchanged
-        return p;
-      });
+        });
+        console.log('🔄 Updated all products state:', updated.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+        return updated;
+      } else {
+        // When viewing a specific category, only update products in that category
+        const updated = prevProducts.map(p => {
+          if (p.category_id === selectedCategory) {
+            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+            return updatedProduct || p;
+          }
+          return p;
+        });
+        console.log('🔄 Updated category products state:', updated.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+        return updated;
+      }
     });
 
     try {
-      // Update the sort order in the database - send all products with their current sort_order
-      const allProductsToUpdate = products.map(p => {
-        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+      // Update the sort order in the database
+      let allProductsToUpdate;
+      
+      if (selectedCategory === 'all') {
+        // When viewing all products, send all products with updated sort_order
+        allProductsToUpdate = products.map(p => {
           const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
           return {
             id: p.id,
             sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
           };
-        }
-        return {
-          id: p.id,
-          sort_order: p.sort_order || 0
-        };
-      });
+        });
+      } else {
+        // When viewing a specific category, send all products but only update sort_order for that category
+        allProductsToUpdate = products.map(p => {
+          if (p.category_id === selectedCategory) {
+            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+            return {
+              id: p.id,
+              sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
+            };
+          }
+          return {
+            id: p.id,
+            sort_order: p.sort_order || 0
+          };
+        });
+      }
+
+      console.log('📤 Sending to API:', allProductsToUpdate);
 
       const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
         products: allProductsToUpdate
@@ -442,13 +481,18 @@ export default function AdminMenu() {
         method: 'PUT'
       });
 
+      console.log('📥 API response:', { ok: response.ok, status: response.status });
+
       if (!response.ok) {
-        console.error('Failed to reorder products');
+        const errorText = await response.text();
+        console.error('❌ Failed to reorder products:', { status: response.status, error: errorText });
         // Revert on error
         loadData();
+      } else {
+        console.log('✅ Product reordering successful!');
       }
     } catch (error) {
-      console.error('Error reordering products:', error);
+      console.error('❌ Error reordering products:', error);
       // Revert on error
       loadData();
     }
@@ -535,10 +579,13 @@ export default function AdminMenu() {
   // Handle product drag end
   const handleProductDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    console.log('🔄 Drag and drop event:', { active: active.id, over: over?.id });
 
     if (active.id !== over?.id) {
       const oldIndex = filteredProducts.findIndex(prod => prod.id === active.id);
       const newIndex = filteredProducts.findIndex(prod => prod.id === over?.id);
+
+      console.log('📊 Drag indices:', { oldIndex, newIndex, totalProducts: filteredProducts.length });
 
       const newProducts = arrayMove(filteredProducts, oldIndex, newIndex);
       const updatedFilteredProducts = newProducts.map((prod, index) => ({
@@ -546,34 +593,63 @@ export default function AdminMenu() {
         sort_order: index
       }));
 
-      // Update the products state with new order - maintain sort_order for all products
+      console.log('📝 Updated products after drag:', updatedFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+
+      // Update the products state with new order
       setProducts(prevProducts => {
-        return prevProducts.map(p => {
-          // If this product is in the filtered category, update its sort_order
-          if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+        if (selectedCategory === 'all') {
+          // When viewing all products, update sort_order for all products
+          const updated = prevProducts.map(p => {
             const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
             return updatedProduct || p;
-          }
-          // Keep other products unchanged
-          return p;
-        });
+          });
+          console.log('🔄 Updated all products state after drag:', updated.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+          return updated;
+        } else {
+          // When viewing a specific category, only update products in that category
+          const updated = prevProducts.map(p => {
+            if (p.category_id === selectedCategory) {
+              const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+              return updatedProduct || p;
+            }
+            return p;
+          });
+          console.log('🔄 Updated category products state after drag:', updated.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
+          return updated;
+        }
       });
 
       try {
-        // Update the sort order in the database - send all products with their current sort_order
-        const allProductsToUpdate = products.map(p => {
-          if (selectedCategory === 'all' || p.category_id === selectedCategory) {
+        // Update the sort order in the database
+        let allProductsToUpdate;
+        
+        if (selectedCategory === 'all') {
+          // When viewing all products, send all products with updated sort_order
+          allProductsToUpdate = products.map(p => {
             const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
             return {
               id: p.id,
               sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
             };
-          }
-          return {
-            id: p.id,
-            sort_order: p.sort_order || 0
-          };
-        });
+          });
+        } else {
+          // When viewing a specific category, send all products but only update sort_order for that category
+          allProductsToUpdate = products.map(p => {
+            if (p.category_id === selectedCategory) {
+              const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
+              return {
+                id: p.id,
+                sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
+              };
+            }
+            return {
+              id: p.id,
+              sort_order: p.sort_order || 0
+            };
+          });
+        }
+
+        console.log('📤 Sending to API after drag:', allProductsToUpdate);
 
         const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
           products: allProductsToUpdate
@@ -581,12 +657,17 @@ export default function AdminMenu() {
           method: 'PUT'
         });
 
+        console.log('📥 API response after drag:', { ok: response.ok, status: response.status });
+
         if (!response.ok) {
-          console.error('Failed to reorder products');
+          const errorText = await response.text();
+          console.error('❌ Failed to reorder products after drag:', { status: response.status, error: errorText });
           loadData();
+        } else {
+          console.log('✅ Product reordering after drag successful!');
         }
       } catch (error) {
-        console.error('Error reordering products:', error);
+        console.error('❌ Error reordering products after drag:', error);
         loadData();
       }
     }
