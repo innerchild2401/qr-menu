@@ -159,7 +159,8 @@ function SortableProduct({
   isReordering, 
   onReorder, 
   onToggleVisibility, 
-  isUpdatingVisibility 
+  isUpdatingVisibility,
+  totalProducts
 }: {
   product: Product;
   index: number;
@@ -167,6 +168,7 @@ function SortableProduct({
   onReorder: (productId: string, direction: 'up' | 'down') => void;
   onToggleVisibility: (productId: string, currentAvailable: boolean) => void;
   isUpdatingVisibility: string | null;
+  totalProducts: number;
 }) {
   const {
     attributes,
@@ -218,7 +220,7 @@ function SortableProduct({
                 variant="ghost"
                 size="sm"
                 onClick={() => onReorder(product.id, 'down')}
-                disabled={index === -1}
+                disabled={index === totalProducts - 1}
                 className="h-6 w-6 p-0"
               >
                 <ChevronDown className="w-3 h-3" />
@@ -813,6 +815,7 @@ export default function AdminMenu() {
                            onReorder={reorderProduct}
                            onToggleVisibility={toggleProductVisibility}
                            isUpdatingVisibility={isUpdatingVisibility}
+                           totalProducts={filteredProducts.length}
                          />
                        ))}
                      </tbody>
@@ -822,110 +825,7 @@ export default function AdminMenu() {
              </DndContext>
           )
         )}
-      </Card>
-
-             {/* All Products Overview */}
-       <Card className="p-6">
-         <div className="flex justify-between items-center mb-4">
-           <h2 className="text-xl font-semibold text-foreground">
-             All Menu Items
-           </h2>
-           <div className="flex items-center space-x-4">
-             <select
-               value={selectedCategory}
-               onChange={(e) => setSelectedCategory(e.target.value)}
-               className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-             >
-               <option value="all">All Categories</option>
-               {categories.map((category) => (
-                 <option key={category.id} value={category.id}>
-                   {category.name}
-                 </option>
-               ))}
-             </select>
-             <button
-               onClick={() => window.location.href = '/admin/products'}
-               className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
-             >
-               Add Product
-             </button>
-           </div>
-         </div>
-        
-        {products.length === 0 ? (
-                     <div className="text-center py-8">
-             <div className="text-muted-foreground mb-4">
-               <Package className="w-12 h-12 mx-auto" />
-             </div>
-             <p className="text-muted-foreground mb-4">
-               No products found. Create your first product to get started.
-             </p>
-             <button
-               onClick={() => window.location.href = '/admin/products'}
-               className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
-             >
-               Add Product
-             </button>
-           </div>
-        ) : (
-                     <div className="overflow-x-auto">
-             <table className="w-full min-w-[600px]">
-               <thead>
-                 <tr className="border-b border-border">
-                   <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
-                   <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
-                   <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
-                   <th className="text-left py-3 px-4 font-medium text-foreground">Visibility</th>
-                   <th className="text-left py-3 px-4 font-medium text-foreground">Actions</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {products.map((product) => (
-                   <tr key={product.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                     <td className="py-3 px-4 text-foreground font-medium">
-                       {product.name}
-                     </td>
-                     <td className="py-3 px-4 text-muted-foreground">
-                       {getCategoryName(product.category_id)}
-                     </td>
-                     <td className="py-3 px-4 text-foreground font-medium">
-                       ${product.price.toFixed(2)}
-                     </td>
-                     <td className="py-3 px-4">
-                       <div className="flex items-center space-x-2">
-                         <Switch
-                           checked={product.available !== false}
-                           onCheckedChange={() => toggleProductVisibility(product.id, product.available !== false)}
-                           disabled={isUpdatingVisibility === product.id}
-                         />
-                         <span className="text-sm text-muted-foreground">
-                           {product.available !== false ? 'Visible' : 'Hidden'}
-                         </span>
-                       </div>
-                     </td>
-                     <td className="py-3 px-4">
-                       <div className="flex space-x-2">
-                         <button 
-                           onClick={() => window.location.href = `/admin/products?edit=${product.id}`}
-                           className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
-                         >
-                           Edit
-                         </button>
-                         <button 
-                           onClick={() => window.location.href = `/admin/products`}
-                           className="text-destructive hover:text-destructive/80 text-sm font-medium transition-colors"
-                         >
-                           Delete
-                         </button>
-                       </div>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-        )}
-      </Card>
+            </Card>
 
       {/* Feature Flag Notice */}
       {!enableMenuAdmin && (

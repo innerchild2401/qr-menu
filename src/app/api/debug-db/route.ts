@@ -1,84 +1,51 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '../../../lib/supabase-server';
 
-export async function GET() {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Create Supabase client directly
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I';
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      }
-    });
+    // Check if sort_order column exists in products table
+    const { data: productsColumns, error: productsError } = await supabaseAdmin
+      .from('information_schema.columns')
+      .select('column_name, data_type, is_nullable, column_default')
+      .eq('table_name', 'products')
+      .in('column_name', ['sort_order', 'available']);
 
-    // Test basic connection
-    const { data: testData, error: testError } = await supabase
-      .from('restaurants')
-      .select('*')
-      .limit(1);
+    // Check if sort_order column exists in categories table
+    const { data: categoriesColumns, error: categoriesError } = await supabaseAdmin
+      .from('information_schema.columns')
+      .select('column_name, data_type, is_nullable, column_default')
+      .eq('table_name', 'categories')
+      .eq('column_name', 'sort_order');
 
-    if (testError) {
-      return NextResponse.json({ 
-        error: 'Database connection failed', 
-        details: testError.message,
-        code: testError.code
-      }, { status: 500 });
-    }
-
-    // Get all restaurants
-    const { data: restaurants, error: restaurantsError } = await supabase
-      .from('restaurants')
-      .select('*');
-
-    if (restaurantsError) {
-      return NextResponse.json({ 
-        error: 'Failed to get restaurants', 
-        details: restaurantsError.message 
-      }, { status: 500 });
-    }
-
-    // Get all categories
-    const { data: categories, error: categoriesError } = await supabase
-      .from('categories')
-      .select('*')
-      .limit(5);
-
-    if (categoriesError) {
-      return NextResponse.json({ 
-        error: 'Failed to get categories', 
-        details: categoriesError.message 
-      }, { status: 500 });
-    }
-
-    // Get all products
-    const { data: products, error: productsError } = await supabase
+    // Get sample products to see their current structure
+    const { data: sampleProducts, error: sampleError } = await supabaseAdmin
       .from('products')
       .select('*')
-      .limit(5);
+      .limit(3);
 
-    if (productsError) {
-      return NextResponse.json({ 
-        error: 'Failed to get products', 
-        details: productsError.message 
-      }, { status: 500 });
-    }
+    // Get sample categories to see their current structure
+    const { data: sampleCategories, error: sampleCategoriesError } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .limit(3);
 
     return NextResponse.json({
-      success: true,
-      restaurants: restaurants || [],
-      categories: categories || [],
-      products: products || [],
-      testData: testData || []
+      productsColumns: productsColumns || [],
+      categoriesColumns: categoriesColumns || [],
+      sampleProducts: sampleProducts || [],
+      sampleCategories: sampleCategories || [],
+      errors: {
+        products: productsError,
+        categories: categoriesError,
+        sampleProducts: sampleError,
+        sampleCategories: sampleCategoriesError
+      }
     });
-
   } catch (error) {
-    console.error('Debug API error:', error);
-    return NextResponse.json({ 
-      error: 'Debug failed', 
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Error checking database schema:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
