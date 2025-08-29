@@ -68,7 +68,8 @@ function SortableCategory({
   isReordering, 
   categoryProducts, 
   onReorder, 
-  onViewItems 
+  onViewItems,
+  totalCategories
 }: {
   category: Category;
   index: number;
@@ -76,6 +77,7 @@ function SortableCategory({
   categoryProducts: Product[];
   onReorder: (categoryId: string, direction: 'up' | 'down') => void;
   onViewItems: (categoryId: string) => void;
+  totalCategories: number;
 }) {
   const {
     attributes,
@@ -131,14 +133,14 @@ function SortableCategory({
             >
               <ChevronUp className="w-4 h-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onReorder(category.id, 'down')}
-              disabled={index === -1}
-            >
-              <ChevronDown className="w-4 h-4" />
-            </Button>
+                         <Button
+               variant="ghost"
+               size="sm"
+               onClick={() => onReorder(category.id, 'down')}
+               disabled={index === totalCategories - 1}
+             >
+               <ChevronDown className="w-4 h-4" />
+             </Button>
           </>
         )}
         <button 
@@ -405,22 +407,11 @@ export default function AdminMenu() {
       sort_order: index
     }));
 
-    // Update the products state with new order
+    // Update the products state with new order - simplified logic
     setProducts(prevProducts => {
-      const otherProducts = prevProducts.filter(p => 
-        selectedCategory === 'all' ? true : p.category_id === selectedCategory
-      );
-      const updatedOtherProducts = otherProducts.map(p => {
+      return prevProducts.map(p => {
         const updatedProduct = updatedProducts.find(up => up.id === p.id);
         return updatedProduct || p;
-      });
-      
-      return prevProducts.map(p => {
-        if (selectedCategory === 'all' || p.category_id === selectedCategory) {
-          const updatedProduct = updatedProducts.find(up => up.id === p.id);
-          return updatedProduct || p;
-        }
-        return p;
       });
     });
 
@@ -539,14 +530,11 @@ export default function AdminMenu() {
         sort_order: index
       }));
 
-      // Update the products state with new order
+      // Update the products state with new order - simplified logic
       setProducts(prevProducts => {
         return prevProducts.map(p => {
-          if (selectedCategory === 'all' || p.category_id === selectedCategory) {
-            const updatedProduct = updatedProducts.find(up => up.id === p.id);
-            return updatedProduct || p;
-          }
-          return p;
+          const updatedProduct = updatedProducts.find(up => up.id === p.id);
+          return updatedProduct || p;
         });
       });
 
@@ -750,15 +738,16 @@ export default function AdminMenu() {
                    {categories.map((category, index) => {
                      const categoryProducts = products.filter(product => product.category_id === category.id);
                      return (
-                       <SortableCategory
-                         key={category.id}
-                         category={category}
-                         index={index}
-                         isReordering={isReordering}
-                         categoryProducts={categoryProducts}
-                         onReorder={reorderCategory}
-                         onViewItems={setSelectedCategory}
-                       />
+                                               <SortableCategory
+                          key={category.id}
+                          category={category}
+                          index={index}
+                          isReordering={isReordering}
+                          categoryProducts={categoryProducts}
+                          onReorder={reorderCategory}
+                          onViewItems={setSelectedCategory}
+                          totalCategories={categories.length}
+                        />
                      );
                    })}
                  </div>
