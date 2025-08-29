@@ -1,7 +1,7 @@
 'use client';
 
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -490,6 +490,16 @@ export default function AdminMenu() {
         loadData();
       } else {
         console.log('✅ Product reordering successful!');
+        
+        // Log the current state to verify the order
+        setTimeout(() => {
+          const currentFilteredProducts = selectedCategory === 'all' 
+            ? products 
+            : products.filter(product => product.category_id === selectedCategory);
+          console.log('🔍 Current filtered products after reorder:', 
+            currentFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order }))
+          );
+        }, 100);
       }
     } catch (error) {
       console.error('❌ Error reordering products:', error);
@@ -527,10 +537,13 @@ export default function AdminMenu() {
     }
   };
 
-  // Filter products by selected category
-  const filteredProducts = selectedCategory === 'all' 
-    ? products 
-    : products.filter(product => product.category_id === selectedCategory);
+  // Filter products by selected category - memoized to ensure proper re-rendering
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'all') {
+      return products;
+    }
+    return products.filter(product => product.category_id === selectedCategory);
+  }, [selectedCategory, products]);
 
   // Get category name by ID
   const getCategoryName = (categoryId?: string) => {
