@@ -610,79 +610,59 @@ export default function AdminMenu() {
 
       // Update the products state with new order
       setProducts(prevProducts => {
+        let updatedProducts;
+        
         if (selectedCategory === 'all') {
           // When viewing all products, update sort_order for all products
-          const updated = prevProducts.map(p => {
+          updatedProducts = prevProducts.map(p => {
             const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
             return updatedProduct || p;
           });
-          console.log('🔄 Updated all products state after drag:', updated.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
-          return updated;
+          console.log('🔄 Updated all products state after drag:', updatedProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
         } else {
           // When viewing a specific category, only update products in that category
-          const updated = prevProducts.map(p => {
+          updatedProducts = prevProducts.map(p => {
             if (p.category_id === selectedCategory) {
               const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
               return updatedProduct || p;
             }
             return p;
           });
-          console.log('🔄 Updated category products state after drag:', updated.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
-          return updated;
+          console.log('🔄 Updated category products state after drag:', updatedProducts.filter(p => p.category_id === selectedCategory).map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
         }
-      });
-
-      try {
-        // Update the sort order in the database
-        let allProductsToUpdate;
         
-        if (selectedCategory === 'all') {
-          // When viewing all products, send all products with updated sort_order
-          allProductsToUpdate = products.map(p => {
-            const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
-            return {
-              id: p.id,
-              sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
-            };
-          });
-        } else {
-          // When viewing a specific category, send all products but only update sort_order for that category
-          allProductsToUpdate = products.map(p => {
-            if (p.category_id === selectedCategory) {
-              const updatedProduct = updatedFilteredProducts.find(up => up.id === p.id);
-              return {
-                id: p.id,
-                sort_order: updatedProduct ? updatedProduct.sort_order : p.sort_order || 0
-              };
+        // Use the updated products for the API call
+        setTimeout(() => {
+          const allProductsToUpdate = updatedProducts.map(p => ({
+            id: p.id,
+            sort_order: p.sort_order || 0
+          }));
+          
+          console.log('📤 Sending to API after drag:', allProductsToUpdate);
+          
+          authenticatedApiCallWithBody('/api/admin/products/reorder', {
+            products: allProductsToUpdate
+          }, {
+            method: 'PUT'
+          }).then(response => {
+            console.log('📥 API response after drag:', { ok: response.ok, status: response.status });
+            
+            if (!response.ok) {
+              response.text().then(errorText => {
+                console.error('❌ Failed to reorder products after drag:', { status: response.status, error: errorText });
+                loadData();
+              });
+            } else {
+              console.log('✅ Product reordering after drag successful!');
             }
-            return {
-              id: p.id,
-              sort_order: p.sort_order || 0
-            };
+          }).catch(error => {
+            console.error('❌ Error reordering products after drag:', error);
+            loadData();
           });
-        }
-
-        console.log('📤 Sending to API after drag:', allProductsToUpdate);
-
-        const response = await authenticatedApiCallWithBody('/api/admin/products/reorder', {
-          products: allProductsToUpdate
-        }, {
-          method: 'PUT'
-        });
-
-        console.log('📥 API response after drag:', { ok: response.ok, status: response.status });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Failed to reorder products after drag:', { status: response.status, error: errorText });
-          loadData();
-        } else {
-          console.log('✅ Product reordering after drag successful!');
-        }
-      } catch (error) {
-        console.error('❌ Error reordering products after drag:', error);
-        loadData();
-      }
+        }, 0);
+        
+        return updatedProducts;
+      });
     }
   };
 
