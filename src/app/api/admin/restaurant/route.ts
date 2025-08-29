@@ -89,7 +89,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         slug,
         address: address.trim(),
         schedule: schedule || {},
-        owner_id: userId
+        owner_id: userId,
+        currency: 'RON',
+        nutrition_language: 'EN'
       })
       .select()
       .single();
@@ -179,7 +181,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         address: updatedData.address,
         schedule: updatedData.schedule,
         logo_url: updatedData.logo_url,
-        cover_url: updatedData.cover_url
+        cover_url: updatedData.cover_url,
+        currency: updatedData.currency,
+        nutrition_language: updatedData.nutrition_language
       })
       .eq('id', restaurant.id)
       .select()

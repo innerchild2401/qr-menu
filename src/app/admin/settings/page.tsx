@@ -8,6 +8,7 @@ import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PDFMenuGenerator from '../../../components/admin/PDFMenuGenerator';
+import { CURRENCIES, NUTRITION_LANGUAGES, type Currency, type NutritionLanguage } from '@/lib/currency-utils';
 
 interface Restaurant {
   id: string;
@@ -17,6 +18,8 @@ interface Restaurant {
   schedule: Record<string, string>;
   logo_url?: string;
   cover_url?: string;
+  currency?: Currency;
+  nutrition_language?: NutritionLanguage;
 }
 
 interface CreateRestaurantForm {
@@ -425,6 +428,55 @@ export default function AdminSettings() {
               className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
               placeholder="Enter restaurant address"
             />
+          </div>
+        </div>
+      </Card>
+
+      {/* Menu Settings Card */}
+      <Card className={`${spacing.md} mb-6`}>
+        <h2 className={`${typography.h4} mb-4`}>
+          Menu Settings
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Currency
+            </label>
+            <select
+              value={restaurant.currency || 'RON'}
+              onChange={(e) => handleInputChange('currency', e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+            >
+              {CURRENCIES.map((currency) => (
+                <option key={currency.value} value={currency.value}>
+                  {currency.label} ({currency.symbol})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Currency used for menu prices
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Nutrition Language
+            </label>
+            <select
+              value={restaurant.nutrition_language || 'EN'}
+              onChange={(e) => handleInputChange('nutrition_language', e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+            >
+              {NUTRITION_LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Language for nutritional value labels
+            </p>
           </div>
         </div>
       </Card>

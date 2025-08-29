@@ -13,6 +13,8 @@ interface Product {
     protein?: string;
     carbs?: string;
     fat?: string;
+    sugars?: string;
+    salts?: string;
   };
   category_id?: string;
   available?: boolean;

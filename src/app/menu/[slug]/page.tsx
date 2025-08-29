@@ -21,6 +21,7 @@ import {
 import { layout, typography, spacing, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
 import RestaurantNavbar from '@/components/RestaurantNavbar';
+import { formatCurrency, getNutritionLabel, type Currency, type NutritionLanguage } from '@/lib/currency-utils';
 
 interface MenuPageProps {
   params: Promise<{
@@ -36,6 +37,8 @@ interface Restaurant {
   schedule: Record<string, string>;
   logo_url?: string;
   cover_url?: string;
+  currency?: Currency;
+  nutrition_language?: NutritionLanguage;
 }
 
 interface Category {
@@ -56,6 +59,8 @@ interface Product {
     protein?: string;
     carbs?: string;
     fat?: string;
+    sugars?: string;
+    salts?: string;
   };
   category_id?: string;
   available?: boolean;
@@ -376,6 +381,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       isExpanded={expandedDescriptions.has(product.id)}
                       onToggleDescription={() => toggleDescription(product.id)}
                       showAddedToast={showAddedToast === product.id}
+                      restaurant={restaurant}
                     />
                   ))}
                 </div>
@@ -396,6 +402,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       isExpanded={expandedDescriptions.has(product.id)}
                       onToggleDescription={() => toggleDescription(product.id)}
                       showAddedToast={showAddedToast === product.id}
+                      restaurant={restaurant}
                     />
                   ))}
                 </div>
@@ -412,6 +419,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                 isExpanded={expandedDescriptions.has(product.id)}
                 onToggleDescription={() => toggleDescription(product.id)}
                 showAddedToast={showAddedToast === product.id}
+                restaurant={restaurant}
               />
             ))}
           </div>
@@ -437,7 +445,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                     <div key={item.product.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
                         <h4 className="font-medium">{item.product.name}</h4>
-                        <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)} each</p>
+                        <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price, restaurant.currency)} each</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
@@ -465,7 +473,7 @@ function MenuPageContent({ params }: MenuPageProps) {
               <div className="p-4 border-t bg-gray-50">
                 <div className="flex justify-between items-center mb-3">
                   <span className="font-semibold">Total:</span>
-                  <span className="font-bold text-lg">${getTotalPrice().toFixed(2)}</span>
+                  <span className="font-bold text-lg">{formatCurrency(getTotalPrice(), restaurant.currency)}</span>
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="outline" className="flex-1" onClick={clearOrder}>
@@ -490,13 +498,15 @@ function ProductCard({
   onAddToOrder, 
   isExpanded, 
   onToggleDescription,
-  showAddedToast
+  showAddedToast,
+  restaurant
 }: { 
   product: Product; 
   onAddToOrder: (product: Product) => void;
   isExpanded: boolean;
   onToggleDescription: () => void;
   showAddedToast: boolean;
+  restaurant: Restaurant;
 }) {
   const description = product.description || '';
   const shouldTruncate = description.length > 60;
@@ -522,7 +532,7 @@ function ProductCard({
           </div>
           <div className="ml-4 flex-shrink-0">
             <div className="text-lg font-bold text-primary">
-              ${product.price.toFixed(2)}
+              {formatCurrency(product.price, restaurant.currency)}
             </div>
           </div>
         </div>
@@ -586,16 +596,22 @@ function ProductCard({
             <div className="flex-1 p-2 bg-muted/50 rounded-md">
               <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
                 {product.nutrition.calories && (
-                  <span className="font-medium">{product.nutrition.calories} cal</span>
+                  <span className="font-medium">{product.nutrition.calories} {getNutritionLabel('calories', restaurant.nutrition_language)}</span>
                 )}
                 {product.nutrition.protein && (
-                  <span>P: {product.nutrition.protein}g</span>
+                  <span>{getNutritionLabel('protein', restaurant.nutrition_language)}: {product.nutrition.protein}g</span>
                 )}
                 {product.nutrition.carbs && (
-                  <span>C: {product.nutrition.carbs}g</span>
+                  <span>{getNutritionLabel('carbs', restaurant.nutrition_language)}: {product.nutrition.carbs}g</span>
                 )}
                 {product.nutrition.fat && (
-                  <span>F: {product.nutrition.fat}g</span>
+                  <span>{getNutritionLabel('fat', restaurant.nutrition_language)}: {product.nutrition.fat}g</span>
+                )}
+                {product.nutrition.sugars && (
+                  <span>{getNutritionLabel('sugars', restaurant.nutrition_language)}: {product.nutrition.sugars}g</span>
+                )}
+                {product.nutrition.salts && (
+                  <span>{getNutritionLabel('salts', restaurant.nutrition_language)}: {product.nutrition.salts}g</span>
                 )}
               </div>
             </div>
