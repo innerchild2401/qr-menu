@@ -16,6 +16,9 @@ interface Product {
     sugars?: string;
     salts?: string;
   };
+  is_frozen?: boolean;
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
   category_id?: string;
   available?: boolean;
   sort_order?: number;

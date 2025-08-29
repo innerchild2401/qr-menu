@@ -6,6 +6,7 @@ import { generateDescription } from '../../lib/ai/generateDescription';
 import { typography, spacing, layout } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Snowflake, Leaf, Flame } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -14,6 +15,9 @@ interface Product {
   price: number;
   image_url?: string;
   nutrition?: Record<string, unknown>;
+  is_frozen?: boolean;
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
   category_id?: string;
   restaurant_id: string;
   created_at: string;
@@ -34,6 +38,9 @@ interface ProductFormData {
   description: string;
   price: string;
   category_id: string;
+  is_frozen: boolean;
+  is_vegetarian: boolean;
+  is_spicy: boolean;
   nutrition: {
     calories: string;
     protein: string;
@@ -76,6 +83,9 @@ export default function ProductForm({
     description: '',
     price: '',
     category_id: '',
+    is_frozen: false,
+    is_vegetarian: false,
+    is_spicy: false,
     nutrition: {
       calories: '',
       protein: '',
@@ -132,6 +142,9 @@ export default function ProductForm({
         description: editingProduct.description,
         price: editingProduct.price.toString(),
         category_id: editingProduct.category_id || '',
+        is_frozen: editingProduct.is_frozen || false,
+        is_vegetarian: editingProduct.is_vegetarian || false,
+        is_spicy: editingProduct.is_spicy || false,
         nutrition: {
           calories: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'calories' in editingProduct.nutrition ? String(editingProduct.nutrition.calories) : '',
           protein: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'protein' in editingProduct.nutrition ? String(editingProduct.nutrition.protein) : '',
@@ -153,6 +166,9 @@ export default function ProductForm({
       description: '',
       price: '',
       category_id: '',
+      is_frozen: false,
+      is_vegetarian: false,
+      is_spicy: false,
       nutrition: {
         calories: '',
         protein: '',
@@ -195,6 +211,9 @@ export default function ProductForm({
         price: parseFloat(formData.price),
         category_id: formData.category_id || null,
         image_url: imagePreview || null,
+        is_frozen: formData.is_frozen,
+        is_vegetarian: formData.is_vegetarian,
+        is_spicy: formData.is_spicy,
         nutrition: formData.nutrition.calories || formData.nutrition.protein || formData.nutrition.carbs || formData.nutrition.fat || formData.nutrition.sugars || formData.nutrition.salts ? {
           calories: formData.nutrition.calories ? parseInt(formData.nutrition.calories) : null,
           protein: formData.nutrition.protein || null,
@@ -362,6 +381,56 @@ export default function ProductForm({
               <p className="text-sm italic text-blue-700 dark:text-blue-300">{aiDescription}</p>
             </div>
           )}
+        </div>
+
+        {/* Product Flags */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-3">
+            Product Attributes
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Frozen Toggle */}
+            <label className="flex items-center gap-2 rounded-md border p-3 hover:bg-muted/50 transition cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_frozen}
+                onChange={(e) => setFormData({ ...formData, is_frozen: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div className="flex items-center gap-2">
+                <Snowflake className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-medium">Comes from frozen product</span>
+              </div>
+            </label>
+
+            {/* Vegetarian Toggle */}
+            <label className="flex items-center gap-2 rounded-md border p-3 hover:bg-muted/50 transition cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_vegetarian}
+                onChange={(e) => setFormData({ ...formData, is_vegetarian: e.target.checked })}
+                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <div className="flex items-center gap-2">
+                <Leaf className="w-5 h-5 text-green-500" />
+                <span className="text-sm font-medium">Is vegetarian</span>
+              </div>
+            </label>
+
+            {/* Spicy Toggle */}
+            <label className="flex items-center gap-2 rounded-md border p-3 hover:bg-muted/50 transition cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_spicy}
+                onChange={(e) => setFormData({ ...formData, is_spicy: e.target.checked })}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+              <div className="flex items-center gap-2">
+                <Flame className="w-5 h-5 text-red-500" />
+                <span className="text-sm font-medium">Is spicy</span>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Image Upload */}

@@ -36,7 +36,7 @@ export async function PUT(
     }
 
     // Parse request body
-    const { name, description, price, category_id, image_url, nutrition } = await request.json();
+    const { name, description, price, category_id, image_url, nutrition, is_frozen, is_vegetarian, is_spicy } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -64,7 +64,10 @@ export async function PUT(
         price: price,
         category_id: category_id || null,
         image_url: image_url || null,
-        nutrition: nutrition || null
+        nutrition: nutrition || null,
+        is_frozen: is_frozen || false,
+        is_vegetarian: is_vegetarian || false,
+        is_spicy: is_spicy || false
       })
       .eq('id', id)
       .eq('restaurant_id', restaurant.id)

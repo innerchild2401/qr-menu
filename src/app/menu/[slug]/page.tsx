@@ -16,7 +16,10 @@ import {
   QrCode,
   ShoppingCart,
   X,
-  Check
+  Check,
+  Snowflake,
+  Leaf,
+  Flame
 } from 'lucide-react';
 import { layout, typography, spacing, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
@@ -62,6 +65,9 @@ interface Product {
     sugars?: string;
     salts?: string;
   };
+  is_frozen?: boolean;
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
   category_id?: string;
   available?: boolean;
   sort_order?: number;
@@ -526,9 +532,23 @@ function ProductCard({
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-lg mb-1 line-clamp-1">
-              {product.name}
-            </h3>
+            <div className="flex items-center gap-1 mb-1">
+              <h3 className="font-semibold text-foreground text-lg line-clamp-1">
+                {product.name}
+              </h3>
+              {/* Product Attribute Icons */}
+              <div className="flex items-center gap-1 ml-2">
+                {product.is_frozen && (
+                  <Snowflake className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                )}
+                {product.is_vegetarian && (
+                  <Leaf className="w-4 h-4 text-green-500 flex-shrink-0" />
+                )}
+                {product.is_spicy && (
+                  <Flame className="w-4 h-4 text-red-500 flex-shrink-0" />
+                )}
+              </div>
+            </div>
           </div>
           <div className="ml-4 flex-shrink-0">
             <div className="text-lg font-bold text-primary">

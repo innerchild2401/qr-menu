@@ -44,6 +44,9 @@ export interface Product {
   price: number;
   image_url?: string; // Actual column name in database
   nutrition?: Record<string, unknown>; // JSON field
+  is_frozen?: boolean; // Indicates if the product comes from frozen ingredients
+  is_vegetarian?: boolean; // Indicates if the product is vegetarian
+  is_spicy?: boolean; // Indicates if the product is spicy
   created_at: string;
   // Note: available, sort_order, updated_at columns don't exist in actual schema
 }
