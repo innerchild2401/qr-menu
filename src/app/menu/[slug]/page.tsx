@@ -206,13 +206,19 @@ function MenuPageContent({ params }: MenuPageProps) {
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
     
-    // Reset scroll position to top with smooth scrolling
-    if (menuContentRef.current) {
-      menuContentRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-    }
+    // Reset scroll position to account for sticky navigation
+    setTimeout(() => {
+      if (menuContentRef.current) {
+        const stickyNavHeight = 80; // Approximate height of sticky navigation
+        const elementTop = menuContentRef.current.offsetTop;
+        const offsetPosition = elementTop - stickyNavHeight - 20; // Extra 20px for breathing room
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 100); // Small delay to ensure state update is complete
   };
 
   if (isLoading) {
