@@ -40,6 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         categories(name)
       `)
       .eq('restaurant_id', restaurant.id)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
 
     if (productsError) {
