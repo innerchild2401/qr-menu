@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
 import { generateDescription } from '../../lib/ai/generateDescription';
+import { typography, spacing, layout } from '@/lib/design-system';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Product {
   id: string;
@@ -270,29 +273,29 @@ export default function ProductForm({
   if (!isOpen) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+    <Card className={`${spacing.lg} mb-6`}>
+      <h2 className={`${typography.h3} mb-6`}>
         {editingProduct ? 'Edit Product' : 'Add New Product'}
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Product Name *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
               placeholder="Enter product name"
               required
             />
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Price *
             </label>
             <input
@@ -301,7 +304,7 @@ export default function ProductForm({
               min="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
               placeholder="0.00"
               required
             />
@@ -309,13 +312,13 @@ export default function ProductForm({
         </div>
         
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Category
           </label>
           <select
             value={formData.category_id}
             onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+            className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
           >
             <option value="">Select a category (optional)</option>
             {categories.map((category) => (
@@ -327,13 +330,13 @@ export default function ProductForm({
         </div>
         
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Description
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+            className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
             placeholder="Enter product description"
             rows={4}
           />
@@ -363,7 +366,7 @@ export default function ProductForm({
 
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Product Image
           </label>
           {imagePreview ? (
@@ -371,7 +374,7 @@ export default function ProductForm({
               <img
                 src={imagePreview}
                 alt="Product preview"
-                className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
+                className="w-full h-32 object-cover rounded-lg border-2 border-border"
               />
               <button
                 type="button"
@@ -383,22 +386,22 @@ export default function ProductForm({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={isUploadingImage}
-              className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors"
-            >
-              {isUploadingImage ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
-              ) : (
-                <>
-                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span className="text-sm">Click to upload image</span>
-                </>
-              )}
+                          <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              >
+                              {isUploadingImage ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-muted-foreground"></div>
+                ) : (
+                  <>
+                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span className="text-sm">Click to upload image</span>
+                  </>
+                )}
             </button>
           )}
           <input
@@ -414,13 +417,13 @@ export default function ProductForm({
         </div>
 
         {/* Nutrition Information */}
-        <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-6 bg-gray-50 dark:bg-gray-800/50">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="border border-border rounded-lg p-6 bg-muted/30">
+          <h3 className={`${typography.h4} mb-4`}>
             Nutrition Information (Optional)
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Calories (kcal)
               </label>
               <input
@@ -430,12 +433,12 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, calories: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Calories"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Protein (g)
               </label>
               <input
@@ -445,12 +448,12 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, protein: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Protein"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Carbs (g)
               </label>
               <input
@@ -460,12 +463,12 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, carbs: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Carbs"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Fat (g)
               </label>
               <input
@@ -475,12 +478,12 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, fat: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Fat"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Sugars (g)
               </label>
               <input
@@ -490,12 +493,12 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, sugars: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Sugars"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Salts (g)
               </label>
               <input
@@ -505,7 +508,7 @@ export default function ProductForm({
                   ...formData,
                   nutrition: { ...formData.nutrition, salts: e.target.value }
                 })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 placeholder="Salts"
               />
             </div>
@@ -513,30 +516,30 @@ export default function ProductForm({
         </div>
         
         <div className="flex space-x-4 pt-6">
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
+            className="flex items-center"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Saving...
               </>
             ) : (
               editingProduct ? 'Update Product' : 'Create Product'
             )}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
-            className="bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
