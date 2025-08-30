@@ -236,13 +236,13 @@ export default function AdminProducts() {
       {/* Category Filter */}
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Category:</span>
-          <div className="flex flex-wrap gap-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-words">Filter by Category:</span>
+          <div className="flex flex-wrap gap-2 max-w-full">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedCategory('all')}
-              className="text-xs min-h-[44px]"
+              className="text-xs min-h-[44px] flex-shrink-0"
             >
               All Products
             </Button>
@@ -252,9 +252,9 @@ export default function AdminProducts() {
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className="text-xs min-h-[44px] break-words"
+                className="text-xs min-h-[44px] break-words flex-shrink-0 max-w-full"
               >
-                {category.name}
+                <span className="truncate">{category.name}</span>
               </Button>
             ))}
           </div>

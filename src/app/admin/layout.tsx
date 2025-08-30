@@ -110,7 +110,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -118,98 +118,85 @@ export default function AdminLayout({
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
+      
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:relative lg:inset-auto ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">SmartMenu</span>
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            {user && (
+              <div className="mt-2 text-sm text-muted-foreground break-words">
+                {user.email}
+              </div>
+            )}
           </div>
-
+          
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                   onClick={() => setSidebarOpen(false)}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-foreground hover:bg-muted transition-colors"
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1 break-words">{item.label}</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </Link>
               );
             })}
           </nav>
-
-          {/* User section */}
-          <div className="p-4 border-t">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {user?.email || 'User'}
-                </p>
-              </div>
-            </div>
+          
+          {/* Footer */}
+          <div className="p-4 border-t border-border">
             <Button
-              variant="outline"
-              size="sm"
               onClick={handleSignOut}
-              className="w-full"
+              variant="ghost"
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+              <span className="break-words">Sign Out</span>
             </Button>
           </div>
         </div>
       </div>
-
+      
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b lg:hidden">
-          <div className="flex items-center justify-between p-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold text-foreground">SmartMenu</span>
-            </div>
-            <div className="w-10" /> {/* Spacer for centering */}
-          </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile header */}
+        <div className="lg:hidden p-4 border-b border-border bg-card">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(true)}
+            className="p-2"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
         </div>
-
+        
         {/* Page content */}
-        <main className="flex-1 bg-gray-50">
-          <div className="p-6">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <div className="max-w-full min-w-0">
             {children}
           </div>
         </main>

@@ -286,44 +286,46 @@ export default function AdminCategories() {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Name</th>
-                  <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Created</th>
-                  <th className="text-right py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words">
-                      {category.name}
-                    </td>
-                    <td className="py-3 px-2 sm:px-4 text-muted-foreground text-sm">
-                      {new Date(category.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-2 sm:px-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(category)}
-                          className="text-primary hover:text-primary/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-primary/10 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(category)}
-                          className="text-destructive hover:text-destructive/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-destructive/10 transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+          <div className="overflow-hidden">
+            <div className="min-w-0">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Name</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Created</th>
+                    <th className="text-right py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {categories.map((category) => (
+                    <tr key={category.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words min-w-0">
+                        <div className="truncate">{category.name}</div>
+                      </td>
+                      <td className="py-3 px-2 sm:px-4 text-muted-foreground text-sm whitespace-nowrap">
+                        {new Date(category.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-2 sm:px-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(category)}
+                            className="text-primary hover:text-primary/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-primary/10 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category)}
+                            className="text-destructive hover:text-destructive/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-destructive/10 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Card>

@@ -373,7 +373,7 @@ export default function AdminChecklist() {
                   disabled={item.status === 'running'}
                   variant="outline"
                   size="sm"
-                  className="min-h-[44px] min-w-[80px]"
+                  className="min-h-[44px] min-w-[80px] flex-shrink-0"
                 >
                   {item.status === 'running' ? (
                     <>
@@ -390,7 +390,7 @@ export default function AdminChecklist() {
                     onClick={() => runSingleCheck(item.id)}
                     variant="destructive"
                     size="sm"
-                    className="min-h-[44px] min-w-[80px]"
+                    className="min-h-[44px] min-w-[80px] flex-shrink-0"
                   >
                     Retry
                   </Button>

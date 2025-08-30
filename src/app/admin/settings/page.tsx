@@ -492,15 +492,15 @@ export default function AdminSettings() {
 
       {/* Google Business Integration Card */}
       <Card className={`${spacing.md} mb-6`}>
-        <h2 className={`${typography.h4} mb-4`}>
+        <h2 className={`${typography.h4} mb-4 break-words`}>
           Google Business Integration
         </h2>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div>
-              <h3 className="font-medium text-foreground">Google Reviews</h3>
-              <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-border rounded-lg">
+            <div className="min-w-0">
+              <h3 className="font-medium text-foreground break-words">Google Reviews</h3>
+              <p className="text-sm text-muted-foreground break-words">
                 Connect your Google Business account to display real ratings and reviews on your menu
               </p>
             </div>
@@ -509,39 +509,40 @@ export default function AdminSettings() {
                 // TODO: Implement Google Business OAuth
                 alert('Google Business integration coming soon!');
               }}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               Connect Google Business
             </Button>
           </div>
           
-          <div className="text-sm text-muted-foreground">
-            <p>• Display real Google ratings on menu items</p>
-            <p>• Show actual review counts</p>
-            <p>• Automatically sync with your Google Business profile</p>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p className="break-words">• Display real Google ratings on menu items</p>
+            <p className="break-words">• Show actual review counts</p>
+            <p className="break-words">• Automatically sync with your Google Business profile</p>
           </div>
         </div>
       </Card>
 
       {/* Schedule Card */}
       <Card className={`${spacing.md} mb-6`}>
-        <h2 className={`${typography.h4} mb-4`}>
+        <h2 className={`${typography.h4} mb-4 break-words`}>
           Operating Hours
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {[
             'Monday', 'Tuesday', 'Wednesday', 'Thursday', 
             'Friday', 'Saturday', 'Sunday'
           ].map((day) => (
-            <div key={day} className="flex items-center space-x-4">
-              <label className="w-20 text-sm font-medium text-foreground">
+            <div key={day} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <label className="text-sm font-medium text-foreground min-w-0 sm:w-20 flex-shrink-0">
                 {day}
               </label>
               <input
                 type="text"
                 value={restaurant.schedule?.[day.toLowerCase()] || ''}
                 onChange={(e) => handleScheduleChange(day, e.target.value)}
-                className="flex-1 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                className="flex-1 px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground min-h-[44px]"
                 placeholder="e.g., 11:00 AM - 10:00 PM"
               />
             </div>
@@ -551,11 +552,11 @@ export default function AdminSettings() {
 
       {/* Images Card */}
       <Card className={`${spacing.md} mb-6`}>
-        <h2 className={`${typography.h4} mb-4`}>
+        <h2 className={`${typography.h4} mb-4 break-words`}>
           Restaurant Images
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Logo Upload */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -571,7 +572,7 @@ export default function AdminSettings() {
                 <button
                   onClick={() => logoInputRef.current?.click()}
                   disabled={isUploadingLogo}
-                  className="absolute inset-0 bg-black bg-opacity-50 text-white rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  className="absolute inset-0 bg-black bg-opacity-50 text-white rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity min-h-[44px]"
                 >
                   {isUploadingLogo ? 'Uploading...' : 'Change Logo'}
                 </button>
@@ -580,7 +581,7 @@ export default function AdminSettings() {
               <button
                 onClick={() => logoInputRef.current?.click()}
                 disabled={isUploadingLogo}
-                className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors"
+                className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors min-h-[44px]"
               >
                 {isUploadingLogo ? (
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
@@ -589,7 +590,7 @@ export default function AdminSettings() {
                     <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <span className="text-sm">Click to upload logo</span>
+                    <span className="text-sm break-words">Click to upload logo</span>
                   </>
                 )}
               </button>
@@ -621,7 +622,7 @@ export default function AdminSettings() {
                 <button
                   onClick={() => coverInputRef.current?.click()}
                   disabled={isUploadingCover}
-                  className="absolute inset-0 bg-black bg-opacity-50 text-white rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  className="absolute inset-0 bg-black bg-opacity-50 text-white rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity min-h-[44px]"
                 >
                   {isUploadingCover ? 'Uploading...' : 'Change Cover'}
                 </button>
@@ -630,7 +631,7 @@ export default function AdminSettings() {
               <button
                 onClick={() => coverInputRef.current?.click()}
                 disabled={isUploadingCover}
-                className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors"
+                className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors min-h-[44px]"
               >
                 {isUploadingCover ? (
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
@@ -639,7 +640,7 @@ export default function AdminSettings() {
                     <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <span className="text-sm">Click to upload cover</span>
+                    <span className="text-sm break-words">Click to upload cover</span>
                   </>
                 )}
               </button>
