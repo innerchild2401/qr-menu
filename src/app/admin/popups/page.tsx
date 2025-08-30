@@ -2,9 +2,28 @@
 
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { typography, spacing } from '@/lib/design-system';
+import { typography, spacing, gaps } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  EyeOff, 
+  Upload, 
+  Calendar,
+  Clock,
+  MessageSquare,
+  Link,
+  Image as ImageIcon
+} from 'lucide-react';
 
 interface Popup {
   id: string;
@@ -292,7 +311,6 @@ export default function AdminPopups() {
   if (hasRestaurant === false) {
     return (
       <div>
-        
         <div className="mb-6">
           <h1 className={`${typography.h2} mb-2`}>
             Popup Management
@@ -326,7 +344,7 @@ export default function AdminPopups() {
 
   return (
     <div>
-      
+      {/* Page Header */}
       <div className="mb-6">
         <h1 className={`${typography.h2} mb-2`}>
           Popup Management
@@ -339,9 +357,7 @@ export default function AdminPopups() {
       {/* Add Popup Button */}
       <div className="mb-6">
         <Button onClick={() => setShowForm(true)} className="flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          <Plus className="w-4 h-4 mr-2" />
           Add New Popup
         </Button>
       </div>
@@ -349,145 +365,158 @@ export default function AdminPopups() {
       {/* Add/Edit Form */}
       {showForm && (
         <Card className={`${spacing.md} mb-6`}>
-          <h2 className={`${typography.h4} mb-4`}>
-            {editingPopup ? 'Edit Popup' : 'Add New Popup'}
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`${typography.h4}`}>
+              {editingPopup ? 'Edit Popup' : 'Add New Popup'}
+            </h2>
+            <Button variant="ghost" size="sm" onClick={resetForm}>
+              Cancel
+            </Button>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Title *
-                </label>
-                <input
+          <form onSubmit={handleSubmit} className={`space-y-6`}>
+            {/* Title and Status */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.md}`}>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Enter popup title"
                   required
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Status
-                </label>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="active"
                     checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                   />
-                  <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  <Label htmlFor="active" className="text-sm">
                     Active
-                  </label>
+                  </Label>
                 </div>
               </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Message *
-              </label>
-              <textarea
+            {/* Message */}
+            <div className="space-y-2">
+              <Label htmlFor="message">Message *</Label>
+              <Textarea
+                id="message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder="Enter popup message"
                 rows={3}
                 required
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CTA Text
-                </label>
-                <input
-                  type="text"
-                  value={formData.ctaText}
-                  onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., Learn More"
-                />
+            {/* CTA Fields */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.md}`}>
+              <div className="space-y-2">
+                <Label htmlFor="ctaText">CTA Text</Label>
+                <div className="relative">
+                  <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="ctaText"
+                    type="text"
+                    value={formData.ctaText}
+                    onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
+                    placeholder="e.g., Learn More"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CTA URL
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="ctaUrl">CTA URL</Label>
+                <Input
+                  id="ctaUrl"
                   type="url"
                   value={formData.ctaUrl}
                   onChange={(e) => setFormData({ ...formData, ctaUrl: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="https://example.com"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.startAt}
-                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
+            {/* Date Fields */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${gaps.md}`}>
+              <div className="space-y-2">
+                <Label htmlFor="startAt">Start Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="startAt"
+                    type="datetime-local"
+                    value={formData.startAt}
+                    onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                    className="pl-10"
+                  />
+                </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.endAt}
-                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="endAt">End Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="endAt"
+                    type="datetime-local"
+                    value={formData.endAt}
+                    onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Frequency
-              </label>
-              <select
+            {/* Frequency */}
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Frequency</Label>
+              <Select
                 value={formData.frequency}
-                onChange={(e) => setFormData({ ...formData, frequency: e.target.value as "once-per-session" | "every-visit" })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                onValueChange={(value: "once-per-session" | "every-visit") => 
+                  setFormData({ ...formData, frequency: value })
+                }
               >
-                <option value="once-per-session">Once per session</option>
-                <option value="every-visit">Every visit</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="once-per-session">Once per session</SelectItem>
+                  <SelectItem value="every-visit">Every visit</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Popup Image
-              </label>
+            <div className="space-y-2">
+              <Label>Popup Image</Label>
               {imagePreview ? (
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={imagePreview}
                     alt="Popup preview"
-                    className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-border"
                   />
                   <button
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
                     disabled={isUploadingImage}
-                    className="absolute inset-0 bg-black bg-opacity-50 text-white rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 bg-black/50 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    {isUploadingImage ? 'Uploading...' : 'Change Image'}
+                    {isUploadingImage ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    ) : (
+                      <Upload className="w-6 h-6" />
+                    )}
                   </button>
                 </div>
               ) : (
@@ -495,15 +524,13 @@ export default function AdminPopups() {
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
                   disabled={isUploadingImage}
-                  className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors"
+                  className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
                 >
                   {isUploadingImage ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-muted-foreground"></div>
                   ) : (
                     <>
-                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
+                      <ImageIcon className="w-8 h-8 mb-2" />
                       <span className="text-sm">Click to upload image</span>
                     </>
                   )}
@@ -521,11 +548,12 @@ export default function AdminPopups() {
               />
             </div>
             
+            {/* Form Actions */}
             <div className="flex space-x-3 pt-4">
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
+                className="flex items-center"
               >
                 {isSubmitting ? (
                   <>
@@ -535,15 +563,7 @@ export default function AdminPopups() {
                 ) : (
                   editingPopup ? 'Update Popup' : 'Create Popup'
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                disabled={isSubmitting}
-                className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
+              </Button>
             </div>
           </form>
         </Card>
@@ -551,50 +571,43 @@ export default function AdminPopups() {
 
       {/* Popups List */}
       <Card className={spacing.md}>
-        <h2 className={`${typography.h4} mb-4`}>
-          Popups ({popups.length})
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className={`${typography.h4}`}>
+            Popups ({popups.length})
+          </h2>
+        </div>
         
         {popups.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-gray-400 mb-4">
-              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4 19h6v-6H4v6zM4 5h6V4a1 1 0 00-1-1H5a1 1 0 00-1 1v1zM4 11h6v-2H4v2zM14 5h6V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v1zM14 11h6V9a1 1 0 00-1-1h-4a1 1 0 00-1 1v2zM14 17h6v-2h-6v2z" />
-              </svg>
+            <div className="text-muted-foreground mb-4">
+              <MessageSquare className="w-12 h-12 mx-auto" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               No popups found. Create your first popup to get started.
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
+            <Button onClick={() => setShowForm(true)}>
               Add First Popup
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
             {popups.map((popup) => (
               <div
                 key={popup.id}
-                className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mr-3">
+                      <h3 className="text-lg font-semibold text-foreground mr-3">
                         {popup.title}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        popup.active 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
+                      <Badge variant={popup.active ? "default" : "secondary"}>
                         {popup.active ? 'Active' : 'Inactive'}
-                      </span>
+                      </Badge>
                     </div>
                     
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                    <p className="text-muted-foreground text-sm mb-2">
                       {popup.message}
                     </p>
                     
@@ -608,37 +621,57 @@ export default function AdminPopups() {
                       </div>
                     )}
                     
-                    <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                      <div>Frequency: {popup.frequency}</div>
-                      {popup.start_at && <div>Start: {new Date(popup.start_at).toLocaleString()}</div>}
-                      {popup.end_at && <div>End: {new Date(popup.end_at).toLocaleString()}</div>}
-                      {popup.cta_text && <div>CTA: {popup.cta_text}</div>}
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div className="flex items-center">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Frequency: {popup.frequency}
+                      </div>
+                      {popup.start_at && (
+                        <div className="flex items-center">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          Start: {new Date(popup.start_at).toLocaleString()}
+                        </div>
+                      )}
+                      {popup.end_at && (
+                        <div className="flex items-center">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          End: {new Date(popup.end_at).toLocaleString()}
+                        </div>
+                      )}
+                      {popup.cta_text && (
+                        <div className="flex items-center">
+                          <Link className="w-3 h-3 mr-1" />
+                          CTA: {popup.cta_text}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex space-x-2 ml-4">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => toggleActive(popup)}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        popup.active
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300'
-                      }`}
+                      className="flex items-center"
                     >
-                      {popup.active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
+                      {popup.active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleEdit(popup)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      className="flex items-center"
                     >
-                      Edit
-                    </button>
-                    <button
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleDelete(popup)}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                      className="flex items-center text-destructive hover:text-destructive"
                     >
-                      Delete
-                    </button>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
