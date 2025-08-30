@@ -12,6 +12,13 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { 
   Plus, 
   Edit, 
   Trash2, 
@@ -22,7 +29,18 @@ import {
   Clock,
   MessageSquare,
   Link,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Lightbulb,
+  Ruler,
+  Type,
+  ShoppingCart,
+  Target,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  Zap,
+  Star,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Popup {
@@ -346,12 +364,280 @@ export default function AdminPopups() {
     <div>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className={`${typography.h2} mb-2`}>
-          Popup Management
-        </h1>
-        <p className={typography.bodySmall}>
-          Manage promotional popups for your restaurant
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className={`${typography.h2} mb-2`}>
+              Popup Management
+            </h1>
+            <p className={typography.bodySmall}>
+              Manage promotional popups for your restaurant
+            </p>
+          </div>
+          
+          {/* Tips Button */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                💡 Tips to Boost Sales
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center text-2xl font-bold text-blue-700">
+                  <Lightbulb className="w-6 h-6 mr-2" />
+                  Popup Best Practices to Boost Sales
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-8">
+                {/* Best Image Dimensions */}
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                      <Ruler className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-blue-800">Best Image Dimensions 📐</h3>
+                  </div>
+                  <p className="text-blue-700 mb-4">
+                    Ensure popups look sharp and beautiful on all devices.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-xl border border-blue-200">
+                      <div className="flex items-center mb-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                        <span className="font-semibold text-green-700">Recommended</span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div><strong>Size:</strong> 1080 × 1350 px (4:5 ratio)</div>
+                        <div><strong>Format:</strong> JPG for photos, PNG for transparency</div>
+                        <div><strong>Max size:</strong> Under 400 KB</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-xl border border-blue-200">
+                      <div className="flex items-center mb-2">
+                        <AlertTriangle className="w-5 h-5 text-orange-600 mr-2" />
+                        <span className="font-semibold text-orange-700">Minimum</span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div><strong>Size:</strong> 720 × 960 px</div>
+                        <div><strong>Purpose:</strong> Avoid pixelation</div>
+                        <div><strong>Tip:</strong> Use bright colors & high contrast</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Guidelines */}
+                <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                      <Type className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-green-800">Text Guidelines for Popups 📝</h3>
+                  </div>
+                  <p className="text-green-700 mb-4">
+                    Keep messages short, clear, and persuasive.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="bg-white p-4 rounded-xl border border-green-200">
+                        <h4 className="font-semibold text-green-700 mb-2">Text Limits</h4>
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Headline:</strong> Max 7 words</div>
+                          <div><strong>Body text:</strong> 30–40 words maximum</div>
+                          <div><strong>Font size:</strong> Minimum 16px</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white p-4 rounded-xl border border-green-200">
+                        <h4 className="font-semibold text-green-700 mb-2">Examples</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-start">
+                            <CheckCircle className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm">
+                              <div className="font-medium text-green-700">✅ Good:</div>
+                              <div className="text-gray-600">"Today only! 20% OFF all burgers 🍔"</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <XCircle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm">
+                              <div className="font-medium text-red-700">❌ Bad:</div>
+                              <div className="text-gray-600">"Special discounts available for a limited time on selected products"</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Offers Category */}
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl border border-purple-200">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-purple-100 rounded-lg mr-3">
+                      <ShoppingCart className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-purple-800">Special Offers Category 🛒</h3>
+                  </div>
+                  <p className="text-purple-700 mb-4">
+                    Make CTAs more effective by linking directly to offers.
+                  </p>
+                  
+                  <div className="bg-white p-4 rounded-xl border border-purple-200">
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-purple-600 font-bold text-sm">1</span>
+                        </div>
+                        <span className="text-purple-700">Create a "Special Offers" category in your menu</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-purple-600 font-bold text-sm">2</span>
+                        </div>
+                        <span className="text-purple-700">Add your discounted products there</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-purple-600 font-bold text-sm">3</span>
+                        </div>
+                        <span className="text-purple-700">Copy the product link and paste it in the CTA field</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-purple-700">
+                        <strong>Result:</strong> Users tap the popup → go directly to the offer → higher conversion!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Best Practices */}
+                <div className="p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl border border-orange-200">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                      <Target className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-orange-800">Call-to-Action Best Practices 🔗</h3>
+                  </div>
+                  <p className="text-orange-700 mb-4">
+                    Make users take action immediately.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-4 rounded-xl border border-orange-200">
+                      <h4 className="font-semibold text-orange-700 mb-3">✅ Action-Driven CTAs</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 bg-green-50 rounded-lg">
+                          <Zap className="w-4 h-4 text-green-600 mr-2" />
+                          <span className="text-sm font-medium">"Order Now 🍕"</span>
+                        </div>
+                        <div className="flex items-center p-2 bg-green-50 rounded-lg">
+                          <Star className="w-4 h-4 text-green-600 mr-2" />
+                          <span className="text-sm font-medium">"Get 30% Off 🎉"</span>
+                        </div>
+                        <div className="flex items-center p-2 bg-green-50 rounded-lg">
+                          <Clock className="w-4 h-4 text-green-600 mr-2" />
+                          <span className="text-sm font-medium">"Limited Time Deal ⏳"</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-xl border border-orange-200">
+                      <h4 className="font-semibold text-orange-700 mb-3">❌ Avoid These</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
+                          <span className="text-sm text-red-700">"Click Here"</span>
+                        </div>
+                        <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
+                          <span className="text-sm text-red-700">"Learn More"</span>
+                        </div>
+                        <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
+                          <span className="text-sm text-red-700">"Find Out More"</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Marketing Tips */}
+                <div className="p-6 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-yellow-100 rounded-lg mr-3">
+                      <TrendingUp className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-yellow-800">Marketing Tips to Increase Sales 📈</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="bg-white p-4 rounded-xl border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-3">Urgency Words</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                            <span className="text-sm font-medium text-red-700">"Today only"</span>
+                          </div>
+                          <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                            <span className="text-sm font-medium text-red-700">"Limited offer"</span>
+                          </div>
+                          <div className="flex items-center p-2 bg-red-50 rounded-lg">
+                            <span className="text-sm font-medium text-red-700">"Few left!"</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white p-4 rounded-xl border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-3">Exclusivity</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-2 bg-blue-50 rounded-lg">
+                            <span className="text-sm font-medium text-blue-700">"Members-only deal"</span>
+                          </div>
+                          <div className="flex items-center p-2 bg-blue-50 rounded-lg">
+                            <span className="text-sm font-medium text-blue-700">"Early access"</span>
+                          </div>
+                          <div className="flex items-center p-2 bg-blue-50 rounded-lg">
+                            <span className="text-sm font-medium text-blue-700">"VIP customers"</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 bg-white p-4 rounded-xl border border-yellow-200">
+                    <div className="flex items-start">
+                      <Lightbulb className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-yellow-700">
+                          Pro Tips:
+                        </p>
+                        <ul className="text-sm text-yellow-700 space-y-1">
+                          <li>• High-quality food photos get <strong>30% more clicks</strong></li>
+                          <li>• One clear message per popup → too many ideas confuse users</li>
+                          <li>• Use strong visuals and bright colors to stand out</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Add Popup Button */}
