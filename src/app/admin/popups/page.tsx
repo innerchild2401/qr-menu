@@ -364,12 +364,12 @@ export default function AdminPopups() {
     <div>
       {/* Page Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className={`${typography.h2} mb-2`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`${typography.h2} mb-2 break-words`}>
               Popup Management
             </h1>
-            <p className={typography.bodySmall}>
+            <p className={`${typography.bodySmall} break-words`}>
               Manage promotional popups for your restaurant
             </p>
           </div>
@@ -379,52 +379,52 @@ export default function AdminPopups() {
             <DialogTrigger asChild>
               <Button 
                 variant="outline" 
-                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors text-sm md:text-base px-3 md:px-4 py-2 h-auto min-h-[44px]"
               >
-                <Lightbulb className="w-4 h-4 mr-2" />
-                💡 Tips to Boost Sales
+                <Lightbulb className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="whitespace-nowrap">💡 Tips to Boost Sales</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center text-2xl font-bold text-blue-700">
-                  <Lightbulb className="w-6 h-6 mr-2" />
-                  Popup Best Practices to Boost Sales
+            <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="flex items-center text-xl md:text-2xl font-bold text-blue-700 leading-tight break-words">
+                  <Lightbulb className="w-5 h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
+                  <span className="text-wrap">Popup Best Practices to Boost Sales</span>
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8 max-w-full">
                 {/* Best Image Dimensions */}
-                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
-                      <Ruler className="w-6 h-6 text-blue-600" />
+                <div className="p-4 md:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl md:rounded-2xl border border-blue-200">
+                  <div className="flex items-center mb-3 md:mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3 flex-shrink-0">
+                      <Ruler className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-blue-800">Best Image Dimensions 📐</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-blue-800 break-words">Best Image Dimensions 📐</h3>
                   </div>
-                  <p className="text-blue-700 mb-4">
+                  <p className="text-blue-700 mb-4 text-sm md:text-base leading-relaxed">
                     Ensure popups look sharp and beautiful on all devices.
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-blue-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                    <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-blue-200">
                       <div className="flex items-center mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                        <span className="font-semibold text-green-700">Recommended</span>
+                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 mr-2 flex-shrink-0" />
+                        <span className="font-semibold text-green-700 text-sm md:text-base">Recommended</span>
                       </div>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                         <div><strong>Size:</strong> 1080 × 1350 px (4:5 ratio)</div>
                         <div><strong>Format:</strong> JPG for photos, PNG for transparency</div>
                         <div><strong>Max size:</strong> Under 400 KB</div>
                       </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-xl border border-blue-200">
+                    <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-blue-200">
                       <div className="flex items-center mb-2">
-                        <AlertTriangle className="w-5 h-5 text-orange-600 mr-2" />
-                        <span className="font-semibold text-orange-700">Minimum</span>
+                        <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-orange-600 mr-2 flex-shrink-0" />
+                        <span className="font-semibold text-orange-700 text-sm md:text-base">Minimum</span>
                       </div>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                         <div><strong>Size:</strong> 720 × 960 px</div>
                         <div><strong>Purpose:</strong> Avoid pixelation</div>
                         <div><strong>Tip:</strong> Use bright colors & high contrast</div>
@@ -434,22 +434,22 @@ export default function AdminPopups() {
                 </div>
 
                 {/* Text Guidelines */}
-                <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-green-100 rounded-lg mr-3">
-                      <Type className="w-6 h-6 text-green-600" />
+                <div className="p-4 md:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl md:rounded-2xl border border-green-200">
+                  <div className="flex items-center mb-3 md:mb-4">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3 flex-shrink-0">
+                      <Type className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-green-800">Text Guidelines for Popups 📝</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-green-800 break-words">Text Guidelines for Popups 📝</h3>
                   </div>
-                  <p className="text-green-700 mb-4">
+                  <p className="text-green-700 mb-4 text-sm md:text-base leading-relaxed">
                     Keep messages short, clear, and persuasive.
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-xl border border-green-200">
-                        <h4 className="font-semibold text-green-700 mb-2">Text Limits</h4>
-                        <div className="space-y-2 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-green-200">
+                        <h4 className="font-semibold text-green-700 mb-2 text-sm md:text-base">Text Limits</h4>
+                        <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                           <div><strong>Headline:</strong> Max 7 words</div>
                           <div><strong>Body text:</strong> 30–40 words maximum</div>
                           <div><strong>Font size:</strong> Minimum 16px</div>
@@ -457,22 +457,22 @@ export default function AdminPopups() {
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-xl border border-green-200">
-                        <h4 className="font-semibold text-green-700 mb-2">Examples</h4>
-                        <div className="space-y-3">
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-green-200">
+                        <h4 className="font-semibold text-green-700 mb-2 text-sm md:text-base">Examples</h4>
+                        <div className="space-y-2 md:space-y-3">
                           <div className="flex items-start">
-                            <CheckCircle className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm">
+                            <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs md:text-sm min-w-0">
                               <div className="font-medium text-green-700">✅ Good:</div>
-                              <div className="text-gray-600">&ldquo;Today only! 20% OFF all burgers 🍔&rdquo;</div>
+                              <div className="text-gray-600 break-words">&ldquo;Today only! 20% OFF all burgers 🍔&rdquo;</div>
                             </div>
                           </div>
                           <div className="flex items-start">
-                            <XCircle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm">
+                            <XCircle className="w-3 h-3 md:w-4 md:h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs md:text-sm min-w-0">
                               <div className="font-medium text-red-700">❌ Bad:</div>
-                              <div className="text-gray-600">&ldquo;Special discounts available for a limited time on selected products&rdquo;</div>
+                              <div className="text-gray-600 break-words">&ldquo;Special discounts available for a limited time on selected products&rdquo;</div>
                             </div>
                           </div>
                         </div>
@@ -482,40 +482,40 @@ export default function AdminPopups() {
                 </div>
 
                 {/* Special Offers Category */}
-                <div className="p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl border border-purple-200">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                      <ShoppingCart className="w-6 h-6 text-purple-600" />
+                <div className="p-4 md:p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl md:rounded-2xl border border-purple-200">
+                  <div className="flex items-center mb-3 md:mb-4">
+                    <div className="p-2 bg-purple-100 rounded-lg mr-3 flex-shrink-0">
+                      <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-purple-800">Special Offers Category 🛒</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-purple-800 break-words">Special Offers Category 🛒</h3>
                   </div>
-                  <p className="text-purple-700 mb-4">
+                  <p className="text-purple-700 mb-4 text-sm md:text-base leading-relaxed">
                     Make CTAs more effective by linking directly to offers.
                   </p>
                   
-                  <div className="bg-white p-4 rounded-xl border border-purple-200">
-                    <div className="space-y-3">
+                  <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-purple-200">
+                    <div className="space-y-2 md:space-y-3">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-purple-600 font-bold text-sm">1</span>
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                          <span className="text-purple-600 font-bold text-xs md:text-sm">1</span>
                         </div>
-                        <span className="text-purple-700">Create a &ldquo;Special Offers&rdquo; category in your menu</span>
+                        <span className="text-purple-700 text-sm md:text-base break-words">Create a &ldquo;Special Offers&rdquo; category in your menu</span>
                       </div>
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-purple-600 font-bold text-sm">2</span>
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                          <span className="text-purple-600 font-bold text-xs md:text-sm">2</span>
                         </div>
-                        <span className="text-purple-700">Add your discounted products there</span>
+                        <span className="text-purple-700 text-sm md:text-base break-words">Add your discounted products there</span>
                       </div>
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-purple-600 font-bold text-sm">3</span>
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                          <span className="text-purple-600 font-bold text-xs md:text-sm">3</span>
                         </div>
-                        <span className="text-purple-700">Copy the product link and paste it in the CTA field</span>
+                        <span className="text-purple-700 text-sm md:text-base break-words">Copy the product link and paste it in the CTA field</span>
                       </div>
                     </div>
-                    <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                      <p className="text-sm text-purple-700">
+                    <div className="mt-3 md:mt-4 p-2 md:p-3 bg-purple-50 rounded-lg">
+                      <p className="text-xs md:text-sm text-purple-700 leading-relaxed">
                         <strong>Result:</strong> Users tap the popup → go directly to the offer → higher conversion!
                       </p>
                     </div>
@@ -523,50 +523,50 @@ export default function AdminPopups() {
                 </div>
 
                 {/* CTA Best Practices */}
-                <div className="p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl border border-orange-200">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-orange-100 rounded-lg mr-3">
-                      <Target className="w-6 h-6 text-orange-600" />
+                <div className="p-4 md:p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl md:rounded-2xl border border-orange-200">
+                  <div className="flex items-center mb-3 md:mb-4">
+                    <div className="p-2 bg-orange-100 rounded-lg mr-3 flex-shrink-0">
+                      <Target className="w-5 h-5 md:w-6 md:h-6 text-orange-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-orange-800">Call-to-Action Best Practices 🔗</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-orange-800 break-words">Call-to-Action Best Practices 🔗</h3>
                   </div>
-                  <p className="text-orange-700 mb-4">
+                  <p className="text-orange-700 mb-4 text-sm md:text-base leading-relaxed">
                     Make users take action immediately.
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white p-4 rounded-xl border border-orange-200">
-                      <h4 className="font-semibold text-orange-700 mb-3">✅ Action-Driven CTAs</h4>
-                      <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-orange-200">
+                      <h4 className="font-semibold text-orange-700 mb-2 md:mb-3 text-sm md:text-base">✅ Action-Driven CTAs</h4>
+                      <div className="space-y-1 md:space-y-2">
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
-                          <Zap className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">&ldquo;Order Now 🍕&rdquo;</span>
+                          <Zap className="w-3 h-3 md:w-4 md:h-4 text-green-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-medium break-words">&ldquo;Order Now 🍕&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
-                          <Star className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">&ldquo;Get 30% Off 🎉&rdquo;</span>
+                          <Star className="w-3 h-3 md:w-4 md:h-4 text-green-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-medium break-words">&ldquo;Get 30% Off 🎉&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
-                          <Clock className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">&ldquo;Limited Time Deal ⏳&rdquo;</span>
+                          <Clock className="w-3 h-3 md:w-4 md:h-4 text-green-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-medium break-words">&ldquo;Limited Time Deal ⏳&rdquo;</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-white p-4 rounded-xl border border-orange-200">
-                      <h4 className="font-semibold text-orange-700 mb-3">❌ Avoid These</h4>
-                      <div className="space-y-2">
+                    <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-orange-200">
+                      <h4 className="font-semibold text-orange-700 mb-2 md:mb-3 text-sm md:text-base">❌ Avoid These</h4>
+                      <div className="space-y-1 md:space-y-2">
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">&ldquo;Click Here&rdquo;</span>
+                          <XCircle className="w-3 h-3 md:w-4 md:h-4 text-red-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm text-red-700 break-words">&ldquo;Click Here&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">&ldquo;Learn More&rdquo;</span>
+                          <XCircle className="w-3 h-3 md:w-4 md:h-4 text-red-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm text-red-700 break-words">&ldquo;Learn More&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                          <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">&ldquo;Find Out More&rdquo;</span>
+                          <XCircle className="w-3 h-3 md:w-4 md:h-4 text-red-600 mr-2 flex-shrink-0" />
+                          <span className="text-xs md:text-sm text-red-700 break-words">&ldquo;Find Out More&rdquo;</span>
                         </div>
                       </div>
                     </div>
@@ -574,58 +574,58 @@ export default function AdminPopups() {
                 </div>
 
                 {/* Marketing Tips */}
-                <div className="p-6 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-yellow-100 rounded-lg mr-3">
-                      <TrendingUp className="w-6 h-6 text-yellow-600" />
+                <div className="p-4 md:p-6 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl md:rounded-2xl border border-yellow-200">
+                  <div className="flex items-center mb-3 md:mb-4">
+                    <div className="p-2 bg-yellow-100 rounded-lg mr-3 flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-yellow-800">Marketing Tips to Increase Sales 📈</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-yellow-800 break-words">Marketing Tips to Increase Sales 📈</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-xl border border-yellow-200">
-                        <h4 className="font-semibold text-yellow-700 mb-3">Urgency Words</h4>
-                        <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-2 md:mb-3 text-sm md:text-base">Urgency Words</h4>
+                        <div className="space-y-1 md:space-y-2">
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">&ldquo;Today only&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-red-700 break-words">&ldquo;Today only&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">&ldquo;Limited offer&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-red-700 break-words">&ldquo;Limited offer&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">&ldquo;Few left!&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-red-700 break-words">&ldquo;Few left!&rdquo;</span>
                           </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-xl border border-yellow-200">
-                        <h4 className="font-semibold text-yellow-700 mb-3">Exclusivity</h4>
-                        <div className="space-y-2">
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-2 md:mb-3 text-sm md:text-base">Exclusivity</h4>
+                        <div className="space-y-1 md:space-y-2">
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">&ldquo;Members-only deal&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-blue-700 break-words">&ldquo;Members-only deal&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">&ldquo;Early access&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-blue-700 break-words">&ldquo;Early access&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">&ldquo;VIP customers&rdquo;</span>
+                            <span className="text-xs md:text-sm font-medium text-blue-700 break-words">&ldquo;VIP customers&rdquo;</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="mt-6 bg-white p-4 rounded-xl border border-yellow-200">
+                  <div className="mt-4 md:mt-6 bg-white p-3 md:p-4 rounded-lg md:rounded-xl border border-yellow-200">
                     <div className="flex items-start">
-                      <Lightbulb className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-yellow-700">
+                      <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-yellow-600 mr-2 md:mr-3 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1 md:space-y-2 min-w-0">
+                        <p className="text-xs md:text-sm font-semibold text-yellow-700">
                           Pro Tips:
                         </p>
-                        <ul className="text-sm text-yellow-700 space-y-1">
+                        <ul className="text-xs md:text-sm text-yellow-700 space-y-1 leading-relaxed">
                           <li>• High-quality food photos get <strong>30% more clicks</strong></li>
                           <li>• One clear message per popup → too many ideas confuse users</li>
                           <li>• Use strong visuals and bright colors to stand out</li>
@@ -880,65 +880,70 @@ export default function AdminPopups() {
             {popups.map((popup) => (
               <div
                 key={popup.id}
-                className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border border-border rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-semibold text-foreground mr-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                      <h3 className="text-base md:text-lg font-semibold text-foreground break-words">
                         {popup.title}
                       </h3>
-                      <Badge variant={popup.active ? "default" : "secondary"}>
+                      <Badge variant={popup.active ? "default" : "secondary"} className="self-start sm:self-center">
                         {popup.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                     
-                    <p className="text-muted-foreground text-sm mb-2">
+                    <p className="text-muted-foreground text-sm mb-2 break-words">
                       {popup.message}
                     </p>
                     
                     {popup.image_url && (
                       <div className="mb-2">
-                        <img
-                          src={popup.image_url}
-                          alt={popup.title}
-                          className="w-16 h-16 object-cover rounded-lg"
+                        <div
+                          style={{
+                            backgroundImage: `url(${popup.image_url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                          className="w-16 h-16 rounded-lg"
+                          role="img"
+                          aria-label={popup.title}
                         />
                       </div>
                     )}
                     
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div className="flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Frequency: {popup.frequency}
+                        <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                        <span className="break-words">Frequency: {popup.frequency}</span>
                       </div>
                       {popup.start_at && (
                         <div className="flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          Start: {new Date(popup.start_at).toLocaleString()}
+                          <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="break-words">Start: {new Date(popup.start_at).toLocaleString()}</span>
                         </div>
                       )}
                       {popup.end_at && (
                         <div className="flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          End: {new Date(popup.end_at).toLocaleString()}
+                          <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="break-words">End: {new Date(popup.end_at).toLocaleString()}</span>
                         </div>
                       )}
                       {popup.cta_text && (
                         <div className="flex items-center">
-                          <Link className="w-3 h-3 mr-1" />
-                          CTA: {popup.cta_text}
+                          <Link className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="break-words">CTA: {popup.cta_text}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="flex space-x-2 ml-4">
+                  <div className="flex flex-wrap gap-2 sm:ml-4">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleActive(popup)}
-                      className="flex items-center"
+                      className="flex items-center min-h-[44px] min-w-[44px] p-2"
                     >
                       {popup.active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -946,7 +951,7 @@ export default function AdminPopups() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(popup)}
-                      className="flex items-center"
+                      className="flex items-center min-h-[44px] min-w-[44px] p-2"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -954,7 +959,7 @@ export default function AdminPopups() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(popup)}
-                      className="flex items-center text-destructive hover:text-destructive"
+                      className="flex items-center text-destructive hover:text-destructive min-h-[44px] min-w-[44px] p-2"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
