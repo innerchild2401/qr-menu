@@ -56,6 +56,9 @@ interface Product {
   created_at: string;
   available?: boolean;
   sort_order?: number;
+  is_frozen?: boolean;
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
   categories?: {
     name: string;
   };
@@ -189,17 +192,17 @@ function SortableProduct({
   };
 
   return (
-    <tr 
+    <div
       ref={setNodeRef}
       style={style}
-      className={`border-b border-border transition-all duration-200 ${
+      className={`flex items-center justify-between p-4 border border-border rounded-lg transition-all duration-200 ${
         isDragging 
           ? 'shadow-2xl scale-105 bg-background/80 backdrop-blur-sm' 
           : 'hover:bg-muted/50'
       }`}
     >
-      {isReordering && (
-        <td className="py-3 px-4">
+      <div className="flex items-center space-x-4 flex-1">
+        {isReordering && (
           <div className="flex items-center space-x-2">
             <div
               {...attributes}
@@ -229,15 +232,13 @@ function SortableProduct({
               </Button>
             </div>
           </div>
-        </td>
-      )}
-      <td className="py-3 px-4 text-foreground font-medium">
-        {product.name}
-      </td>
-      <td className="py-3 px-4 text-foreground font-medium">
-        ${product.price.toFixed(2)}
-      </td>
-      <td className="py-3 px-4">
+        )}
+        
+        <div className="flex-1">
+          <div className="font-medium text-foreground">{product.name}</div>
+          <div className="text-sm text-muted-foreground">${product.price.toFixed(2)}</div>
+        </div>
+        
         <div className="flex items-center space-x-2">
           <Switch
             checked={product.available !== false}
@@ -248,8 +249,7 @@ function SortableProduct({
             {product.available !== false ? 'Visible' : 'Hidden'}
           </span>
         </div>
-      </td>
-      <td className="py-3 px-4">
+        
         <div className="flex space-x-2">
           <button 
             onClick={() => window.location.href = `/admin/products?edit=${product.id}`}
@@ -264,8 +264,8 @@ function SortableProduct({
             Delete
           </button>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
 
@@ -320,7 +320,10 @@ export default function AdminMenu() {
       const categoriesResponse = await authenticatedApiCall('/api/admin/categories');
       if (categoriesResponse.ok) {
         const categoriesData = await categoriesResponse.json();
-        setCategories(categoriesData.categories || []);
+        const sortedCategories = (categoriesData.categories || []).sort((a: Category, b: Category) => 
+          (a.sort_order || 0) - (b.sort_order || 0)
+        );
+        setCategories(sortedCategories);
       } else {
         console.error('Failed to load categories');
       }
@@ -329,7 +332,10 @@ export default function AdminMenu() {
       const productsResponse = await authenticatedApiCall('/api/admin/products');
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
-        setProducts(productsData.products || []);
+        const sortedProducts = (productsData.products || []).sort((a: Product, b: Product) => 
+          (a.sort_order || 0) - (b.sort_order || 0)
+        );
+        setProducts(sortedProducts);
       } else {
         console.error('Failed to load products');
       }
@@ -515,13 +521,17 @@ export default function AdminMenu() {
     }
   };
 
-  // Filter products by selected category - memoized to ensure proper re-rendering
-  const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'all') {
-      return products;
-    }
-    return products.filter(product => product.category_id === selectedCategory);
-  }, [selectedCategory, products]);
+  // Filter products by selected category
+  const filteredProducts = selectedCategory === 'all' 
+    ? [...products].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    : products
+        .filter(product => product.category_id === selectedCategory)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  // Debug: Log current product order
+  console.log('🔍 Current filtered products order:', 
+    filteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order }))
+  );
 
   // Get category name by ID
   const getCategoryName = (categoryId?: string) => {
@@ -578,6 +588,11 @@ export default function AdminMenu() {
 
       console.log('📊 Drag indices:', { oldIndex, newIndex, totalProducts: filteredProducts.length });
 
+      if (oldIndex === -1 || newIndex === -1) {
+        console.log('❌ Invalid indices found');
+        return;
+      }
+
       const newProducts = arrayMove(filteredProducts, oldIndex, newIndex);
       const updatedFilteredProducts = newProducts.map((prod, index) => ({
         ...prod,
@@ -586,7 +601,7 @@ export default function AdminMenu() {
 
       console.log('📝 Updated products after drag:', updatedFilteredProducts.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order })));
 
-      // Update the products state with new order
+      // Update the products state with new order immediately for UI feedback
       setProducts(prevProducts => {
         let updatedProducts;
         
@@ -641,6 +656,16 @@ export default function AdminMenu() {
         
         return updatedProducts;
       });
+
+      // Force a re-render by updating the filtered products
+      setTimeout(() => {
+        const currentFiltered = selectedCategory === 'all' 
+          ? products 
+          : products.filter(product => product.category_id === selectedCategory);
+        console.log('🔍 Current filtered products after state update:', 
+          currentFiltered.map(p => ({ id: p.id, name: p.name, sort_order: p.sort_order }))
+        );
+      }, 100);
     }
   };
 
@@ -810,35 +835,44 @@ export default function AdminMenu() {
              </button>
            </div>
                      ) : (
-             <DndContext
-               sensors={sensors}
-               collisionDetection={closestCenter}
-               onDragEnd={handleCategoryDragEnd}
-             >
-               <SortableContext
-                 items={categories.map(cat => cat.id)}
-                 strategy={verticalListSortingStrategy}
-               >
-                 <div className="space-y-2">
-                   {categories.map((category, index) => {
-                     const categoryProducts = products.filter(product => product.category_id === category.id);
-                     return (
-                                               <SortableCategory
-                          key={category.id}
-                          category={category}
-                          index={index}
-                          isReordering={isReordering}
-                          categoryProducts={categoryProducts}
-                          onReorder={reorderCategory}
-                          onViewItems={setSelectedCategory}
-                          totalCategories={categories.length}
-                        />
-                     );
-                   })}
-                 </div>
-               </SortableContext>
-             </DndContext>
-          )
+                       <div>
+                         {isReordering && (
+                           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                             <p className="text-sm text-blue-800 dark:text-blue-200">
+                               💡 Drag and drop categories to reorder them, or use the arrow buttons to move items up and down.
+                             </p>
+                           </div>
+                         )}
+                         <DndContext
+                           sensors={sensors}
+                           collisionDetection={closestCenter}
+                           onDragEnd={handleCategoryDragEnd}
+                         >
+                           <SortableContext
+                             items={categories.map(cat => cat.id)}
+                             strategy={verticalListSortingStrategy}
+                           >
+                                                           <div className="space-y-2">
+                                {categories.map((category, index) => {
+                                  const categoryProducts = products.filter(product => product.category_id === category.id);
+                                  return (
+                                    <SortableCategory
+                                      key={`${category.id}-${category.sort_order}-${index}`}
+                                      category={category}
+                                      index={index}
+                                      isReordering={isReordering}
+                                      categoryProducts={categoryProducts}
+                                      onReorder={reorderCategory}
+                                      onViewItems={setSelectedCategory}
+                                      totalCategories={categories.length}
+                                    />
+                                  );
+                                })}
+                              </div>
+                           </SortableContext>
+                         </DndContext>
+                       </div>
+                     )
         ) : (
           // Products view for selected category
           filteredProducts.length === 0 ? (
@@ -857,47 +891,41 @@ export default function AdminMenu() {
                </button>
              </div>
                      ) : (
-             <DndContext
-               sensors={sensors}
-               collisionDetection={closestCenter}
-               onDragEnd={handleProductDragEnd}
-             >
-               <SortableContext
-                 items={filteredProducts.map(prod => prod.id)}
-                 strategy={verticalListSortingStrategy}
-               >
-                 <div className="overflow-x-auto">
-                   <table className="w-full min-w-[600px]">
-                     <thead>
-                       <tr className="border-b border-border">
+                       <div>
                          {isReorderingProducts && (
-                           <th className="text-left py-3 px-4 font-medium text-foreground">Order</th>
+                           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                             <p className="text-sm text-blue-800 dark:text-blue-200">
+                               💡 Drag and drop products to reorder them, or use the arrow buttons to move items up and down.
+                             </p>
+                           </div>
                          )}
-                         <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
-                         <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
-                         <th className="text-left py-3 px-4 font-medium text-foreground">Visibility</th>
-                         <th className="text-left py-3 px-4 font-medium text-foreground">Actions</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {filteredProducts.map((product, index) => (
-                         <SortableProduct
-                           key={product.id}
-                           product={product}
-                           index={index}
-                           isReordering={isReorderingProducts}
-                           onReorder={reorderProduct}
-                           onToggleVisibility={toggleProductVisibility}
-                           isUpdatingVisibility={isUpdatingVisibility}
-                           totalProducts={filteredProducts.length}
-                         />
-                       ))}
-                     </tbody>
-                   </table>
-                 </div>
-               </SortableContext>
-             </DndContext>
-          )
+                         <DndContext
+                           sensors={sensors}
+                           collisionDetection={closestCenter}
+                           onDragEnd={handleProductDragEnd}
+                         >
+                           <SortableContext
+                             items={filteredProducts.map(prod => prod.id)}
+                             strategy={verticalListSortingStrategy}
+                           >
+                                                           <div className="space-y-2">
+                                {filteredProducts.map((product, index) => (
+                                  <SortableProduct
+                                    key={`${product.id}-${product.sort_order}-${index}`}
+                                    product={product}
+                                    index={index}
+                                    isReordering={isReorderingProducts}
+                                    onReorder={reorderProduct}
+                                    onToggleVisibility={toggleProductVisibility}
+                                    isUpdatingVisibility={isUpdatingVisibility}
+                                    totalProducts={filteredProducts.length}
+                                  />
+                                ))}
+                              </div>
+                           </SortableContext>
+                         </DndContext>
+                       </div>
+                     )
         )}
             </Card>
 

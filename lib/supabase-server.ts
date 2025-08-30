@@ -30,7 +30,8 @@ export interface Category {
   id: string;
   restaurant_id: string;
   name: string;
-  // Note: description, sort_order, updated_at columns don't exist in actual schema
+  sort_order?: number;
+  created_at: string;
 }
 
 export interface Product {
@@ -42,8 +43,12 @@ export interface Product {
   price: number;
   image_url?: string; // Actual column name in database
   nutrition?: Record<string, unknown>; // JSON field
+  available?: boolean;
+  sort_order?: number;
+  is_frozen?: boolean;
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
   created_at: string;
-  // Note: available, sort_order, updated_at columns don't exist in actual schema
 }
 
 export interface Popup {
