@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { ClassifiedItem, organizeMenuItems, getCategoryDisplayName, getCategoryOrder } from '../ai/menuClassifier';
-import { detectLanguage, generateDescriptionInLanguage, getLanguageName } from '../ai/languageDetector';
+import { generateDescriptionInLanguage, getLanguageName } from '../ai/languageDetector';
 
 export interface RestaurantInfo {
   name: string;
@@ -105,7 +105,7 @@ export class ProfessionalMenuPDFGenerator {
     const categoryOrder = customOrder || getCategoryOrder();
     
     // Add menu content
-    this.addMenuContent(organizedItems, categoryOrder, includeDescriptions, includeNutrition, includeImages);
+    this.addMenuContent(organizedItems, categoryOrder, includeDescriptions, includeNutrition);
     
     // Add footer
     this.addFooter(restaurant);
@@ -213,8 +213,7 @@ export class ProfessionalMenuPDFGenerator {
     organizedItems: Record<string, ClassifiedItem[]>, 
     categoryOrder: string[],
     includeDescriptions: boolean,
-    includeNutrition: boolean,
-    includeImages: boolean
+    includeNutrition: boolean
   ): void {
     for (const category of categoryOrder) {
       const items = organizedItems[category];
@@ -231,7 +230,7 @@ export class ProfessionalMenuPDFGenerator {
       
       // Add items in this category
       for (const item of items) {
-        this.addMenuItem(item, includeDescriptions, includeNutrition, includeImages);
+        this.addMenuItem(item, includeDescriptions, includeNutrition);
       }
       
       // Add spacing after category
@@ -264,7 +263,6 @@ export class ProfessionalMenuPDFGenerator {
 
   private addCategorySeparator(): void {
     const y = this.currentY;
-    const lineWidth = this.contentWidth;
     const centerX = this.pageWidth / 2;
     
     const primaryRgb = this.hexToRgb(this.theme.primaryColor);
@@ -295,7 +293,7 @@ export class ProfessionalMenuPDFGenerator {
     }
   }
 
-  private addMenuItem(item: ClassifiedItem, includeDescriptions: boolean, includeNutrition: boolean, includeImages: boolean): void {
+  private addMenuItem(item: ClassifiedItem, includeDescriptions: boolean, includeNutrition: boolean): void {
     // Check if we need a new page
     if (this.currentY > this.pageHeight - 50) {
       this.doc.addPage();
@@ -543,7 +541,6 @@ export const MENU_THEMES: MenuTheme[] = [
 // AI theme selection function
 export function selectThemeForRestaurant(restaurant: RestaurantInfo): MenuTheme {
   const name = restaurant.name.toLowerCase();
-  const address = restaurant.address?.toLowerCase() || '';
   
   // Analyze restaurant characteristics
   const isFineDining = name.includes('restaurant') || name.includes('bistro') || name.includes('grill');

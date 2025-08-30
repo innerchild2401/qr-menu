@@ -43,7 +43,7 @@ export default function ProductList({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         // The parent component will handle the success message and data refresh
         onDelete(product);
       } else {
@@ -95,10 +95,15 @@ export default function ProductList({
               <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700">
                 <td className="py-3 px-4">
                   {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded-lg"
+                    <div
+                      style={{
+                        backgroundImage: `url(${product.image_url})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                      className="w-12 h-12 rounded-lg"
+                      role="img"
+                      aria-label={product.name}
                     />
                   ) : (
                     <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
@@ -180,10 +185,15 @@ export default function ProductList({
                 {/* Image Square - Left Column */}
                 <div className="flex-shrink-0">
                   <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
+                    <div
+                      style={{
+                        backgroundImage: `url(${product.image_url})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                      className="w-full h-full"
+                      role="img"
+                      aria-label={product.name}
                     />
                     {/* Gradient overlay for smooth transition to text */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />

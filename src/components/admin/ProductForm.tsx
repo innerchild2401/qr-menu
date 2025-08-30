@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
 import { generateDescription } from '../../lib/ai/generateDescription';
-import { typography, spacing, layout } from '@/lib/design-system';
+import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Snowflake, Leaf, Flame } from 'lucide-react';
@@ -440,10 +440,15 @@ export default function ProductForm({
           </label>
           {imagePreview ? (
             <div className="relative">
-              <img
-                src={imagePreview}
-                alt="Product preview"
-                className="w-full h-32 object-cover rounded-lg border-2 border-border"
+              <div
+                style={{
+                  backgroundImage: `url(${imagePreview})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+                className="w-full h-32 rounded-lg border-2 border-border"
+                role="img"
+                aria-label="Product preview"
               />
               <button
                 type="button"

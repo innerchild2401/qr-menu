@@ -465,14 +465,14 @@ export default function AdminPopups() {
                             <CheckCircle className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div className="text-sm">
                               <div className="font-medium text-green-700">✅ Good:</div>
-                              <div className="text-gray-600">"Today only! 20% OFF all burgers 🍔"</div>
+                              <div className="text-gray-600">&ldquo;Today only! 20% OFF all burgers 🍔&rdquo;</div>
                             </div>
                           </div>
                           <div className="flex items-start">
                             <XCircle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div className="text-sm">
                               <div className="font-medium text-red-700">❌ Bad:</div>
-                              <div className="text-gray-600">"Special discounts available for a limited time on selected products"</div>
+                              <div className="text-gray-600">&ldquo;Special discounts available for a limited time on selected products&rdquo;</div>
                             </div>
                           </div>
                         </div>
@@ -499,7 +499,7 @@ export default function AdminPopups() {
                         <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
                           <span className="text-purple-600 font-bold text-sm">1</span>
                         </div>
-                        <span className="text-purple-700">Create a "Special Offers" category in your menu</span>
+                        <span className="text-purple-700">Create a &ldquo;Special Offers&rdquo; category in your menu</span>
                       </div>
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
@@ -540,15 +540,15 @@ export default function AdminPopups() {
                       <div className="space-y-2">
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
                           <Zap className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">"Order Now 🍕"</span>
+                          <span className="text-sm font-medium">&ldquo;Order Now 🍕&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
                           <Star className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">"Get 30% Off 🎉"</span>
+                          <span className="text-sm font-medium">&ldquo;Get 30% Off 🎉&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-green-50 rounded-lg">
                           <Clock className="w-4 h-4 text-green-600 mr-2" />
-                          <span className="text-sm font-medium">"Limited Time Deal ⏳"</span>
+                          <span className="text-sm font-medium">&ldquo;Limited Time Deal ⏳&rdquo;</span>
                         </div>
                       </div>
                     </div>
@@ -558,15 +558,15 @@ export default function AdminPopups() {
                       <div className="space-y-2">
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
                           <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">"Click Here"</span>
+                          <span className="text-sm text-red-700">&ldquo;Click Here&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
                           <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">"Learn More"</span>
+                          <span className="text-sm text-red-700">&ldquo;Learn More&rdquo;</span>
                         </div>
                         <div className="flex items-center p-2 bg-red-50 rounded-lg">
                           <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                          <span className="text-sm text-red-700">"Find Out More"</span>
+                          <span className="text-sm text-red-700">&ldquo;Find Out More&rdquo;</span>
                         </div>
                       </div>
                     </div>
@@ -588,13 +588,13 @@ export default function AdminPopups() {
                         <h4 className="font-semibold text-yellow-700 mb-3">Urgency Words</h4>
                         <div className="space-y-2">
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">"Today only"</span>
+                            <span className="text-sm font-medium text-red-700">&ldquo;Today only&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">"Limited offer"</span>
+                            <span className="text-sm font-medium text-red-700">&ldquo;Limited offer&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-red-50 rounded-lg">
-                            <span className="text-sm font-medium text-red-700">"Few left!"</span>
+                            <span className="text-sm font-medium text-red-700">&ldquo;Few left!&rdquo;</span>
                           </div>
                         </div>
                       </div>
@@ -605,13 +605,13 @@ export default function AdminPopups() {
                         <h4 className="font-semibold text-yellow-700 mb-3">Exclusivity</h4>
                         <div className="space-y-2">
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">"Members-only deal"</span>
+                            <span className="text-sm font-medium text-blue-700">&ldquo;Members-only deal&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">"Early access"</span>
+                            <span className="text-sm font-medium text-blue-700">&ldquo;Early access&rdquo;</span>
                           </div>
                           <div className="flex items-center p-2 bg-blue-50 rounded-lg">
-                            <span className="text-sm font-medium text-blue-700">"VIP customers"</span>
+                            <span className="text-sm font-medium text-blue-700">&ldquo;VIP customers&rdquo;</span>
                           </div>
                         </div>
                       </div>
