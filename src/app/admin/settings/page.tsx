@@ -257,39 +257,43 @@ export default function AdminSettings() {
       <div>
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className={`${typography.h2} mb-2`}>
-            Restaurant Settings
-          </h1>
-          <p className={typography.bodySmall}>
-            Create your first restaurant to get started
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className={`${typography.h2} mb-2 break-words`}>
+                Restaurant Settings
+              </h1>
+              <p className={`${typography.bodySmall} break-words`}>
+                Create your first restaurant to get started
+              </p>
+            </div>
+          </div>
         </div>
 
         {!showCreateForm ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
+              <div className="text-muted-foreground mb-4">
                 <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h2 className={`${typography.h4} mb-2`}>
+              <h2 className={`${typography.h4} mb-2 break-words`}>
                 No Restaurant Found
               </h2>
-              <p className={`${typography.bodySmall} mb-6`}>
+              <p className={`${typography.bodySmall} mb-6 break-words`}>
                 You don&apos;t have a restaurant set up yet. Create your first restaurant to get started.
               </p>
-              <button
+              <Button
                 onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 Create Restaurant
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <Card className={spacing.md}>
-            <h2 className={`${typography.h4} mb-4`}>
+            <h2 className={`${typography.h4} mb-4 break-words`}>
               Create Your Restaurant
             </h2>
             
@@ -302,7 +306,7 @@ export default function AdminSettings() {
                   type="text"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground min-h-[44px]"
                   placeholder="Enter restaurant name"
                 />
               </div>
@@ -315,16 +319,16 @@ export default function AdminSettings() {
                   type="text"
                   value={createForm.address}
                   onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground min-h-[44px]"
                   placeholder="Enter restaurant address"
                 />
               </div>
               
-              <div className="flex space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button
                   onClick={handleCreateRestaurant}
                   disabled={isCreating}
-                  className="flex items-center"
+                  className="flex items-center min-h-[44px] w-full sm:w-auto"
                 >
                   {isCreating ? (
                     <>
@@ -339,6 +343,7 @@ export default function AdminSettings() {
                   variant="outline"
                   onClick={() => setShowCreateForm(false)}
                   disabled={isCreating}
+                  className="min-h-[44px] w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
@@ -374,12 +379,16 @@ export default function AdminSettings() {
       
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className={`${typography.h2} mb-2`}>
-          Restaurant Settings
-        </h1>
-        <p className={typography.bodySmall}>
-          Manage your restaurant information and settings
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`${typography.h2} mb-2 break-words`}>
+              Restaurant Settings
+            </h1>
+            <p className={`${typography.bodySmall} break-words`}>
+              Manage your restaurant information and settings
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Restaurant Info Card */}

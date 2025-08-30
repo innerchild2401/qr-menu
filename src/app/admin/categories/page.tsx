@@ -190,29 +190,34 @@ export default function AdminCategories() {
   return (
     <div>
       
+      {/* Page Header */}
       <div className="mb-6">
-        <h1 className={`${typography.h2} mb-2`}>
-          Category Management
-        </h1>
-        <p className={typography.bodySmall}>
-          Manage your menu categories and their organization
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`${typography.h2} mb-2 break-words`}>
+              Category Management
+            </h1>
+            <p className={`${typography.bodySmall} break-words`}>
+              Manage your menu categories
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Add Category Button */}
       <div className="mb-6">
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <Button onClick={() => setShowAddForm(true)} className="flex items-center w-full sm:w-auto min-h-[44px]">
+          <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Add New Category
+          <span className="whitespace-nowrap">Add New Category</span>
         </Button>
       </div>
 
       {/* Add/Edit Form */}
       {showAddForm && (
         <Card className={`${spacing.md} mb-6`}>
-          <h2 className={`${typography.h4} mb-4`}>
+          <h2 className={`${typography.h4} mb-4 break-words`}>
             {editingCategory ? 'Edit Category' : 'Add New Category'}
           </h2>
           
@@ -225,17 +230,17 @@ export default function AdminCategories() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground min-h-[44px]"
                 placeholder="Enter category name"
                 required
               />
             </div>
             
-            <div className="flex space-x-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center"
+                className="flex items-center min-h-[44px] w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -251,6 +256,7 @@ export default function AdminCategories() {
                 variant="outline"
                 onClick={resetForm}
                 disabled={isSubmitting}
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -261,7 +267,7 @@ export default function AdminCategories() {
 
       {/* Categories List */}
       <Card className={spacing.md}>
-        <h2 className={`${typography.h4} mb-4`}>
+        <h2 className={`${typography.h4} mb-4 break-words`}>
           Categories ({categories.length})
         </h2>
         
@@ -272,10 +278,10 @@ export default function AdminCategories() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 break-words">
               No categories found. Create your first category to get started.
             </p>
-            <Button onClick={() => setShowAddForm(true)}>
+            <Button onClick={() => setShowAddForm(true)} className="min-h-[44px]">
               Add First Category
             </Button>
           </div>
@@ -284,31 +290,31 @@ export default function AdminCategories() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-foreground">Created</th>
-                  <th className="text-right py-3 px-4 font-medium text-foreground">Actions</th>
+                  <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Name</th>
+                  <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Created</th>
+                  <th className="text-right py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.map((category) => (
                   <tr key={category.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="py-3 px-4 text-foreground font-medium">
+                    <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words">
                       {category.name}
                     </td>
-                    <td className="py-3 px-4 text-muted-foreground">
+                    <td className="py-3 px-2 sm:px-4 text-muted-foreground text-sm">
                       {new Date(category.created_at).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-end space-x-2">
+                    <td className="py-3 px-2 sm:px-4">
+                      <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleEdit(category)}
-                          className="text-primary hover:text-primary/80 text-sm font-medium"
+                          className="text-primary hover:text-primary/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-primary/10 transition-colors"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(category)}
-                          className="text-destructive hover:text-destructive/80 text-sm font-medium"
+                          className="text-destructive hover:text-destructive/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-destructive/10 transition-colors"
                         >
                           Delete
                         </button>

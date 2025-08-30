@@ -273,92 +273,128 @@ export default function AdminChecklist() {
 
   return (
     <div>
+      {/* Page Header */}
       <div className="mb-6">
-        <h1 className={typography.h1}>
-          System Checklist
-        </h1>
-        <p className="text-muted-foreground">
-          Verify your restaurant system is properly configured
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`${typography.h2} mb-2 break-words`}>
+              System Checklist
+            </h1>
+            <p className={`${typography.bodySmall} break-words`}>
+              Verify all system components are working correctly
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mb-6 flex flex-wrap gap-3">
-        <Button
-          onClick={runAllChecks}
+      {/* Run All Button */}
+      <div className="mb-6">
+        <Button 
+          onClick={runAllChecks} 
           disabled={isRunningAll}
+          className="flex items-center w-full sm:w-auto min-h-[44px]"
         >
           {isRunningAll ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Running Checks...
+              Running All Checks...
             </>
           ) : (
             <>
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Run All Checks
+              <span className="whitespace-nowrap">Run All Checks</span>
             </>
           )}
-        </Button>
-        <Button
-          onClick={resetAllChecks}
-          disabled={isRunningAll}
-          variant="outline"
-        >
-          Reset All
         </Button>
       </div>
 
       {/* Checklist Items */}
       <div className="space-y-4">
         {checklist.map((item) => (
-          <Card
-            key={item.id}
-            className={spacing.md}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <h3 className={`${typography.h3} mr-3`}>
-                    {item.title}
-                  </h3>
-                  <StatusBadge status={item.status} />
+          <Card key={item.id} className={spacing.md}>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-3 mb-2">
+                  <div className="flex-shrink-0 mt-1">
+                    {item.status === 'pending' && (
+                      <div className="w-4 h-4 rounded-full border-2 border-muted-foreground"></div>
+                    )}
+                    {item.status === 'running' && (
+                      <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                    )}
+                    {item.status === 'success' && (
+                      <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                    {item.status === 'error' && (
+                      <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="min-w-0 flex-1">
+                    <h3 className={`${typography.h4} break-words`}>
+                      {item.title}
+                    </h3>
+                    <p className={`${typography.bodySmall} text-muted-foreground break-words`}>
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-muted-foreground mb-3">
-                  {item.description}
-                </p>
                 
-                {item.status === 'success' && item.result && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                    <p className="text-green-800 text-sm">
-                      ✅ {item.result}
+                {item.result && (
+                  <div className="ml-7 mt-2 p-2 bg-muted rounded-lg">
+                    <p className="text-sm text-foreground break-words">
+                      {item.result}
                     </p>
                   </div>
                 )}
                 
-                {item.status === 'error' && item.error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                    <p className="text-red-800 text-sm">
-                      ❌ {item.error}
+                {item.error && (
+                  <div className="ml-7 mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-300 break-words">
+                      <strong>Error:</strong> {item.error}
                     </p>
                   </div>
                 )}
               </div>
               
-              <div className="ml-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
                 <Button
                   onClick={() => runSingleCheck(item.id)}
-                  disabled={item.status === 'running' || isRunningAll}
+                  disabled={item.status === 'running'}
+                  variant="outline"
                   size="sm"
+                  className="min-h-[44px] min-w-[80px]"
                 >
                   {item.status === 'running' ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-muted-foreground mr-2"></div>
+                      Running
+                    </>
                   ) : (
                     'Run Check'
                   )}
                 </Button>
+                
+                {item.status === 'error' && (
+                  <Button
+                    onClick={() => runSingleCheck(item.id)}
+                    variant="destructive"
+                    size="sm"
+                    className="min-h-[44px] min-w-[80px]"
+                  >
+                    Retry
+                  </Button>
+                )}
               </div>
             </div>
           </Card>

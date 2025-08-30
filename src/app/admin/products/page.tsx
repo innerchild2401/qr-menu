@@ -173,65 +173,76 @@ export default function AdminProducts() {
   return (
     <div>
       
+      {/* Page Header */}
       <div className="mb-6">
-        <h1 className={`${typography.h2} mb-2`}>
-          Product Management
-        </h1>
-        <p className={typography.bodySmall}>
-          Manage your menu products and their details
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`${typography.h2} mb-2 break-words`}>
+              Product Management
+            </h1>
+            <p className={`${typography.bodySmall} break-words`}>
+              Manage your menu products and their details
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Add Product Buttons and Filters */}
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex space-x-3">
-        <Button onClick={handleAddNew} className="flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add New Product
-        </Button>
-          
-          <Button 
-            onClick={() => setShowBulkUploadModal(true)}
-            variant="outline"
-            className="flex items-center"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Bulk Upload Menu
-          </Button>
-        </div>
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleAddNew} className="flex items-center w-full sm:w-auto min-h-[44px]">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span className="whitespace-nowrap">Add New Product</span>
+            </Button>
+              
+            <Button 
+              onClick={() => setShowBulkUploadModal(true)}
+              variant="outline"
+              className="flex items-center w-full sm:w-auto min-h-[44px]"
+            >
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span className="whitespace-nowrap">Bulk Upload Menu</span>
+            </Button>
+          </div>
 
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => setViewMode('cards')}
-            variant={viewMode === 'cards' ? 'default' : 'outline'}
-            size="sm"
-          >
-            Cards
-          </Button>
-          <Button
-            onClick={() => setViewMode('table')}
-            variant={viewMode === 'table' ? 'default' : 'outline'}
-            size="sm"
-          >
-            Table
-          </Button>
+          <div className="flex justify-center sm:justify-end">
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => setViewMode('cards')}
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                size="sm"
+                className="min-h-[44px] min-w-[60px]"
+              >
+                Cards
+              </Button>
+              <Button
+                onClick={() => setViewMode('table')}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                className="min-h-[44px] min-w-[60px]"
+              >
+                Table
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Category Filter */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Category:</span>
           <div className="flex flex-wrap gap-2">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedCategory('all')}
-              className="text-xs"
+              className="text-xs min-h-[44px]"
             >
               All Products
             </Button>
@@ -241,7 +252,7 @@ export default function AdminProducts() {
                 variant={selectedCategory === category.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className="text-xs"
+                className="text-xs min-h-[44px] break-words"
               >
                 {category.name}
               </Button>
