@@ -19,6 +19,12 @@ const businessInformationClient = google.mybusinessbusinessinformation({
   auth: oauth2Client
 });
 
+// Google My Business API client (for locations and basic info)
+const myBusinessClient = google.mybusiness({
+  version: 'v4',
+  auth: oauth2Client
+});
+
 export interface GoogleBusinessProfile {
   locationId: string;
   placeId: string;
@@ -78,12 +84,22 @@ export async function getBusinessLocations(accessToken: string): Promise<Array<{
   try {
     oauth2Client.setCredentials({ access_token: accessToken });
     
-    const response = await businessInformationClient.accounts.locations.list({
-      parent: 'accounts/me'
+    // First get accounts
+    const accountsResponse = await myBusinessClient.accounts.list();
+    const accounts = accountsResponse.data.accounts || [];
+    
+    if (accounts.length === 0) {
+      throw new Error('No Google Business accounts found');
+    }
+    
+    // Get locations for the first account
+    const accountName = accounts[0].name;
+    const locationsResponse = await myBusinessClient.accounts.locations.list({
+      parent: accountName
     });
 
-    return (response.data.locations || []).map(location => ({
-      name: location.title || 'Unknown Location',
+    return (locationsResponse.data.locations || []).map(location => ({
+      name: location.locationName || 'Unknown Location',
       locationId: location.name?.split('/').pop() || ''
     }));
   } catch (error) {
@@ -99,21 +115,48 @@ export async function getBusinessProfile(locationId: string, accessToken: string
   try {
     oauth2Client.setCredentials({ access_token: accessToken });
     
-    const response = await businessInformationClient.accounts.locations.get({
-      name: `locations/${locationId}`
+    // Get accounts first
+    const accountsResponse = await myBusinessClient.accounts.list();
+    const accounts = accountsResponse.data.accounts || [];
+    
+    if (accounts.length === 0) {
+      throw new Error('No Google Business accounts found');
+    }
+    
+    const accountName = accounts[0].name;
+    const locationName = `${accountName}/locations/${locationId}`;
+    
+    // Get location details
+    const locationResponse = await myBusinessClient.accounts.locations.get({
+      name: locationName
     });
 
-    const location = response.data;
+    const location = locationResponse.data;
     
     if (!location) {
       throw new Error('Location not found');
     }
 
+    // Get reviews to calculate rating and count
+    const reviewsResponse = await myBusinessClient.accounts.locations.reviews.list({
+      parent: locationName
+    });
+
+    const reviews = reviewsResponse.data.reviews || [];
+    const totalReviewCount = reviews.length;
+    
+    // Calculate average rating from reviews
+    let averageRating = 0;
+    if (totalReviewCount > 0) {
+      const totalRating = reviews.reduce((sum, review) => sum + (review.starRating || 0), 0);
+      averageRating = totalRating / totalReviewCount;
+    }
+
     return {
       locationId,
       placeId: location.placeId || '',
-      averageRating: location.averageRating || 0,
-      totalReviewCount: location.totalReviewCount || 0
+      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+      totalReviewCount
     };
   } catch (error) {
     console.error('Error fetching business profile:', error);

@@ -613,6 +613,7 @@ export default function AdminSettings() {
             <p className="break-words">• Display real Google ratings on menu items</p>
             <p className="break-words">• Show actual review counts</p>
             <p className="break-words">• Automatically sync with your Google Business profile</p>
+            <p className="break-words">• Fallback to sample rating (4.8 ⭐) when not connected</p>
           </div>
         </div>
       </Card>
