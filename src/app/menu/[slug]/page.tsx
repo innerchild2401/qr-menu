@@ -538,7 +538,7 @@ function ProductCard({
   const displayDescription = isExpanded ? description : description.slice(0, 60);
 
   return (
-    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-48'} flex flex-col`}>
+    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-48'} flex flex-col justify-between`}>
       {/* Added to Order Toast */}
       {showAddedToast && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 animate-in slide-in-from-top-2">
@@ -578,7 +578,7 @@ function ProductCard({
       </div>
 
       {/* Middle Section: Image + Description */}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-3">
         {product.image_url ? (
           /* Layout with image */
           <div className="flex gap-3">
@@ -598,7 +598,7 @@ function ProductCard({
             
             {/* Description - Right Column */}
             <div className="flex-1 min-w-0">
-              <div className="text-muted-foreground text-sm">
+              <div className="text-muted-foreground text-sm leading-relaxed">
                 {displayDescription}
                 {shouldTruncate && (
                   <button
@@ -613,7 +613,7 @@ function ProductCard({
           </div>
         ) : (
           /* Layout without image - full width description */
-          <div className="text-muted-foreground text-sm">
+          <div className="text-muted-foreground text-sm leading-relaxed">
             {displayDescription}
             {shouldTruncate && (
               <button
