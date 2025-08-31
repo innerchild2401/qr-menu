@@ -42,6 +42,7 @@ interface Category {
   restaurant_id: string;
   created_at: string;
   sort_order?: number;
+  available?: boolean;
 }
 
 interface Product {
@@ -119,9 +120,15 @@ function SortableCategory({
           </div>
         )}
         <div>
-          <h3 className="font-medium text-foreground">{category.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className={`font-medium ${!category.available ? 'text-muted-foreground' : 'text-foreground'}`}>
+              {category.name}
+            </h3>
+            <div className={`w-2 h-2 rounded-full ${category.available ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+          </div>
           <p className="text-sm text-muted-foreground">
             {categoryProducts.length} items
+            {!category.available && ' (Hidden)'}
           </p>
         </div>
       </div>
@@ -198,7 +205,9 @@ function SortableProduct({
       className={`flex items-center justify-between p-4 border border-border rounded-lg transition-all duration-200 ${
         isDragging 
           ? 'shadow-2xl scale-105 bg-background/80 backdrop-blur-sm' 
-          : 'hover:bg-muted/50'
+          : !product.available 
+            ? 'opacity-60 bg-muted/20 hover:bg-muted/30' 
+            : 'hover:bg-muted/50'
       }`}
     >
       <div className="flex items-center space-x-4 flex-1">
@@ -235,7 +244,9 @@ function SortableProduct({
         )}
         
         <div className="flex-1">
-          <div className="font-medium text-foreground">{product.name}</div>
+          <div className={`font-medium ${!product.available ? 'text-muted-foreground' : 'text-foreground'}`}>
+            {product.name}
+          </div>
           <div className="text-sm text-muted-foreground">${product.price.toFixed(2)}</div>
         </div>
         

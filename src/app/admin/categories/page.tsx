@@ -11,6 +11,7 @@ interface Category {
   name: string;
   restaurant_id: string;
   created_at: string;
+  available: boolean; // Added available property
 }
 
 interface CategoryFormData {
@@ -140,6 +141,36 @@ export default function AdminCategories() {
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleToggleAvailability = async (category: Category) => {
+    try {
+      const newAvailable = !category.available;
+      
+      const response = await authenticatedApiCallWithBody(`/api/admin/categories/${category.id}`, {
+        name: category.name,
+        available: newAvailable
+      }, {
+        method: 'PUT',
+      });
+
+      if (response.ok) {
+        // Update local state
+        setCategories(prevCategories => 
+          prevCategories.map(cat => 
+            cat.id === category.id 
+              ? { ...cat, available: newAvailable }
+              : cat
+          )
+        );
+        console.log(`Category ${category.name} is now ${newAvailable ? 'available' : 'unavailable'}`);
+      } else {
+        const errorData = await response.json();
+        console.error(errorData.error || 'Failed to toggle availability');
+      }
+    } catch (error) {
+      console.error('Error toggling availability:', error);
     }
   };
 
@@ -292,21 +323,43 @@ export default function AdminCategories() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Name</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Status</th>
                     <th className="text-left py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Created</th>
                     <th className="text-right py-3 px-2 sm:px-4 font-medium text-foreground text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {categories.map((category) => (
-                    <tr key={category.id} className="border-b border-border hover:bg-muted/50">
+                    <tr key={category.id} className={`border-b border-border hover:bg-muted/50 ${!category.available ? 'opacity-60 bg-muted/20' : ''}`}>
                       <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words min-w-0">
-                        <div className="truncate">{category.name}</div>
+                        <div className={`truncate ${!category.available ? 'text-muted-foreground' : ''}`}>
+                          {category.name}
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 sm:px-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${category.available ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                          <span className={`text-sm ${category.available ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {category.available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-2 sm:px-4 text-muted-foreground text-sm whitespace-nowrap">
                         {new Date(category.created_at).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-2 sm:px-4">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleToggleAvailability(category)}
+                            className={`text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded transition-colors ${
+                              category.available 
+                                ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' 
+                                : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                            }`}
+                            title={category.available ? 'Make unavailable' : 'Make available'}
+                          >
+                            {category.available ? 'Hide' : 'Show'}
+                          </button>
                           <button
                             onClick={() => handleEdit(category)}
                             className="text-primary hover:text-primary/80 text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded hover:bg-primary/10 transition-colors"

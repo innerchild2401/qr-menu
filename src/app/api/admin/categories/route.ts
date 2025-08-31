@@ -103,7 +103,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .from('categories')
       .insert({
         restaurant_id: restaurant.id,
-        name: name.trim()
+        name: name.trim(),
+        available: true
       })
       .select()
       .single();

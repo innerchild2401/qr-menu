@@ -48,6 +48,7 @@ export async function GET(
         .from('categories')
         .select('*')
         .eq('restaurant_id', restaurant.id)
+        .eq('available', true)
         .order('sort_order', { ascending: true }),
       supabase
         .from('products')

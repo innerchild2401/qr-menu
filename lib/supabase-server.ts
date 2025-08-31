@@ -31,6 +31,7 @@ export interface Category {
   restaurant_id: string;
   name: string;
   sort_order?: number;
+  available?: boolean;
   created_at: string;
 }
 

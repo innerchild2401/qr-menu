@@ -36,7 +36,7 @@ export async function PUT(
     }
 
     // Parse request body
-    const { name } = await request.json();
+    const { name, available } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -52,7 +52,8 @@ export async function PUT(
     const { data: updatedCategory, error: updateError } = await supabaseAdmin
       .from('categories')
       .update({
-        name: name.trim()
+        name: name.trim(),
+        ...(available !== undefined && { available })
       })
       .eq('id', id)
       .eq('restaurant_id', restaurant.id)
@@ -72,6 +73,20 @@ export async function PUT(
         { error: 'Category not found' },
         { status: 404 }
       );
+    }
+
+    // If availability is being changed, update all products in this category
+    if (available !== undefined) {
+      const { error: productsUpdateError } = await supabaseAdmin
+        .from('products')
+        .update({ available })
+        .eq('category_id', id)
+        .eq('restaurant_id', restaurant.id);
+
+      if (productsUpdateError) {
+        console.error('Supabase products update error:', productsUpdateError);
+        // Don't fail the request, just log the error
+      }
     }
 
     return NextResponse.json({ 
