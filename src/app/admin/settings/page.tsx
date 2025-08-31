@@ -20,6 +20,15 @@ interface Restaurant {
   cover_url?: string;
   currency?: Currency;
   nutrition_language?: NutritionLanguage;
+  // Google Business Profile integration
+  google_business_location_id?: string;
+  google_business_access_token?: string;
+  google_business_refresh_token?: string;
+  google_business_token_expires_at?: string;
+  google_business_place_id?: string;
+  google_business_rating?: number;
+  google_business_review_count?: number;
+  google_business_last_sync?: string;
 }
 
 interface CreateRestaurantForm {
@@ -54,6 +63,9 @@ export default function AdminSettings() {
   // PDF Menu Generator state
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   
+  // Google Business integration state
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +74,39 @@ export default function AdminSettings() {
   useEffect(() => {
     loadRestaurantData();
   }, []);
+
+  // Handle URL parameters for OAuth success/error messages
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    const message = urlParams.get('message');
+    const location = urlParams.get('location');
+
+    if (success === 'google_connected') {
+      showSuccess(`Successfully connected to Google Business Profile${location ? ` (${location})` : ''}`);
+      // Reload restaurant data to show updated connection status
+      loadRestaurantData();
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      let errorMessage = 'Google Business Profile connection failed';
+      if (error === 'google_oauth_failed') {
+        errorMessage = 'Google OAuth authentication failed';
+      } else if (error === 'no_locations_found') {
+        errorMessage = 'No Google Business Profile locations found';
+      } else if (error === 'setup_failed') {
+        errorMessage = `Setup failed: ${message || 'Unknown error'}`;
+      } else if (error === 'callback_failed') {
+        errorMessage = 'OAuth callback processing failed';
+      } else if (error === 'missing_parameters') {
+        errorMessage = 'Missing OAuth parameters';
+      }
+      showError(errorMessage);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [showSuccess, showError]);
 
   const loadRestaurantData = async () => {
     try {
@@ -240,6 +285,29 @@ export default function AdminSettings() {
       showError('Error saving settings');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleGoogleBusinessConnect = async () => {
+    try {
+      setIsConnectingGoogle(true);
+      
+      const response = await authenticatedApiCall('/api/auth/google');
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Redirect to Google OAuth
+        window.location.href = data.authUrl;
+      } else {
+        const error = await response.json();
+        console.error(error.error || 'Failed to start Google Business connection');
+        showError(error.error || 'Failed to start Google Business connection');
+      }
+    } catch (error) {
+      console.error('Error connecting to Google Business:', error);
+      showError('Error connecting to Google Business');
+    } finally {
+      setIsConnectingGoogle(false);
     }
   };
 
@@ -505,15 +573,41 @@ export default function AdminSettings() {
               </p>
             </div>
             <Button
-              onClick={() => {
-                // TODO: Implement Google Business OAuth
-                alert('Google Business integration coming soon!');
-              }}
+              onClick={handleGoogleBusinessConnect}
+              disabled={isConnectingGoogle}
               className="w-full sm:w-auto min-h-[44px]"
             >
-              Connect Google Business
+              {isConnectingGoogle ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Connecting...
+                </>
+              ) : restaurant?.google_business_location_id ? (
+                'Reconnect Google Business'
+              ) : (
+                'Connect Google Business'
+              )}
             </Button>
           </div>
+          
+          {restaurant?.google_business_location_id && (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">Connected to Google Business Profile</span>
+              </div>
+              {restaurant.google_business_rating && restaurant.google_business_review_count && (
+                <div className="text-sm text-green-700 dark:text-green-300">
+                  Current rating: ⭐ {restaurant.google_business_rating} ({restaurant.google_business_review_count} reviews)
+                </div>
+              )}
+              {restaurant.google_business_last_sync && (
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  Last synced: {new Date(restaurant.google_business_last_sync).toLocaleString()}
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="text-sm text-muted-foreground space-y-1">
             <p className="break-words">• Display real Google ratings on menu items</p>

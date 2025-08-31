@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { generateAuthUrl } from '@/lib/google-business-service';
+import { getUserFromHeaders, getUserRestaurant } from '../../../../../lib/api-route-helpers';
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  try {
+    // Get current user
+    const userId = getUserFromHeaders(request);
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Missing user ID' },
+        { status: 401 }
+      );
+    }
+
+    // Get user's restaurant
+    const restaurant = await getUserRestaurant(userId);
+    
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: 'No restaurant found for current user' },
+        { status: 404 }
+      );
+    }
+
+    // Generate Google OAuth URL
+    const authUrl = generateAuthUrl(restaurant.id);
+
+    return NextResponse.json({ 
+      authUrl,
+      restaurantId: restaurant.id 
+    });
+  } catch (error) {
+    console.error('Error generating Google auth URL:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate Google authorization URL' },
+      { status: 500 }
+    );
+  }
+}

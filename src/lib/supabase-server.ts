@@ -24,6 +24,15 @@ export interface Restaurant {
   owner_id?: string; // Links to users.id
   currency?: string; // Currency for menu prices: RON, EUR, USD, GBP
   nutrition_language?: string; // Language for nutritional values: EN, RO, FR, DE, ES
+  // Google Business Profile integration
+  google_business_location_id?: string;
+  google_business_access_token?: string;
+  google_business_refresh_token?: string;
+  google_business_token_expires_at?: string;
+  google_business_place_id?: string;
+  google_business_rating?: number;
+  google_business_review_count?: number;
+  google_business_last_sync?: string;
   created_at: string;
   // Note: description, qr_code_url, updated_at columns don't exist in actual schema
 }

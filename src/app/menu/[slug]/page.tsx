@@ -42,6 +42,15 @@ interface Restaurant {
   cover_url?: string;
   currency?: Currency;
   nutrition_language?: NutritionLanguage;
+  // Google Business Profile integration
+  google_business_location_id?: string;
+  google_business_access_token?: string;
+  google_business_refresh_token?: string;
+  google_business_token_expires_at?: string;
+  google_business_place_id?: string;
+  google_business_rating?: number;
+  google_business_review_count?: number;
+  google_business_last_sync?: string;
 }
 
 interface Category {
@@ -344,11 +353,25 @@ function MenuPageContent({ params }: MenuPageProps) {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {/* TODO: Show real Google ratings when connected */}
-                <Badge variant="secondary">
-                  <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                  4.8 (120 reviews)
-                </Badge>
+                {restaurant.google_business_rating && restaurant.google_business_review_count ? (
+                  <Badge 
+                    variant="secondary" 
+                    className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                    onClick={() => {
+                      if (restaurant.google_business_place_id) {
+                        window.open(`https://www.google.com/maps/place/?q=place_id:${restaurant.google_business_place_id}`, '_blank');
+                      }
+                    }}
+                  >
+                    <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                    ⭐ {restaurant.google_business_rating} ({restaurant.google_business_review_count} reviews)
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                    Ratings not available
+                  </Badge>
+                )}
                 <Badge variant="outline">
                   <QrCode className="w-3 h-3 mr-1" />
                   Digital Menu

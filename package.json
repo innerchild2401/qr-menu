@@ -46,6 +46,7 @@
     "dotenv": "^17.2.1",
     "exceljs": "^4.4.0",
     "form-data": "^4.0.4",
+    "googleapis": "^159.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.2",
     "lucide-react": "^0.541.0",

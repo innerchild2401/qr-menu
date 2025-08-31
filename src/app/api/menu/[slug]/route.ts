@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { syncGoogleBusinessRatings } from '../../../../lib/google-business-service';
 
 export async function GET(
   request: NextRequest,
@@ -40,6 +41,13 @@ export async function GET(
 
     if (!restaurant) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
+
+    // Sync Google Business ratings if connected (in background, don't block response)
+    if (restaurant.google_business_location_id) {
+      syncGoogleBusinessRatings(restaurant.id).catch(error => {
+        console.error('Background Google Business rating sync failed:', error);
+      });
     }
 
     // Get categories and products in parallel

@@ -1,0 +1,73 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { syncGoogleBusinessRatings } from '@/lib/google-business-service';
+import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
+      }
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch restaurant data' },
+        { status: 500 }
+      );
+    }
+
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Check if restaurant is connected to Google Business Profile
+    if (!restaurant.google_business_location_id) {
+      return NextResponse.json(
+        { error: 'Restaurant not connected to Google Business Profile' },
+        { status: 400 }
+      );
+    }
+
+    // Sync ratings from Google Business Profile
+    const profile = await syncGoogleBusinessRatings(restaurant.id);
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: 'Failed to sync Google Business Profile ratings' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Google Business Profile ratings synced successfully',
+      data: {
+        rating: profile.averageRating,
+        reviewCount: profile.totalReviewCount,
+        placeId: profile.placeId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error syncing Google Business ratings:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to sync Google Business Profile ratings',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
