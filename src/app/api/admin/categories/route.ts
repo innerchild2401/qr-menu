@@ -47,7 +47,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json({ categories: categories || [] });
+    // Add default available=true for categories that don't have the field yet
+    const categoriesWithDefault = (categories || []).map(category => ({
+      ...category,
+      available: category.available !== undefined ? category.available : true
+    }));
+
+    return NextResponse.json({ categories: categoriesWithDefault });
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(

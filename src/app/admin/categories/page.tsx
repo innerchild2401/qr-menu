@@ -146,7 +146,8 @@ export default function AdminCategories() {
 
   const handleToggleAvailability = async (category: Category) => {
     try {
-      const newAvailable = !category.available;
+      const currentAvailable = category.available !== undefined ? category.available : true;
+      const newAvailable = !currentAvailable;
       
       const response = await authenticatedApiCallWithBody(`/api/admin/categories/${category.id}`, {
         name: category.name,
@@ -329,21 +330,23 @@ export default function AdminCategories() {
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((category) => (
-                    <tr key={category.id} className={`border-b border-border hover:bg-muted/50 ${!category.available ? 'opacity-60 bg-muted/20' : ''}`}>
-                      <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words min-w-0">
-                        <div className={`truncate ${!category.available ? 'text-muted-foreground' : ''}`}>
-                          {category.name}
-                        </div>
-                      </td>
-                      <td className="py-3 px-2 sm:px-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${category.available ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <span className={`text-sm ${category.available ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {category.available ? 'Available' : 'Unavailable'}
-                          </span>
-                        </div>
-                      </td>
+                  {categories.map((category) => {
+                    const isAvailable = category.available !== undefined ? category.available : true;
+                    return (
+                      <tr key={category.id} className={`border-b border-border hover:bg-muted/50 ${!isAvailable ? 'opacity-60 bg-muted/20' : ''}`}>
+                        <td className="py-3 px-2 sm:px-4 text-foreground font-medium break-words min-w-0">
+                          <div className={`truncate ${!isAvailable ? 'text-muted-foreground' : ''}`}>
+                            {category.name}
+                          </div>
+                        </td>
+                        <td className="py-3 px-2 sm:px-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className={`text-sm ${isAvailable ? 'text-green-600' : 'text-muted-foreground'}`}>
+                              {isAvailable ? 'Available' : 'Unavailable'}
+                            </span>
+                          </div>
+                        </td>
                       <td className="py-3 px-2 sm:px-4 text-muted-foreground text-sm whitespace-nowrap">
                         {new Date(category.created_at).toLocaleDateString()}
                       </td>
@@ -352,13 +355,13 @@ export default function AdminCategories() {
                           <button
                             onClick={() => handleToggleAvailability(category)}
                             className={`text-sm font-medium min-h-[44px] min-w-[44px] px-3 py-2 rounded transition-colors ${
-                              category.available 
+                              isAvailable 
                                 ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' 
                                 : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                             }`}
-                            title={category.available ? 'Make unavailable' : 'Make available'}
+                            title={isAvailable ? 'Make unavailable' : 'Make available'}
                           >
-                            {category.available ? 'Hide' : 'Show'}
+                            {isAvailable ? 'Hide' : 'Show'}
                           </button>
                           <button
                             onClick={() => handleEdit(category)}
@@ -375,7 +378,8 @@ export default function AdminCategories() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>

@@ -121,14 +121,14 @@ function SortableCategory({
         )}
         <div>
           <div className="flex items-center gap-2">
-            <h3 className={`font-medium ${!category.available ? 'text-muted-foreground' : 'text-foreground'}`}>
+            <h3 className={`font-medium ${!(category.available !== undefined ? category.available : true) ? 'text-muted-foreground' : 'text-foreground'}`}>
               {category.name}
             </h3>
-            <div className={`w-2 h-2 rounded-full ${category.available ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${(category.available !== undefined ? category.available : true) ? 'bg-green-500' : 'bg-gray-400'}`}></div>
           </div>
           <p className="text-sm text-muted-foreground">
             {categoryProducts.length} items
-            {!category.available && ' (Hidden)'}
+            {!(category.available !== undefined ? category.available : true) && ' (Hidden)'}
           </p>
         </div>
       </div>
