@@ -1,3 +1,5 @@
+// Google Business sync API route - TEMPORARILY DISABLED
+/*
 import { NextRequest, NextResponse } from 'next/server';
 import { syncGoogleBusinessRatings } from '@/lib/google-business-service';
 import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
@@ -71,3 +73,4 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
+*/

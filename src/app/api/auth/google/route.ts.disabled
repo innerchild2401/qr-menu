@@ -1,3 +1,5 @@
+// Google OAuth initiation API route - TEMPORARILY DISABLED
+/*
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAuthUrl } from '@/lib/google-business-service';
 import { getUserFromHeaders, getUserRestaurant } from '../../../../../lib/api-route-helpers';
@@ -39,3 +41,4 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
+*/

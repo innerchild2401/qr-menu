@@ -20,7 +20,8 @@ interface Restaurant {
   cover_url?: string;
   currency?: Currency;
   nutrition_language?: NutritionLanguage;
-  // Google Business Profile integration
+  // Google Business Profile integration - TEMPORARILY DISABLED
+  /*
   google_business_location_id?: string;
   google_business_access_token?: string;
   google_business_refresh_token?: string;
@@ -29,6 +30,7 @@ interface Restaurant {
   google_business_rating?: number;
   google_business_review_count?: number;
   google_business_last_sync?: string;
+  */
 }
 
 interface CreateRestaurantForm {
@@ -63,8 +65,8 @@ export default function AdminSettings() {
   // PDF Menu Generator state
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   
-  // Google Business integration state
-  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  // Google Business integration state - TEMPORARILY DISABLED
+  // const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
   
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +77,8 @@ export default function AdminSettings() {
     loadRestaurantData();
   }, []);
 
-  // Handle URL parameters for OAuth success/error messages
+  // Handle URL parameters for OAuth success/error messages - TEMPORARILY DISABLED
+  /*
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
@@ -107,6 +110,7 @@ export default function AdminSettings() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [showSuccess, showError]);
+  */
 
   const loadRestaurantData = async () => {
     try {
@@ -288,6 +292,8 @@ export default function AdminSettings() {
     }
   };
 
+  // Google Business connection function - TEMPORARILY DISABLED
+  /*
   const handleGoogleBusinessConnect = async () => {
     try {
       setIsConnectingGoogle(true);
@@ -310,6 +316,7 @@ export default function AdminSettings() {
       setIsConnectingGoogle(false);
     }
   };
+  */
 
   if (isLoading) {
     return (
@@ -558,7 +565,8 @@ export default function AdminSettings() {
         </div>
       </Card>
 
-      {/* Google Business Integration Card */}
+      {/* Google Business Integration Card - TEMPORARILY DISABLED */}
+      {/* 
       <Card className={`${spacing.md} mb-6`}>
         <h2 className={`${typography.h4} mb-4 break-words`}>
           Google Business Integration
@@ -617,6 +625,7 @@ export default function AdminSettings() {
           </div>
         </div>
       </Card>
+      */}
 
       {/* Schedule Card */}
       <Card className={`${spacing.md} mb-6`}>
