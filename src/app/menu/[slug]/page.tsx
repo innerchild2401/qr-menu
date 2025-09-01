@@ -557,8 +557,15 @@ function ProductCard({
   restaurant: Restaurant;
 }) {
   const description = product.description || '';
-  const shouldTruncate = description.length > 60;
-  const displayDescription = isExpanded ? description : description.slice(0, 60);
+  const hasDescription = description.length > 0;
+  const descriptionNeedsExpanding = description.length > 60;
+  const productNameNeedsExpanding = product.name.length > 30; // Threshold for product name truncation
+  
+  // Show full product name when no description or when expanded
+  const shouldShowFullProductName = !hasDescription || isExpanded;
+  
+  // Description display logic
+  const displayDescription = isExpanded ? description : (hasDescription ? description.slice(0, 60) : '');
 
   return (
     <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-48'} flex flex-col justify-between`}>
@@ -574,12 +581,12 @@ function ProductCard({
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 mb-1">
-              <h3 className={`font-semibold text-foreground text-lg ${!isExpanded ? 'line-clamp-1' : ''}`}>
+            <div className="flex items-start gap-1 mb-1">
+              <h3 className={`font-semibold text-foreground text-lg ${!shouldShowFullProductName ? 'line-clamp-1' : ''}`}>
                 {product.name}
               </h3>
               {/* Product Attribute Icons */}
-              <div className="flex items-center gap-1 ml-2">
+              <div className="flex items-center gap-1 ml-2 flex-shrink-0">
                 {product.is_frozen && (
                   <Snowflake className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 )}
@@ -621,9 +628,32 @@ function ProductCard({
             
             {/* Description - Right Column */}
             <div className="flex-1 min-w-0">
-              <div className="text-muted-foreground text-sm leading-relaxed">
+              {hasDescription ? (
+                <div className="text-muted-foreground text-sm leading-relaxed">
+                  {displayDescription}
+                  {descriptionNeedsExpanding && (
+                    <button
+                      className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
+                      onClick={onToggleDescription}
+                    >
+                      {isExpanded ? 'Less' : 'More'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm italic text-gray-500">
+                  No description available
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Layout without image - full width description */
+          <div className="text-muted-foreground text-sm leading-relaxed">
+            {hasDescription ? (
+              <>
                 {displayDescription}
-                {shouldTruncate && (
+                {descriptionNeedsExpanding && (
                   <button
                     className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
                     onClick={onToggleDescription}
@@ -631,24 +661,27 @@ function ProductCard({
                     {isExpanded ? 'Less' : 'More'}
                   </button>
                 )}
+              </>
+            ) : (
+              <div className="text-muted-foreground text-sm italic text-gray-500">
+                No description available
               </div>
-            </div>
-          </div>
-        ) : (
-          /* Layout without image - full width description */
-          <div className="text-muted-foreground text-sm leading-relaxed">
-            {displayDescription}
-            {shouldTruncate && (
-              <button
-                className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
-                onClick={onToggleDescription}
-              >
-                {isExpanded ? 'Less' : 'More'}
-              </button>
             )}
           </div>
         )}
       </div>
+
+      {/* Expand/Collapse button for product name when no description */}
+      {!hasDescription && productNameNeedsExpanding && (
+        <div className="px-4 pb-2">
+          <button
+            className="text-blue-600 hover:text-blue-700 underline text-sm"
+            onClick={onToggleDescription}
+          >
+            {isExpanded ? 'Show Less' : 'Show More'}
+          </button>
+        </div>
+      )}
 
       {/* Nutrition Info and Actions - pinned to bottom */}
       <div className="px-4 pb-4 mt-auto">
