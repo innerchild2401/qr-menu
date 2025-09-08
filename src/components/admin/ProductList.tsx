@@ -73,17 +73,17 @@ export default function ProductList({
   if (products.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="text-gray-400 mb-4">
+        <div className="text-muted-foreground mb-4">
           <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-muted-foreground mb-4">
           No products found. Create your first product to get started.
         </p>
         <button
           onClick={onAddNew}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
         >
           Add First Product
         </button>
@@ -96,17 +96,17 @@ export default function ProductList({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-600">
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Image</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Name</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Category</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Price</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">Actions</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground">Image</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Name</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Category</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Price</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-b border-gray-100 dark:border-gray-700">
+              <tr key={product.id} className="border-b border-border/50">
                 <td className="py-3 px-4">
                   {product.image_url ? (
                     <div
@@ -120,8 +120,8 @@ export default function ProductList({
                       aria-label={product.name}
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -129,31 +129,31 @@ export default function ProductList({
                 </td>
                 <td className="py-3 px-4">
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">{product.name}</div>
+                    <div className="font-medium text-foreground">{product.name}</div>
                     {product.description && (
-                      <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                      <div className="text-sm text-muted-foreground truncate max-w-xs">
                         {product.description}
                       </div>
                     )}
                   </div>
                 </td>
-                <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                <td className="py-3 px-4 text-muted-foreground">
                   {product.categories?.name || 'No category'}
                 </td>
-                <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                <td className="py-3 px-4 text-foreground font-medium">
                   ${product.price.toFixed(2)}
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex justify-end space-x-2">
                     <button
                       onClick={() => onEdit(product)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      className="text-primary hover:text-primary/80 text-sm font-medium"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(product)}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                      className="text-destructive hover:text-destructive/80 text-sm font-medium"
                     >
                       Delete
                     </button>
@@ -215,7 +215,7 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
   } : null;
 
   return (
-    <div className="overflow-hidden hover:shadow-lg transition-all duration-300 min-h-[320px] flex flex-col border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+    <div className="overflow-hidden hover:shadow-lg transition-all duration-300 min-h-[320px] flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm">
       {/* Header with name, price, and language indicator */}
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between">
@@ -252,8 +252,8 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
               onClick={() => setShowRecipe(false)}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 !showRecipe
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
             >
               Description
@@ -263,8 +263,8 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
                 onClick={() => setShowRecipe(true)}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${
                   showRecipe
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`}
               >
                 Recipe
@@ -324,31 +324,31 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
       {/* Nutritional Facts */}
       {nutrition && (
         <div className="px-4 pb-2">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Nutritional Facts (per portion)</h4>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <h4 className="text-xs font-semibold text-foreground mb-2">Nutritional Facts (per portion)</h4>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {nutrition.calories && (
                 <div className="flex justify-between">
-                  <span>Calories:</span>
-                  <span className="font-medium">{nutrition.calories} kcal</span>
+                  <span className="text-muted-foreground">Calories:</span>
+                  <span className="font-medium text-foreground">{nutrition.calories} kcal</span>
                 </div>
               )}
               {nutrition.protein && (
                 <div className="flex justify-between">
-                  <span>Protein:</span>
-                  <span className="font-medium">{nutrition.protein}g</span>
+                  <span className="text-muted-foreground">Protein:</span>
+                  <span className="font-medium text-foreground">{nutrition.protein}g</span>
                 </div>
               )}
               {nutrition.carbs && (
                 <div className="flex justify-between">
-                  <span>Carbs:</span>
-                  <span className="font-medium">{nutrition.carbs}g</span>
+                  <span className="text-muted-foreground">Carbs:</span>
+                  <span className="font-medium text-foreground">{nutrition.carbs}g</span>
                 </div>
               )}
               {nutrition.fat && (
                 <div className="flex justify-between">
-                  <span>Fat:</span>
-                  <span className="font-medium">{nutrition.fat}g</span>
+                  <span className="text-muted-foreground">Fat:</span>
+                  <span className="font-medium text-foreground">{nutrition.fat}g</span>
                 </div>
               )}
             </div>
@@ -360,11 +360,11 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
       {hasAllergens && (
         <div className="px-4 pb-2">
           <div className="flex flex-wrap gap-1">
-            <span className="text-xs text-gray-600 dark:text-gray-400 mr-1">Allergens:</span>
+            <span className="text-xs text-muted-foreground mr-1">Allergens:</span>
             {product.allergens!.map((allergen, index) => (
               <span
                 key={index}
-                className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full"
+                className="px-2 py-1 text-xs bg-destructive/10 text-destructive rounded-full"
               >
                 {allergen}
               </span>
@@ -393,7 +393,7 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
               <button
                 onClick={() => onRegenerate(product)}
                 disabled={isRegenerating}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
               >
                 {isRegenerating ? (
                   <>
@@ -412,13 +412,13 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
             )}
             <button
               onClick={() => onEdit(product)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 rounded-md text-sm font-medium transition-colors"
             >
               Edit
             </button>
             <button
               onClick={() => onDelete(product)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded-md text-sm font-medium transition-colors"
             >
               Delete
             </button>
