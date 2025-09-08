@@ -24,6 +24,13 @@ interface Product {
   categories?: {
     name: string;
   };
+  // AI-generated fields
+  generated_description?: string;
+  recipe?: Array<{ ingredient: string; quantity: string }>;
+  allergens?: string[];
+  manual_language_override?: 'ro' | 'en';
+  ai_generated_at?: string;
+  ai_last_updated?: string;
 }
 
 interface Category {
@@ -48,6 +55,9 @@ export default function AdminProducts() {
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regeneratingProductId, setRegeneratingProductId] = useState<string | null>(null);
+  const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -138,6 +148,98 @@ export default function AdminProducts() {
     loadData();
   };
 
+  // AI Regeneration Functions
+  const handleRegenerate = async (product: Product) => {
+    try {
+      setIsRegenerating(true);
+      setRegeneratingProductId(product.id);
+
+      const response = await authenticatedApiCall('/api/generate-product-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          products: [{
+            id: product.id,
+            name: product.name,
+            manual_language_override: product.manual_language_override
+          }]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('AI regeneration successful:', data);
+        await loadData(); // Reload products to show updated data
+      } else {
+        const errorData = await response.json();
+        console.error('AI regeneration failed:', errorData);
+        alert(`Failed to regenerate product data: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error during AI regeneration:', error);
+      alert('Error during AI regeneration. Please try again.');
+    } finally {
+      setIsRegenerating(false);
+      setRegeneratingProductId(null);
+    }
+  };
+
+  const handleRegenerateAll = async () => {
+    try {
+      setIsRegeneratingAll(true);
+      
+      // Get products that don't have AI-generated descriptions or recipes
+      const productsNeedingGeneration = products.filter(product => 
+        !product.generated_description && (!product.recipe || product.recipe.length === 0)
+      );
+
+      if (productsNeedingGeneration.length === 0) {
+        alert('All products already have AI-generated content.');
+        return;
+      }
+
+      if (!confirm(`This will generate AI content for ${productsNeedingGeneration.length} products. Continue?`)) {
+        return;
+      }
+
+      // Process in batches of 10 (API limit)
+      const batchSize = 10;
+      for (let i = 0; i < productsNeedingGeneration.length; i += batchSize) {
+        const batch = productsNeedingGeneration.slice(i, i + batchSize);
+        
+        const response = await authenticatedApiCall('/api/generate-product-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            products: batch.map(product => ({
+              id: product.id,
+              name: product.name,
+              manual_language_override: product.manual_language_override
+            }))
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error(`Batch ${i / batchSize + 1} failed:`, errorData);
+          // Continue with remaining batches
+        }
+      }
+
+      await loadData(); // Reload products to show updated data
+      alert(`AI regeneration completed for ${productsNeedingGeneration.length} products.`);
+    } catch (error) {
+      console.error('Error during bulk AI regeneration:', error);
+      alert('Error during bulk regeneration. Please try again.');
+    } finally {
+      setIsRegeneratingAll(false);
+    }
+  };
+
   // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all' 
     ? products 
@@ -207,6 +309,27 @@ export default function AdminProducts() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <span className="whitespace-nowrap">Bulk Upload Menu</span>
+            </Button>
+
+            <Button 
+              onClick={handleRegenerateAll}
+              variant="outline"
+              disabled={isRegeneratingAll || products.length === 0}
+              className="flex items-center w-full sm:w-auto min-h-[44px] bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
+            >
+              {isRegeneratingAll ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2 flex-shrink-0"></div>
+                  <span className="whitespace-nowrap">Generating AI...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="whitespace-nowrap">Regenerate All</span>
+                </>
+              )}
             </Button>
           </div>
 
@@ -285,6 +408,9 @@ export default function AdminProducts() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onAddNew={handleAddNew}
+          onRegenerate={handleRegenerate}
+          isRegenerating={isRegenerating}
+          regeneratingProductId={regeneratingProductId || undefined}
         />
       </Card>
                 

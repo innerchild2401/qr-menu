@@ -8,20 +8,17 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect, useRef } from 'react';
 import { 
-  Share2, 
   Star, 
   MapPin, 
   Clock, 
-  ArrowLeft,
   QrCode,
-  ShoppingCart,
   X,
   Check,
   Snowflake,
   Leaf,
   Flame
 } from 'lucide-react';
-import { layout, typography, spacing, gaps } from '@/lib/design-system';
+import { layout, typography, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
 import RestaurantNavbar from '@/components/RestaurantNavbar';
 import { formatCurrency, getNutritionLabel, type Currency, type NutritionLanguage } from '@/lib/currency-utils';

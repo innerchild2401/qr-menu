@@ -1,17 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
-
-// Supabase configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.Lug4smvqk5sI-46MbFeh64Yu2nptehnUTlUCPSpYbqI';
+import { env } from './env';
 
 // Debug environment variables in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Not set');
-  console.log('Supabase Anon Key:', supabaseAnonKey ? 'Set' : 'Not set');
+if (typeof window !== 'undefined' && env.IS_DEVELOPMENT) {
+  console.log('Supabase URL:', env.SUPABASE_URL ? 'Set' : 'Not set');
+  console.log('Supabase Anon Key:', env.SUPABASE_ANON_KEY ? 'Set' : 'Not set');
 }
 
 // Client-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

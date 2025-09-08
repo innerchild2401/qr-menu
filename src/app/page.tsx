@@ -1,7 +1,6 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import {
   ArrowRight, 
   CheckCircle
 } from "lucide-react";
-import { layout, typography, spacing, gaps } from "@/lib/design-system";
+import { layout, typography, gaps } from "@/lib/design-system";
 
 export default function Home() {
 

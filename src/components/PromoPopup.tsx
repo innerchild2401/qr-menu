@@ -29,37 +29,36 @@ export default function PromoPopup({ slug }: PromoPopupProps) {
   useEffect(() => {
     const fetchPopup = async () => {
       try {
-        const { createClient } = await import('@supabase/supabase-js');
+        // Use the secure API route instead of direct database access
+        const response = await fetch(`/api/popups/${slug}`);
         
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-        const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I';
-        
-        const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-        
-        // First get the restaurant ID
-        const { data: restaurant } = await supabase
-          .from('restaurants')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-
-        if (!restaurant) {
-          setIsLoading(false);
-          return;
+        if (!response.ok) {
+          throw new Error('Failed to fetch popup');
         }
-
-        // Then get the popup for this restaurant
-        const { data: popupData } = await supabase
-          .from('popups')
-          .select('*')
-          .eq('restaurant_id', restaurant.id)
-          .eq('is_active', true)
-          .single();
-
+        
+        const { popup: popupData } = await response.json();
+        
         if (popupData) {
-          setPopup(popupData);
-          // Show popup after a delay
-          setTimeout(() => setIsVisible(true), 2000);
+          // Check session storage to see if this popup was already shown
+          const sessionKey = `popup-shown-${popupData.id}`;
+          const wasShown = sessionStorage.getItem(sessionKey);
+          
+          if (!wasShown || popupData.frequency === 'every-visit') {
+            setPopup({
+              id: popupData.id,
+              title: popupData.title,
+              description: popupData.message,
+              image_url: popupData.image || undefined,
+              button_text: popupData.cta_text || undefined,
+              button_url: popupData.cta_url || undefined,
+            });
+            
+            // Mark as shown in session storage
+            sessionStorage.setItem(sessionKey, 'true');
+            
+            // Show popup after a delay
+            setTimeout(() => setIsVisible(true), 2000);
+          }
         }
       } catch (error) {
         console.error('Error fetching popup:', error);

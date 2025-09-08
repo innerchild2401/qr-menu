@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { authenticatedApiCall } from '../../../lib/api-helpers';
 
 interface Product {
@@ -15,6 +16,13 @@ interface Product {
   categories?: {
     name: string;
   };
+  // AI-generated fields
+  generated_description?: string;
+  recipe?: Array<{ ingredient: string; quantity: string }>;
+  allergens?: string[];
+  manual_language_override?: 'ro' | 'en';
+  ai_generated_at?: string;
+  ai_last_updated?: string;
 }
 
 interface ProductListProps {
@@ -23,6 +31,9 @@ interface ProductListProps {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onAddNew: () => void;
+  onRegenerate?: (product: Product) => void;
+  isRegenerating?: boolean;
+  regeneratingProductId?: string;
 }
 
 export default function ProductList({ 
@@ -30,7 +41,10 @@ export default function ProductList({
   viewMode, 
   onEdit, 
   onDelete, 
-  onAddNew 
+  onAddNew,
+  onRegenerate,
+  isRegenerating = false,
+  regeneratingProductId
 }: ProductListProps) {
   const handleDelete = async (product: Product) => {
     if (!confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
@@ -153,113 +167,264 @@ export default function ProductList({
     );
   }
 
-  // Card view - matching restaurant menu page design
+  // Enhanced card view with AI features
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product) => (
-        <div
+        <ProductCard
           key={product.id}
-          className="overflow-hidden hover:shadow-lg transition-all duration-300 h-48 flex flex-col border border-gray-200 dark:border-gray-600 rounded-lg"
-        >
-          {/* Header with name and price - at the top */}
-          <div className="p-4 pb-2">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground text-lg line-clamp-1">
-                  {product.name}
-                </h3>
-              </div>
-              <div className="ml-4 flex-shrink-0">
-                <div className="text-lg font-bold text-primary">
-                  ${product.price.toFixed(2)}
-                </div>
-              </div>
+          product={product}
+          onEdit={onEdit}
+          onDelete={handleDelete}
+          onRegenerate={onRegenerate}
+          isRegenerating={isRegenerating && regeneratingProductId === product.id}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Enhanced Product Card Component with AI Features
+interface ProductCardProps {
+  product: Product;
+  onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
+  onRegenerate?: (product: Product) => void;
+  isRegenerating: boolean;
+}
+
+function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }: ProductCardProps) {
+  const [showRecipe, setShowRecipe] = useState(false);
+  
+  // Get the description to display (AI-generated takes priority)
+  const displayDescription = product.generated_description || product.description;
+  const hasRecipe = product.recipe && product.recipe.length > 0;
+  const hasNutrition = product.nutrition && typeof product.nutrition === 'object';
+  const hasAllergens = product.allergens && product.allergens.length > 0;
+
+  // Parse nutrition data
+  const nutrition = hasNutrition ? {
+    calories: typeof product.nutrition?.calories === 'number' ? product.nutrition.calories : 
+              typeof product.nutrition?.calories === 'string' ? parseFloat(product.nutrition.calories) : null,
+    protein: typeof product.nutrition?.protein === 'number' ? product.nutrition.protein : 
+             typeof product.nutrition?.protein === 'string' ? product.nutrition.protein : null,
+    carbs: typeof product.nutrition?.carbs === 'number' ? product.nutrition.carbs : 
+           typeof product.nutrition?.carbs === 'string' ? product.nutrition.carbs : null,
+    fat: typeof product.nutrition?.fat === 'number' ? product.nutrition.fat : 
+        typeof product.nutrition?.fat === 'string' ? product.nutrition.fat : null,
+  } : null;
+
+  return (
+    <div className="overflow-hidden hover:shadow-lg transition-all duration-300 min-h-[320px] flex flex-col border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+      {/* Header with name, price, and language indicator */}
+      <div className="p-4 pb-2">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground text-lg line-clamp-1">
+                {product.name}
+              </h3>
+              {product.manual_language_override && (
+                <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+                  {product.manual_language_override.toUpperCase()}
+                </span>
+              )}
+              {product.ai_generated_at && (
+                <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
+                  AI
+                </span>
+              )}
             </div>
           </div>
+          <div className="ml-4 flex-shrink-0">
+            <div className="text-lg font-bold text-primary">
+              ${product.price.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Middle Section: Image + Description */}
-          <div className="px-4 pb-2">
-            {product.image_url ? (
-              /* Layout with image */
-              <div className="flex gap-3">
-                {/* Image Square - Left Column */}
-                <div className="flex-shrink-0">
-                  <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-muted">
-                    <div
-                      style={{
-                        backgroundImage: `url(${product.image_url})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
-                      className="w-full h-full"
-                      role="img"
-                      aria-label={product.name}
-                    />
-                    {/* Gradient overlay for smooth transition to text */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white dark:to-background opacity-80" />
+      {/* Description/Recipe Toggle */}
+      {(displayDescription || hasRecipe) && (
+        <div className="px-4 pb-2">
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => setShowRecipe(false)}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                !showRecipe
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              Description
+            </button>
+            {hasRecipe && (
+              <button
+                onClick={() => setShowRecipe(true)}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  showRecipe
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Recipe
+              </button>
+            )}
+          </div>
+          
+          {/* Content Display */}
+          <div className="text-sm text-muted-foreground">
+            {showRecipe && hasRecipe ? (
+              <div className="space-y-1">
+                {product.recipe!.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{item.ingredient}</span>
+                    <span className="text-xs">{item.quantity}</span>
                   </div>
-                </div>
-                
-                {/* Description - Right Column */}
-                <div className="flex-1 min-w-0">
-                  <div className="text-muted-foreground text-sm">
-                    {product.description ? (
-                      product.description.length > 60 ? 
-                        `${product.description.slice(0, 60)}...` : 
-                        product.description
-                    ) : (
-                      <span className="text-gray-400 italic">No description</span>
-                    )}
+                ))}
+                {product.recipe!.length > 3 && (
+                  <div className="text-xs text-gray-400 italic">
+                    +{product.recipe!.length - 3} more ingredients...
                   </div>
-                </div>
+                )}
               </div>
             ) : (
-              /* Layout without image - full width description */
-              <div className="text-muted-foreground text-sm">
-                {product.description ? (
-                  product.description.length > 60 ? 
-                    `${product.description.slice(0, 60)}...` : 
-                    product.description
+              <div>
+                {displayDescription ? (
+                  displayDescription.length > 80 ? 
+                    `${displayDescription.slice(0, 80)}...` : 
+                    displayDescription
                 ) : (
-                  <span className="text-gray-400 italic">No description</span>
+                  <span className="text-gray-400 italic">No description available</span>
                 )}
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Category and Actions - pinned to bottom */}
-          <div className="px-4 pb-4 mt-auto">
-            <div className="flex items-center justify-between gap-3">
-              {/* Category Info - Left Side */}
-              <div className="flex-1">
-                {product.categories?.name && (
-                  <div className="p-2 bg-muted/50 rounded-md">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      {product.categories.name}
-                    </span>
-                  </div>
-                )}
-              </div>
+      {/* Image */}
+      {product.image_url && (
+        <div className="px-4 pb-2">
+          <div className="w-full h-24 relative rounded-lg overflow-hidden bg-muted">
+            <div
+              style={{
+                backgroundImage: `url(${product.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+              className="w-full h-full"
+              role="img"
+              aria-label={product.name}
+            />
+          </div>
+        </div>
+      )}
 
-              {/* Action Buttons - Right Side */}
-              <div className="flex-shrink-0 flex gap-2">
-                <button
-                  onClick={() => onEdit(product)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(product)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
+      {/* Nutritional Facts */}
+      {nutrition && (
+        <div className="px-4 pb-2">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Nutritional Facts (per portion)</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {nutrition.calories && (
+                <div className="flex justify-between">
+                  <span>Calories:</span>
+                  <span className="font-medium">{nutrition.calories} kcal</span>
+                </div>
+              )}
+              {nutrition.protein && (
+                <div className="flex justify-between">
+                  <span>Protein:</span>
+                  <span className="font-medium">{nutrition.protein}g</span>
+                </div>
+              )}
+              {nutrition.carbs && (
+                <div className="flex justify-between">
+                  <span>Carbs:</span>
+                  <span className="font-medium">{nutrition.carbs}g</span>
+                </div>
+              )}
+              {nutrition.fat && (
+                <div className="flex justify-between">
+                  <span>Fat:</span>
+                  <span className="font-medium">{nutrition.fat}g</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      ))}
+      )}
+
+      {/* Allergens */}
+      {hasAllergens && (
+        <div className="px-4 pb-2">
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-600 dark:text-gray-400 mr-1">Allergens:</span>
+            {product.allergens!.map((allergen, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full"
+              >
+                {allergen}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Category and Actions - pinned to bottom */}
+      <div className="px-4 pb-4 mt-auto">
+        <div className="flex items-center justify-between gap-3">
+          {/* Category Info - Left Side */}
+          <div className="flex-1">
+            {product.categories?.name && (
+              <div className="p-2 bg-muted/50 rounded-md">
+                <span className="text-xs text-muted-foreground font-medium">
+                  {product.categories.name}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons - Right Side */}
+          <div className="flex-shrink-0 flex gap-2">
+            {onRegenerate && (
+              <button
+                onClick={() => onRegenerate(product)}
+                disabled={isRegenerating}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1"
+              >
+                {isRegenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    <span>AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Regen
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => onEdit(product)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => onDelete(product)}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

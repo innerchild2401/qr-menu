@@ -24,6 +24,13 @@ interface Product {
   categories?: {
     name: string;
   };
+  // AI-generated fields
+  generated_description?: string;
+  recipe?: Array<{ ingredient: string; quantity: string }>;
+  allergens?: string[];
+  manual_language_override?: 'ro' | 'en';
+  ai_generated_at?: string;
+  ai_last_updated?: string;
 }
 
 interface Category {
@@ -41,6 +48,7 @@ interface ProductFormData {
   is_frozen: boolean;
   is_vegetarian: boolean;
   is_spicy: boolean;
+  manual_language_override: '' | 'ro' | 'en';
   nutrition: {
     calories: string;
     protein: string;
@@ -86,6 +94,7 @@ export default function ProductForm({
     is_frozen: false,
     is_vegetarian: false,
     is_spicy: false,
+    manual_language_override: '',
     nutrition: {
       calories: '',
       protein: '',
@@ -145,6 +154,7 @@ export default function ProductForm({
         is_frozen: editingProduct.is_frozen || false,
         is_vegetarian: editingProduct.is_vegetarian || false,
         is_spicy: editingProduct.is_spicy || false,
+        manual_language_override: editingProduct.manual_language_override || '',
         nutrition: {
           calories: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'calories' in editingProduct.nutrition ? String(editingProduct.nutrition.calories) : '',
           protein: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'protein' in editingProduct.nutrition ? String(editingProduct.nutrition.protein) : '',
@@ -169,6 +179,7 @@ export default function ProductForm({
       is_frozen: false,
       is_vegetarian: false,
       is_spicy: false,
+      manual_language_override: '',
       nutrition: {
         calories: '',
         protein: '',
@@ -214,6 +225,7 @@ export default function ProductForm({
         is_frozen: formData.is_frozen,
         is_vegetarian: formData.is_vegetarian,
         is_spicy: formData.is_spicy,
+        manual_language_override: formData.manual_language_override || null,
         nutrition: formData.nutrition.calories || formData.nutrition.protein || formData.nutrition.carbs || formData.nutrition.fat || formData.nutrition.sugars || formData.nutrition.salts ? {
           calories: formData.nutrition.calories ? parseInt(formData.nutrition.calories) : null,
           protein: formData.nutrition.protein || null,
@@ -330,22 +342,42 @@ export default function ProductForm({
           </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Category
-          </label>
-          <select
-            value={formData.category_id}
-            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-            className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
-          >
-            <option value="">Select a category (optional)</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Category
+            </label>
+            <select
+              value={formData.category_id}
+              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+            >
+              <option value="">Select a category (optional)</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              AI Language Override
+            </label>
+            <select
+              value={formData.manual_language_override}
+              onChange={(e) => setFormData({ ...formData, manual_language_override: e.target.value as '' | 'ro' | 'en' })}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+            >
+              <option value="">Auto-detect language</option>
+              <option value="ro">Romanian (ro)</option>
+              <option value="en">English (en)</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Force AI to generate content in a specific language. Leave as auto-detect for automatic language detection based on product name.
+            </p>
+          </div>
         </div>
         
         <div>

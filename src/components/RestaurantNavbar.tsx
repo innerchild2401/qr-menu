@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { QrCode, ShoppingCart } from 'lucide-react';
 import { layout } from '@/lib/design-system';

@@ -13,14 +13,30 @@
 - **Multi-restaurant Support**: Each restaurant owner manages their own establishment independently
 
 ### Current Functionality
-- ✅ User authentication and restaurant registration
+- ✅ User authentication and restaurant registration with Supabase Auth
 - ✅ Complete menu management (categories, products, pricing)
 - ✅ Image upload and management for products and restaurant branding
-- ✅ QR code generation and management
-- ✅ Promotional popup system with scheduling
-- ✅ Responsive customer-facing menu display
+- ✅ QR code generation and management with automatic upload
+- ✅ Promotional popup system with scheduling and frequency control
+- ✅ Responsive customer-facing menu display with modern card layout
 - ✅ Admin dashboard with comprehensive management tools
-- ✅ Real-time data synchronization
+- ✅ Real-time data synchronization with Supabase
+- ✅ AI-powered menu classification and organization
+- ✅ AI-generated product descriptions with language detection
+- ✅ Professional PDF menu generation with multiple themes
+- ✅ Google Business Profile integration (prepared, temporarily disabled)
+- ✅ Advanced debugging and diagnostic tools
+- ✅ Comprehensive system health checklist
+- ✅ Row Level Security (RLS) for data protection
+- ✅ Multi-tenant architecture with user-restaurant relationships
+- ✅ Drag-and-drop category and product reordering
+- ✅ Product visibility controls
+- ✅ Nutritional information tracking
+- ✅ Restaurant branding and customization
+- ✅ Operating hours management
+- ✅ Toast notification system
+- ✅ Mobile-first responsive design
+- ✅ Dark/light mode support
 
 ### Tech Stack
 
@@ -28,9 +44,12 @@
 - **Framework**: Next.js 15.5.0 (App Router)
 - **Language**: TypeScript 5
 - **Styling**: Tailwind CSS 4
-- **UI Components**: Custom React components
+- **UI Components**: Custom React components with Radix UI primitives
 - **State Management**: React hooks (useState, useEffect, useCallback)
 - **Routing**: Next.js App Router with dynamic routes
+- **Icons**: Lucide React icon library
+- **Form Handling**: React Hook Form with validation
+- **PDF Generation**: jsPDF and html2canvas for menu PDFs
 
 #### Backend
 - **Runtime**: Node.js
@@ -41,10 +60,12 @@
 - **Middleware**: Next.js middleware for route protection
 
 #### Database & APIs
-- **Primary Database**: Supabase PostgreSQL
+- **Primary Database**: Supabase PostgreSQL with Row Level Security
 - **Authentication**: Supabase Auth with JWT tokens
-- **File Storage**: Supabase Storage buckets
+- **File Storage**: Supabase Storage buckets with CDN delivery
 - **External APIs**: QR code generation (qrcode library)
+- **AI Integration**: OpenAI API for menu classification and description generation
+- **Google APIs**: Google Business Profile API (prepared, temporarily disabled)
 
 #### Development Tools
 - **Package Manager**: npm
@@ -117,13 +138,14 @@ smartmenu/
   - Promotional popups
 
 #### Admin Dashboard Pages
-- **Settings** (`/admin/settings`): Restaurant information and branding
-- **Categories** (`/admin/categories`): Menu category management
-- **Products** (`/admin/products`): Menu item management with images
-- **Menu** (`/admin/menu`): Menu overview and quick actions
-- **Popups** (`/admin/popups`): Promotional popup management
-- **QR Code** (`/admin/qr`): QR code generation and management
+- **Settings** (`/admin/settings`): Restaurant information, branding, and Google Business integration
+- **Categories** (`/admin/categories`): Menu category management with drag-and-drop reordering
+- **Products** (`/admin/products`): Menu item management with images, nutrition, and visibility controls
+- **Menu** (`/admin/menu`): Menu overview, PDF generation, and AI-powered organization
+- **Popups** (`/admin/popups`): Promotional popup management with scheduling
+- **QR Code** (`/admin/qr`): QR code generation, management, and download
 - **Checklist** (`/admin/checklist`): System health and setup verification
+- **Debug** (`/admin/debug`): Advanced debugging and diagnostic tools
 
 ### Reusable Components
 
@@ -136,6 +158,11 @@ smartmenu/
 - **Toast**: Notification system for success/error messages
 - **PromoPopup**: Customer-facing promotional popups
 - **Form Components**: Reusable form elements with validation
+- **PDFMenuGenerator**: AI-powered PDF menu generation with themes
+- **CategoryReviewModal**: AI menu classification review interface
+- **ProductForm**: Advanced product creation and editing
+- **ConditionalNavbar**: Context-aware navigation component
+- **RestaurantNavbar**: Restaurant-specific navigation
 
 #### Layout Components
 - **AdminLayout**: Protected layout for admin pages
@@ -170,16 +197,22 @@ smartmenu/
 - **GET/PUT /api/admin/restaurant**: Restaurant information management
 - **GET/POST /api/admin/categories**: Category CRUD operations
 - **PUT/DELETE /api/admin/categories/[id]**: Individual category management
+- **POST /api/admin/categories/reorder**: Drag-and-drop category reordering
 - **GET/POST /api/admin/products**: Product CRUD operations
 - **PUT/DELETE /api/admin/products/[id]**: Individual product management
+- **POST /api/admin/products/reorder**: Drag-and-drop product reordering
+- **PUT /api/admin/products/[id]/visibility**: Product visibility toggle
 - **GET/POST /api/admin/popups**: Popup CRUD operations
 - **PUT/DELETE /api/admin/popups/[id]**: Individual popup management
 - **GET /api/admin/me/restaurant**: Get current user's restaurant
+- **GET /api/admin/debug/user-restaurant**: Debug user-restaurant relationships
+- **GET /api/admin/debug/check-restaurant/[slug]**: Debug restaurant data
 
 #### Upload APIs
 - **POST /api/upload/logo/[slug]**: Restaurant logo upload
 - **POST /api/upload/cover/[slug]**: Restaurant cover image upload
 - **POST /api/upload/productImage/[slug]**: Product image upload
+- **POST /api/upload/categoryImage/[slug]**: Category image upload
 
 #### QR Code APIs
 - **GET /api/admin/qr/info**: Get QR code information
@@ -190,6 +223,9 @@ smartmenu/
 - **Supabase**: Database, authentication, and file storage
 - **QR Code Generation**: qrcode library for menu QR codes
 - **Image Processing**: Browser-based image handling
+- **OpenAI API**: AI-powered menu classification and description generation
+- **Google Business Profile API**: Restaurant ratings and reviews integration (prepared)
+- **PDF Generation**: jsPDF and html2canvas for professional menu PDFs
 
 ### Data Flow in APIs
 1. **Request Validation**: Check authentication and user permissions
@@ -215,6 +251,14 @@ smartmenu/
 - cover_url: TEXT (Cover image URL)
 - created_at: TIMESTAMP
 - owner_id: UUID (References users.id)
+- google_business_location_id: TEXT (Google Business Profile location ID)
+- google_business_access_token: TEXT (OAuth access token)
+- google_business_refresh_token: TEXT (OAuth refresh token)
+- google_business_token_expires_at: TIMESTAMP (Token expiration)
+- google_business_place_id: TEXT (Google Places place ID)
+- google_business_rating: DECIMAL(3,2) (Cached Google rating)
+- google_business_review_count: INTEGER (Cached review count)
+- google_business_last_sync: TIMESTAMP (Last sync time)
 ```
 
 **users**
@@ -239,6 +283,8 @@ smartmenu/
 - id: SERIAL (Primary Key)
 - restaurant_id: UUID (References restaurants.id)
 - name: TEXT (Category name)
+- sort_order: INTEGER (Drag-and-drop ordering)
+- image_url: TEXT (Category image URL)
 ```
 
 **products**
@@ -251,6 +297,8 @@ smartmenu/
 - price: DECIMAL (Product price)
 - nutrition: JSONB (Nutritional information)
 - image_url: TEXT (Product image URL)
+- visible: BOOLEAN (Product visibility toggle)
+- sort_order: INTEGER (Drag-and-drop ordering)
 - created_at: TIMESTAMP
 ```
 
@@ -273,7 +321,9 @@ smartmenu/
 - **restaurant-logos**: Restaurant logo images
 - **restaurant-covers**: Restaurant cover/hero images
 - **product-images**: Product photos
+- **category-images**: Category images
 - **qr-codes**: Generated QR code images
+- **popup-images**: Promotional popup images
 
 ### Data Persistence
 - **Primary Storage**: Supabase PostgreSQL for all structured data
@@ -314,6 +364,24 @@ smartmenu/
 - **Scheduling**: Start/end date and time control
 - **Frequency Control**: Once-per-session or every-visit display
 - **Call-to-Action**: Optional buttons with custom URLs
+
+#### AI-Powered Features
+- **Menu Classification**: Automatic categorization of menu items using AI
+- **Description Generation**: AI-generated product descriptions with language detection
+- **Smart Organization**: Intelligent menu structure optimization
+- **Language Detection**: Automatic detection of menu language for localization
+
+#### PDF Generation System
+- **Professional Templates**: Multiple themed PDF menu templates
+- **AI-Enhanced Layout**: Smart organization of menu items in PDFs
+- **Custom Branding**: Restaurant-specific styling and colors
+- **Export Options**: High-quality PDF generation with customizable content
+
+#### Google Business Integration (Prepared)
+- **OAuth 2.0 Authentication**: Secure connection to Google Business Profile
+- **Real-time Ratings**: Display actual Google ratings on menus
+- **Review Integration**: Show review counts and link to Google reviews
+- **Automatic Sync**: Background synchronization of business data
 
 ### Key Algorithms & Functions
 
@@ -365,7 +433,40 @@ function isPopupActive(popup: Popup): boolean {
 }
 ```
 
-## 7. Known Limitations & TODOs
+## 7. Recent Major Updates & Improvements
+
+### Supabase Migration (Completed)
+- **Full Database Migration**: Migrated from JSON file system to Supabase PostgreSQL
+- **Row Level Security**: Implemented comprehensive RLS policies for data protection
+- **Storage Integration**: Migrated all file storage to Supabase Storage with CDN
+- **Authentication Overhaul**: Complete Supabase Auth integration with proper user-restaurant relationships
+
+### AI-Powered Features (New)
+- **Menu Classification**: Automatic categorization of menu items using OpenAI
+- **Description Generation**: AI-generated product descriptions with language detection
+- **Smart Organization**: Intelligent menu structure optimization
+- **PDF Generation**: Professional PDF menu generation with AI-enhanced layouts
+
+### UI/UX Improvements (Recent)
+- **Modern Card Layout**: Transformed menu cards from square to rectangular layout
+- **Enhanced Mobile Experience**: Improved responsive design with better content density
+- **Drag-and-Drop Reordering**: Category and product reordering with visual feedback
+- **Product Visibility Controls**: Toggle product visibility without deletion
+- **Advanced Form Components**: Enhanced form handling with better validation
+
+### Google Business Integration (Prepared)
+- **OAuth 2.0 Setup**: Complete Google Business Profile API integration
+- **Database Schema**: Added all necessary fields for Google Business data
+- **Rating Display**: Real-time Google ratings and review counts
+- **Automatic Sync**: Background synchronization system (temporarily disabled)
+
+### Debug & Diagnostic Tools (New)
+- **System Health Checklist**: Comprehensive setup verification
+- **Debug Interface**: Advanced debugging tools for user-restaurant relationships
+- **Database Analysis**: Automated schema analysis and validation
+- **Migration Scripts**: Complete database setup and migration automation
+
+## 8. Known Limitations & TODOs
 
 ### Current Limitations
 - **Email Confirmation**: Disabled for development (should be enabled in production)
@@ -373,13 +474,15 @@ function isPopupActive(popup: Popup): boolean {
 - **Caching**: No explicit caching strategy implemented
 - **Error Boundaries**: Limited error boundary implementation
 - **Loading States**: Some components lack comprehensive loading states
+- **Google Business Integration**: Temporarily disabled (requires environment setup)
 
 ### Unfinished Features
-- **Advanced Menu Management**: Feature flag for advanced menu settings
 - **Bulk Operations**: No bulk import/export functionality
 - **Analytics**: No usage analytics or reporting
 - **Multi-language Support**: Single language (English) only
 - **Payment Integration**: No payment processing capabilities
+- **Real-time Features**: No live updates or real-time notifications
+- **Advanced SEO**: Limited meta tags and structured data
 
 ### Potential Improvements
 - **Performance**: Implement image optimization and lazy loading
@@ -394,7 +497,7 @@ function isPopupActive(popup: Popup): boolean {
 - **Code Duplication**: Some repeated logic in admin pages
 - **Environment Variables**: Hardcoded fallback values
 
-## 8. How to Run the App
+## 9. How to Run the App
 
 ### Prerequisites
 - **Node.js**: Version 18 or higher
@@ -462,6 +565,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```bash
 # Feature Flags
 NEXT_PUBLIC_ENABLE_MENU_ADMIN=true
+
+# AI Integration (for menu classification and description generation)
+OPENAI_API_KEY=your-openai-api-key
+
+# Google Business Profile Integration (temporarily disabled)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 ```
 
 ### Available Scripts

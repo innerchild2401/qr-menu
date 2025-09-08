@@ -1,15 +1,54 @@
-# Copy this content to a new file called .env.local in your project root
+# SmartMenu Environment Configuration Template
+# 
+# IMPORTANT: Replace the existing env-template.txt with this secure version
+# Copy this file to .env.local and fill in your actual values
+# NEVER commit .env.local to version control
+
+# =============================================================================
+# REQUIRED ENVIRONMENT VARIABLES
+# =============================================================================
+# These variables MUST be set for the application to function properly
 
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://nnhyuqhypzytnkkdifuk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzYwOTIsImV4cCI6MjA3MTU1MjA5Mn0.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-# Application Configuration
+# =============================================================================
+# OPTIONAL ENVIRONMENT VARIABLES
+# =============================================================================
+# These variables have defaults but can be customized
+
+# Application URL (used for redirects and API calls)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Google Business Profile API Configuration
-# Get these from Google Cloud Console: https://console.cloud.google.com/
-GOOGLE_CLIENT_ID=your-google-client-id-here
-GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+# Feature Flags
+NEXT_PUBLIC_ENABLE_MENU_ADMIN=false
+
+# Google Business Profile Integration (optional)
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+
+# OpenAI Integration (optional but recommended for AI features)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# =============================================================================
+# DEVELOPMENT SETTINGS
+# =============================================================================
+
+# Node Environment (set automatically in most environments)
+NODE_ENV=development
+
+# =============================================================================
+# SECURITY NOTES
+# =============================================================================
+# 
+# 1. NEVER commit actual credentials to version control
+# 2. Use different keys for development and production
+# 3. Rotate keys regularly in production
+# 4. The SUPABASE_SERVICE_ROLE_KEY should only be used server-side
+# 5. Store production secrets in your deployment platform's secret manager
+# 6. The hardcoded fallback values have been removed for security
+#
+# =============================================================================
