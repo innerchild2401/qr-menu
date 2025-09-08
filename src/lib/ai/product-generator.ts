@@ -6,14 +6,11 @@
 import { 
   generateProductData, 
   generateIngredientNutrition,
-  isBottledDrink,
   type ProductGenerationRequest,
-  type GeneratedProductData,
-  type GPTUsageStats
+  type GeneratedProductData
 } from './openai-client';
 
 import { 
-  detectLanguage, 
   getEffectiveLanguage,
   type SupportedLanguage 
 } from './language-detector';
@@ -22,13 +19,13 @@ import {
   getCachedProductData,
   cacheProductData,
   getProductsNeedingGeneration,
-  getCachedIngredientNutrition,
   cacheIngredientNutrition,
   getIngredientsNeedingNutrition,
   mapIngredientsToAllergens,
   logGPTCall,
-  type CachedProduct
+  getGPTUsageStats
 } from './supabase-cache';
+import { supabaseAdmin } from '../supabase-server';
 
 // =============================================================================
 // TYPES
@@ -38,7 +35,7 @@ export interface ProductGenerationInput {
   id: string;
   name: string;
   manual_language_override?: SupportedLanguage;
-  restaurant_id?: string;
+  restaurant_id: string;
 }
 
 export interface ProductGenerationOutput {
@@ -77,8 +74,173 @@ export interface BatchGenerationResult {
 // =============================================================================
 
 const MAX_PRODUCTS_PER_BATCH = 10;
-const MAX_CONCURRENT_BATCHES = 3;
+const MAX_CONCURRENT_REQUESTS = 3; // Max simultaneous GPT calls
+const BATCH_RETRY_COUNT = 2; // Number of retries for failed requests
+const RETRY_DELAY_MS = 1000; // Base delay between retries (exponential backoff)
 const INGREDIENT_NUTRITION_CACHE_ENABLED = true;
+const COST_THRESHOLD_PER_RESTAURANT_DAILY = 10.0; // $10 daily limit per restaurant
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+/**
+ * Enhanced bottled drink detection with comprehensive patterns
+ */
+function isBottledDrinkEnhanced(productName: string): boolean {
+  const name = productName.toLowerCase().trim();
+  
+  const bottledDrinkPatterns = [
+    // Specific brand names
+    /\b(pepsi|coca|cola|coke|fanta|sprite|7up|mirinda|schweppes)\b/,
+    // Beer brands and terms
+    /\b(beer|bere|heineken|corona|stella|budweiser|becks|carlsberg|guinness|amstel)\b/,
+    // Water brands and terms
+    /\b(water|apa|evian|perrier|san pellegrino|aqua|dorna|borsec)\b/,
+    // Wine and alcohol
+    /\b(wine|vin|prosecco|champagne|sauvignon|chardonnay|whiskey|vodka|rum|gin)\b/,
+    // Juices
+    /\b(juice|suc|tropicana|innocent|fresh|orange|apple|grape)\b/,
+    // Energy drinks
+    /\b(energy|red bull|monster|burn|hell|rockstar)\b/,
+    // Volume indicators (strong indicators of bottled drinks)
+    /\b(bottle|sticla|330ml|500ml|250ml|750ml|1l|1\.5l|0\.5l|0\.33l|can|doza)\b/,
+    // Package descriptors
+    /\b(bottled|canned|draft|draught|tap)\b/
+  ];
+  
+  return bottledDrinkPatterns.some(pattern => pattern.test(name));
+}
+
+/**
+ * Check if restaurant has exceeded daily cost threshold
+ */
+async function checkCostThreshold(restaurantId: string): Promise<boolean> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const stats = await getGPTUsageStats(restaurantId, today, today);
+    return stats.totalCost < COST_THRESHOLD_PER_RESTAURANT_DAILY;
+  } catch (error) {
+    console.error('Error checking cost threshold:', error);
+    // Allow generation if we can't check (fail open)
+    return true;
+  }
+}
+
+/**
+ * Sleep utility for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry wrapper with exponential backoff
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = BATCH_RETRY_COUNT,
+  baseDelay: number = RETRY_DELAY_MS
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+      console.warn(`Attempt ${attempt + 1} failed, retrying in ${Math.round(delay)}ms:`, error);
+      await sleep(delay);
+    }
+  }
+  
+  throw lastError!;
+}
+
+/**
+ * Intelligent product filtering for different generation scenarios
+ */
+export async function getProductsForGeneration(
+  productIds: string[],
+  scenario: 'new' | 'regenerate_all' | 'recipe_edited' | 'force'
+): Promise<Array<{ id: string; name: string; manual_language_override?: SupportedLanguage; reason: string }>> {
+  try {
+    const { data: products, error } = await supabaseAdmin
+      .from('products')
+      .select('id, name, description, generated_description, recipe, manual_language_override, ai_generated_at')
+      .in('id', productIds);
+
+    if (error) {
+      console.error('Error fetching products for generation:', error);
+      return [];
+    }
+
+    return products
+      .map(product => {
+        let shouldGenerate = false;
+        let reason = '';
+
+        switch (scenario) {
+          case 'new':
+            // Always generate for new products
+            shouldGenerate = true;
+            reason = 'New product';
+            break;
+
+          case 'regenerate_all':
+            // Only generate if missing description or recipe
+            const hasDescription = !!(product.generated_description || product.description);
+            const hasRecipe = !!(product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0);
+            
+            if (!hasDescription && !hasRecipe) {
+              shouldGenerate = true;
+              reason = 'Missing description and recipe';
+            } else if (!hasDescription) {
+              shouldGenerate = true;
+              reason = 'Missing description';
+            } else if (!hasRecipe) {
+              shouldGenerate = true;
+              reason = 'Missing recipe';
+            }
+            break;
+
+          case 'recipe_edited':
+            // Only recalculate nutrition and allergens, skip description if unchanged
+            shouldGenerate = true;
+            reason = 'Recipe edited - nutrition update';
+            break;
+
+          case 'force':
+            // Force regeneration regardless of existing data
+            shouldGenerate = true;
+            reason = 'Force regeneration';
+            break;
+        }
+
+        if (shouldGenerate) {
+          return {
+            id: product.id,
+            name: product.name,
+            manual_language_override: product.manual_language_override,
+            reason
+          };
+        }
+        return null;
+      })
+      .filter((product): product is NonNullable<typeof product> => product !== null);
+
+  } catch (error) {
+    console.error('Error in getProductsForGeneration:', error);
+    return [];
+  }
+}
 
 // =============================================================================
 // SINGLE PRODUCT GENERATION
@@ -114,11 +276,17 @@ export async function generateSingleProductData(
       };
     }
 
-    // 2. Determine effective language
+    // 2. Check cost threshold first
+    const canAffordGeneration = await checkCostThreshold(restaurant_id);
+    if (!canAffordGeneration) {
+      throw new Error(`Daily cost threshold exceeded for restaurant ${restaurant_id}`);
+    }
+
+    // 3. Determine effective language
     const { language } = getEffectiveLanguage(name, manual_language_override);
 
-    // 3. Check if it's a bottled drink (skip AI generation)
-    if (isBottledDrink(name)) {
+    // 4. Check if it's a bottled drink (skip AI generation)
+    if (isBottledDrinkEnhanced(name)) {
       const emptyResult: ProductGenerationOutput = {
         id,
         language,
@@ -141,23 +309,25 @@ export async function generateSingleProductData(
       return emptyResult;
     }
 
-    // 4. Generate product data using OpenAI
+    // 5. Generate product data using OpenAI with retry logic
     const request: ProductGenerationRequest = {
       name,
       language,
       restaurant_id,
     };
 
-    const { data: generatedData, usage } = await generateProductData(request);
+    const { data: generatedData, usage } = await withRetry(async () => {
+      return await generateProductData(request);
+    });
 
-    // 5. Process ingredients for better nutrition data
+    // 6. Process ingredients for better nutrition data
     const enhancedNutrition = await enhanceNutritionalData(
       generatedData.recipe,
       generatedData.nutritional_values,
       language
     );
 
-    // 6. Map allergens
+    // 7. Map allergens
     const allergenCodes = await mapIngredientsToAllergens(
       generatedData.estimated_allergens,
       language
@@ -271,11 +441,16 @@ export async function generateBatchProductData(
     }
   }
 
-  // 3. Process uncached products in controlled batches
+  // 3. Process uncached products with enhanced concurrency control
   const uncachedInputs = inputs.filter(input => uncachedIds.has(input.id));
   
-  for (let i = 0; i < uncachedInputs.length; i += MAX_CONCURRENT_BATCHES) {
-    const batch = uncachedInputs.slice(i, i + MAX_CONCURRENT_BATCHES);
+  if (uncachedInputs.length > 0) {
+    console.log(`Processing ${uncachedInputs.length} uncached products with max ${MAX_CONCURRENT_REQUESTS} concurrent requests`);
+  }
+  
+  // Use semaphore-like pattern to limit concurrent GPT calls
+  for (let i = 0; i < uncachedInputs.length; i += MAX_CONCURRENT_REQUESTS) {
+    const batch = uncachedInputs.slice(i, i + MAX_CONCURRENT_REQUESTS);
     
     const batchPromises = batch.map(async (input) => {
       try {
@@ -303,6 +478,12 @@ export async function generateBatchProductData(
 
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
+    
+    // Add delay between batches to respect API rate limits
+    if (i + MAX_CONCURRENT_REQUESTS < uncachedInputs.length) {
+      console.log(`Completed batch ${Math.floor(i / MAX_CONCURRENT_REQUESTS) + 1}, waiting before next batch...`);
+      await sleep(1000); // 1 second delay between batches
+    }
   }
 
   const summary = {
@@ -344,18 +525,40 @@ async function enhanceNutritionalData(
       language
     );
 
-    // Generate nutrition data for uncached ingredients
-    for (const ingredient of uncachedIngredients) {
-      try {
-        const { data: nutritionData } = await generateIngredientNutrition({
-          ingredient,
-          language,
+    // Generate nutrition data for uncached ingredients with retry and concurrency control
+    if (uncachedIngredients.length > 0) {
+      console.log(`Generating nutrition data for ${uncachedIngredients.length} uncached ingredients`);
+      
+      // Process ingredients in smaller batches to avoid overwhelming the API
+      const ingredientBatchSize = Math.min(3, MAX_CONCURRENT_REQUESTS);
+      
+      for (let i = 0; i < uncachedIngredients.length; i += ingredientBatchSize) {
+        const batch = uncachedIngredients.slice(i, i + ingredientBatchSize);
+        
+        const batchPromises = batch.map(async (ingredient) => {
+          try {
+            return await withRetry(async () => {
+              const { data: nutritionData } = await generateIngredientNutrition({
+                ingredient,
+                language,
+              });
+              
+              await cacheIngredientNutrition(nutritionData);
+              return nutritionData;
+            });
+          } catch (error) {
+            console.error(`Failed to generate nutrition for ingredient ${ingredient}:`, error);
+            return null;
+          }
         });
-
-        await cacheIngredientNutrition(nutritionData);
-      } catch (error) {
-        console.error(`Failed to generate nutrition for ingredient ${ingredient}:`, error);
-        // Continue with other ingredients
+        
+        // Wait for the current batch to complete before starting the next
+        await Promise.all(batchPromises);
+        
+        // Small delay between batches to be respectful to the API
+        if (i + ingredientBatchSize < uncachedIngredients.length) {
+          await sleep(500);
+        }
       }
     }
 

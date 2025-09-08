@@ -151,31 +151,66 @@ export default function AdminProducts() {
   // AI Regeneration Functions
   const handleRegenerate = async (product: Product) => {
     try {
+      // Validate product data before proceeding
+      if (!product) {
+        console.error('No product provided to handleRegenerate');
+        alert('Error: No product data available for regeneration');
+        return;
+      }
+
+      if (!product.id || typeof product.id !== 'string') {
+        console.error('Invalid product ID:', { id: product.id, type: typeof product.id });
+        alert('Error: Invalid product ID for regeneration');
+        return;
+      }
+
+      if (!product.name || typeof product.name !== 'string' || product.name.trim().length === 0) {
+        console.error('Invalid product name:', { name: product.name, type: typeof product.name });
+        alert('Error: Invalid product name for regeneration');
+        return;
+      }
+
       setIsRegenerating(true);
       setRegeneratingProductId(product.id);
+
+      // Debug logging
+      console.log('Product for regeneration:', {
+        id: product.id,
+        name: product.name,
+        manual_language_override: product.manual_language_override,
+        idType: typeof product.id,
+        nameType: typeof product.name
+      });
+
+      const requestPayload = {
+        products: [{
+          id: String(product.id).trim(), // Ensure it's a string and trimmed
+          name: String(product.name).trim(), // Ensure it's a string and trimmed
+          manual_language_override: product.manual_language_override || undefined
+        }],
+        scenario: 'force' as const,
+        respect_cost_limits: true
+      };
+
+      console.log('Request payload:', requestPayload);
 
       const response = await authenticatedApiCall('/api/generate-product-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          products: [{
-            id: product.id,
-            name: product.name,
-            manual_language_override: product.manual_language_override
-          }]
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       if (response.ok) {
         const data = await response.json();
         console.log('AI regeneration successful:', data);
         await loadData(); // Reload products to show updated data
+        alert(`Product "${product.name}" successfully regenerated with AI data!`);
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('AI regeneration failed:', errorData);
-        alert(`Failed to regenerate product data: ${errorData.error || 'Unknown error'}`);
+        alert(`Failed to regenerate product "${product.name}": ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error during AI regeneration:', error);
@@ -191,9 +226,19 @@ export default function AdminProducts() {
       setIsRegeneratingAll(true);
       
       // Get products that don't have AI-generated descriptions or recipes
-      const productsNeedingGeneration = products.filter(product => 
-        !product.generated_description && (!product.recipe || product.recipe.length === 0)
-      );
+      const productsNeedingGeneration = products.filter(product => {
+        // Validate product data
+        if (!product.id || typeof product.id !== 'string') {
+          console.warn('Skipping product with invalid ID:', product);
+          return false;
+        }
+        if (!product.name || typeof product.name !== 'string' || product.name.trim().length === 0) {
+          console.warn('Skipping product with invalid name:', product);
+          return false;
+        }
+        
+        return !product.generated_description && (!product.recipe || product.recipe.length === 0);
+      });
 
       if (productsNeedingGeneration.length === 0) {
         alert('All products already have AI-generated content.');
@@ -216,10 +261,12 @@ export default function AdminProducts() {
           },
           body: JSON.stringify({
             products: batch.map(product => ({
-              id: product.id,
-              name: product.name,
-              manual_language_override: product.manual_language_override
-            }))
+              id: String(product.id).trim(),
+              name: String(product.name).trim(),
+              manual_language_override: product.manual_language_override || undefined
+            })),
+            scenario: 'regenerate_all' as const,
+            respect_cost_limits: true
           })
         });
 
@@ -289,57 +336,58 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Add Product Buttons and Filters */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={handleAddNew} className="flex items-center w-full sm:w-auto min-h-[44px]">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="whitespace-nowrap">Add New Product</span>
-            </Button>
+      {/* Action Buttons */}
+      <Card className={spacing.md}>
+        <div className="flex flex-col space-y-4">
+          {/* Primary Actions */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={handleAddNew} className="flex items-center justify-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Product
+              </Button>
               
-            <Button 
-              onClick={() => setShowBulkUploadModal(true)}
-              variant="outline"
-              className="flex items-center w-full sm:w-auto min-h-[44px]"
-            >
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className="whitespace-nowrap">Bulk Upload Menu</span>
-            </Button>
+              <Button 
+                onClick={() => setShowBulkUploadModal(true)}
+                variant="outline"
+                className="flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Bulk Upload Menu
+              </Button>
 
-            <Button 
-              onClick={handleRegenerateAll}
-              variant="outline"
-              disabled={isRegeneratingAll || products.length === 0}
-              className="flex items-center w-full sm:w-auto min-h-[44px] bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
-            >
-              {isRegeneratingAll ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2 flex-shrink-0"></div>
-                  <span className="whitespace-nowrap">Generating AI...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span className="whitespace-nowrap">Regenerate All</span>
-                </>
-              )}
-            </Button>
-          </div>
+              <Button 
+                onClick={handleRegenerateAll}
+                variant="outline"
+                disabled={isRegeneratingAll || products.length === 0}
+                className="flex items-center justify-center bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
+              >
+                {isRegeneratingAll ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                    Generating AI...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Regenerate All
+                  </>
+                )}
+              </Button>
+            </div>
 
-          <div className="flex justify-center sm:justify-end">
-            <div className="flex space-x-2">
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
               <Button
                 onClick={() => setViewMode('cards')}
                 variant={viewMode === 'cards' ? 'default' : 'outline'}
                 size="sm"
-                className="min-h-[44px] min-w-[60px]"
               >
                 Cards
               </Button>
@@ -347,42 +395,39 @@ export default function AdminProducts() {
                 onClick={() => setViewMode('table')}
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
-                className="min-h-[44px] min-w-[60px]"
               >
                 Table
               </Button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Category Filter */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 break-words">Filter by Category:</span>
-          <div className="flex flex-wrap gap-2 max-w-full">
-            <Button
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory('all')}
-              className="text-xs min-h-[44px] flex-shrink-0"
-            >
-              All Products
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(category.id)}
-                className="text-xs min-h-[44px] break-words flex-shrink-0 max-w-full"
-              >
-                <span className="truncate">{category.name}</span>
-              </Button>
-            ))}
+          {/* Category Filters */}
+          <div className="border-t pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Filter by Category:</span>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  All Products
+                </Button>
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                  >
+                    <span className="truncate max-w-32">{category.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Product Form */}
       <ProductForm
@@ -398,9 +443,14 @@ export default function AdminProducts() {
 
       {/* Products List */}
       <Card className={spacing.md}>
-        <h2 className={`${typography.h4} mb-4`}>
-          Products ({filteredProducts.length} of {products.length})
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className={typography.h4}>
+            Products
+          </h2>
+          <span className="text-sm text-muted-foreground">
+            {filteredProducts.length} of {products.length} items
+          </span>
+        </div>
         
         <ProductList
           products={filteredProducts}

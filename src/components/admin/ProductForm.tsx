@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
 import { generateDescription } from '../../lib/ai/generateDescription';
 import { typography, spacing } from '@/lib/design-system';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Snowflake, Leaf, Flame } from 'lucide-react';
 
@@ -106,6 +105,32 @@ export default function ProductForm({
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+      return () => {
+        document.body.classList.remove('modal-open');
+      };
+    }
+  }, [isOpen]);
+
+  // Handle keyboard events
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isOpen, onClose]);
 
   // Handle name change
   const handleNameChange = (name: string) => {
@@ -304,10 +329,31 @@ export default function ProductForm({
   if (!isOpen) return null;
 
   return (
-    <Card className={`${spacing.lg} mb-6`}>
-      <h2 className={`${typography.h3} mb-6`}>
-        {editingProduct ? 'Edit Product' : 'Add New Product'}
-      </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 modal-overlay"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-background border border-border rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden modal-content">
+        <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between">
+          <h2 className={`${typography.h3}`}>
+            {editingProduct ? 'Edit Product' : 'Add New Product'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+          <div className={spacing.lg}>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -646,6 +692,9 @@ export default function ProductForm({
           </Button>
         </div>
       </form>
-    </Card>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

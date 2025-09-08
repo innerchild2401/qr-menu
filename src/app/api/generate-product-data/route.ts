@@ -12,9 +12,17 @@ import { env } from '@/lib/env';
 import { 
   generateBatchProductData,
   validateBatchInput,
+  getProductsForGeneration,
   type ProductGenerationInput 
 } from '@/lib/ai/product-generator';
 import { isOpenAIAvailable } from '@/lib/ai/openai-client';
+import { getGPTUsageStats } from '@/lib/ai/supabase-cache';
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const COST_THRESHOLD_PER_RESTAURANT_DAILY = 10.0; // $10 daily limit per restaurant
 
 // =============================================================================
 // TYPES
@@ -26,6 +34,8 @@ interface RequestBody {
     name: string;
     manual_language_override?: 'ro' | 'en';
   }>;
+  scenario?: 'new' | 'regenerate_all' | 'recipe_edited' | 'force';
+  respect_cost_limits?: boolean;
 }
 
 interface ApiResponse {
@@ -49,8 +59,12 @@ interface ApiResponse {
     cached_products: number;
     generated_products: number;
     failed_products: number;
+    skipped_products: number;
+    bottled_drinks_skipped: number;
     total_cost: number;
     total_processing_time: number;
+    scenario: string;
+    cost_limit_exceeded?: boolean;
   };
   error?: string;
   code?: string;
@@ -204,8 +218,8 @@ function validateRequestBody(body: unknown): { valid: boolean; data?: RequestBod
     for (let i = 0; i < bodyObj.products.length; i++) {
       const product = bodyObj.products[i] as Record<string, unknown>;
       
-      if (!product.id || typeof product.id !== 'string') {
-        return { valid: false, error: `Product at index ${i}: id is required and must be a string` };
+      if (!product.id || typeof product.id !== 'string' || product.id.trim().length === 0) {
+        return { valid: false, error: `Product at index ${i}: id is required and must be a non-empty string` };
       }
 
       if (!product.name || typeof product.name !== 'string' || product.name.trim().length === 0) {
@@ -278,9 +292,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const { user, restaurant } = authResult;
 
     // 4. Validate product ownership
-    const productIds = requestData!.products.map(p => p.id);
+    const allProductIds = requestData!.products.map(p => p.id);
     const { valid: ownershipValid, error: ownershipError } = await validateProductOwnership(
-      productIds,
+      allProductIds,
       restaurant.id,
       request
     );
@@ -293,15 +307,52 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 403 });
     }
 
-    // 5. Convert request to internal format
-    const generationInputs: ProductGenerationInput[] = requestData!.products.map(product => ({
+    // 5. Determine generation scenario and filter products intelligently
+    const scenario = requestData!.scenario || 'force';
+    const respectCostLimits = requestData!.respect_cost_limits !== false; // Default to true
+    
+    let productsToGenerate: Array<{ id: string; name: string; manual_language_override?: 'ro' | 'en'; reason: string }>;
+    
+    if (scenario === 'regenerate_all') {
+      // Use intelligent filtering for "regenerate all"
+      productsToGenerate = await getProductsForGeneration(allProductIds, scenario);
+    } else {
+      // For other scenarios, process all requested products
+      productsToGenerate = requestData!.products.map(product => ({
+        id: product.id,
+        name: product.name,
+        manual_language_override: product.manual_language_override,
+        reason: scenario === 'new' ? 'New product' : 'Manual request'
+      }));
+    }
+
+    if (productsToGenerate.length === 0) {
+      return NextResponse.json({
+        success: true,
+        results: [],
+        summary: {
+          total_products: requestData!.products.length,
+          cached_products: 0,
+          generated_products: 0,
+          failed_products: 0,
+          skipped_products: requestData!.products.length,
+          bottled_drinks_skipped: 0,
+          total_cost: 0,
+          total_processing_time: Date.now() - startTime,
+          scenario,
+        }
+      });
+    }
+
+    // 6. Convert to internal format
+    const generationInputs: ProductGenerationInput[] = productsToGenerate.map(product => ({
       id: product.id,
       name: product.name,
       manual_language_override: product.manual_language_override,
       restaurant_id: restaurant.id,
     }));
 
-    // 6. Validate generation inputs
+    // 7. Validate generation inputs
     const inputValidationError = validateBatchInput(generationInputs);
     if (inputValidationError) {
       return NextResponse.json({
@@ -311,10 +362,43 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 400 });
     }
 
-    // 7. Generate product data
+    // 8. Check cost limits if enabled
+    let costLimitExceeded = false;
+    if (respectCostLimits) {
+      try {
+        const stats = await getGPTUsageStats(restaurant.id, new Date().toISOString().split('T')[0], new Date().toISOString().split('T')[0]);
+        if (stats.totalCost >= COST_THRESHOLD_PER_RESTAURANT_DAILY) {
+          costLimitExceeded = true;
+        }
+      } catch (error) {
+        console.warn('Could not check cost limits:', error);
+      }
+    }
+
+    if (costLimitExceeded) {
+      return NextResponse.json({
+        success: false,
+        error: `Daily cost limit of $${COST_THRESHOLD_PER_RESTAURANT_DAILY} exceeded for restaurant`,
+        code: 'COST_LIMIT_EXCEEDED',
+        summary: {
+          total_products: requestData!.products.length,
+          cached_products: 0,
+          generated_products: 0,
+          failed_products: 0,
+          skipped_products: requestData!.products.length,
+          bottled_drinks_skipped: 0,
+          total_cost: 0,
+          total_processing_time: Date.now() - startTime,
+          scenario,
+          cost_limit_exceeded: true,
+        }
+      }, { status: 429 });
+    }
+
+    // 9. Generate product data with optimizations
     const { results, summary } = await generateBatchProductData(generationInputs);
 
-    // 8. Format response
+    // 10. Format response
     const responseResults = results.map(result => ({
       id: result.id,
       language: result.language,
@@ -330,11 +414,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       cached_products: summary.cached_products,
       generated_products: summary.generated_products,
       failed_products: summary.failed_products,
+      skipped_products: requestData!.products.length - productsToGenerate.length,
+      bottled_drinks_skipped: 0, // Will be calculated by the generator
       total_cost: Math.round(summary.total_cost * 10000) / 10000, // Round to 4 decimal places
       total_processing_time: Date.now() - startTime,
+      scenario,
     };
 
-    // 9. Return success response
+    // 11. Return success response
     return NextResponse.json({
       success: true,
       results: responseResults,
