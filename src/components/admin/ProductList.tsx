@@ -275,18 +275,13 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
           {/* Content Display */}
           <div className="text-sm text-muted-foreground">
             {showRecipe && hasRecipe ? (
-              <div className="space-y-1">
-                {product.recipe!.slice(0, 3).map((item, index) => (
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {product.recipe!.map((item, index) => (
                   <div key={index} className="flex justify-between">
-                    <span>{item.ingredient}</span>
-                    <span className="text-xs">{item.quantity}</span>
+                    <span className="text-xs">{item.ingredient}</span>
+                    <span className="text-xs font-medium">{item.quantity}</span>
                   </div>
                 ))}
-                {product.recipe!.length > 3 && (
-                  <div className="text-xs text-gray-400 italic">
-                    +{product.recipe!.length - 3} more ingredients...
-                  </div>
-                )}
               </div>
             ) : (
               <div>

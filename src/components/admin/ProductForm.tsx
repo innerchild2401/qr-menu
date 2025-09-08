@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
-import { generateDescription } from '../../lib/ai/generateDescription';
+// import { generateDescription } from '../../lib/ai/generateDescription'; // Removed - using new AI system
 import { typography, spacing } from '@/lib/design-system';
 import { Button } from '@/components/ui/button';
 import { Snowflake, Leaf, Flame } from 'lucide-react';
@@ -56,6 +56,10 @@ interface ProductFormData {
     sugars: string;
     salts: string;
   };
+  // AI-generated fields
+  generated_description: string;
+  recipe: Array<{ ingredient: string; quantity: string }>;
+  allergens: string[];
 }
 
 interface ProductFormProps {
@@ -101,7 +105,11 @@ export default function ProductForm({
       fat: '',
       sugars: '',
       salts: ''
-    }
+    },
+    // AI-generated fields
+    generated_description: '',
+    recipe: [],
+    allergens: []
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -147,25 +155,7 @@ export default function ProductForm({
       return;
     }
     
-    // Generate AI description if name is not empty, description is empty, and not editing
-    if (name.trim() && !formData.description.trim() && !editingProduct) {
-      const timeoutId = setTimeout(async () => {
-        setIsGeneratingAI(true);
-        try {
-          const aiDesc = await generateDescription(name);
-          // Only set if the name hasn't changed during generation
-          if (formData.name === name) {
-            setAiDescription(aiDesc);
-          }
-        } catch (error) {
-          console.error('Error generating AI description:', error);
-        } finally {
-          setIsGeneratingAI(false);
-        }
-      }, 1000); // 1 second delay
-      
-      return () => clearTimeout(timeoutId);
-    }
+    // AI description generation removed - using new AI system via API
   }, [formData.name, formData.description, editingProduct]);
 
   // Initialize form data when editing product changes
@@ -187,7 +177,11 @@ export default function ProductForm({
           fat: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'fat' in editingProduct.nutrition ? String(editingProduct.nutrition.fat) : '',
           sugars: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'sugars' in editingProduct.nutrition ? String(editingProduct.nutrition.sugars) : '',
           salts: editingProduct.nutrition && typeof editingProduct.nutrition === 'object' && 'salts' in editingProduct.nutrition ? String(editingProduct.nutrition.salts) : ''
-        }
+        },
+        // AI-generated fields
+        generated_description: editingProduct.generated_description || '',
+        recipe: editingProduct.recipe || [],
+        allergens: editingProduct.allergens || []
       });
       setImagePreview(editingProduct.image_url || '');
     } else {
@@ -212,7 +206,11 @@ export default function ProductForm({
         fat: '',
         sugars: '',
         salts: ''
-      }
+      },
+      // AI-generated fields
+      generated_description: '',
+      recipe: [],
+      allergens: []
     });
     setImagePreview('');
     setAiDescription('');
@@ -258,7 +256,11 @@ export default function ProductForm({
           fat: formData.nutrition.fat || null,
           sugars: formData.nutrition.sugars || null,
           salts: formData.nutrition.salts || null
-        } : null
+        } : null,
+        // AI-generated fields
+        generated_description: formData.generated_description || null,
+        recipe: formData.recipe.length > 0 ? formData.recipe : null,
+        allergens: formData.allergens.length > 0 ? formData.allergens : null
       };
 
       const response = await authenticatedApiCallWithBody(url, submitData, {
@@ -460,6 +462,104 @@ export default function ProductForm({
             </div>
           )}
         </div>
+
+        {/* AI-Generated Fields */}
+        {(formData.generated_description || formData.recipe.length > 0 || formData.allergens.length > 0) && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
+              AI-Generated Content
+            </h3>
+            
+            {/* Generated Description */}
+            {formData.generated_description && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  AI-Generated Description
+                </label>
+                <textarea
+                  value={formData.generated_description}
+                  onChange={(e) => setFormData({ ...formData, generated_description: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                  placeholder="AI-generated description"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* Recipe */}
+            {formData.recipe.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Recipe Ingredients
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-lg p-3">
+                  {formData.recipe.map((item, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={item.ingredient}
+                        onChange={(e) => {
+                          const newRecipe = [...formData.recipe];
+                          newRecipe[index] = { ...item, ingredient: e.target.value };
+                          setFormData({ ...formData, recipe: newRecipe });
+                        }}
+                        className="flex-1 px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                        placeholder="Ingredient"
+                      />
+                      <input
+                        type="text"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const newRecipe = [...formData.recipe];
+                          newRecipe[index] = { ...item, quantity: e.target.value };
+                          setFormData({ ...formData, recipe: newRecipe });
+                        }}
+                        className="w-20 px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                        placeholder="Qty"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newRecipe = formData.recipe.filter((_, i) => i !== index);
+                          setFormData({ ...formData, recipe: newRecipe });
+                        }}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Allergens */}
+            {formData.allergens.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Allergens
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {formData.allergens.map((allergen, index) => (
+                    <div key={index} className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-full text-sm">
+                      <span>{allergen}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newAllergens = formData.allergens.filter((_, i) => i !== index);
+                          setFormData({ ...formData, allergens: newAllergens });
+                        }}
+                        className="text-destructive hover:text-destructive/70 ml-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Product Flags */}
         <div>

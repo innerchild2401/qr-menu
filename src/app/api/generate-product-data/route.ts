@@ -79,6 +79,14 @@ interface ApiResponse {
  */
 async function getAuthenticatedUser(request: NextRequest) {
   try {
+    // Check for Authorization header first
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { error: 'Authentication required', status: 401 };
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
     const supabase = createServerClient(
       env.SUPABASE_URL,
       env.SUPABASE_ANON_KEY,
@@ -94,12 +102,18 @@ async function getAuthenticatedUser(request: NextRequest) {
             // Not needed for read operations
           },
         },
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       }
     );
 
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Verify the token by getting the user
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
-    if (sessionError || !session) {
+    if (userError || !user) {
       return { error: 'Authentication required', status: 401 };
     }
 
@@ -115,7 +129,7 @@ async function getAuthenticatedUser(request: NextRequest) {
           slug
         )
       `)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (restaurantError || !userRestaurants) {
@@ -128,7 +142,7 @@ async function getAuthenticatedUser(request: NextRequest) {
       : userRestaurants.restaurants;
 
     return {
-      user: session.user,
+      user,
       restaurant,
       role: userRestaurants.role,
     };
@@ -217,6 +231,13 @@ function validateRequestBody(body: unknown): { valid: boolean; data?: RequestBod
     // Validate each product
     for (let i = 0; i < bodyObj.products.length; i++) {
       const product = bodyObj.products[i] as Record<string, unknown>;
+      
+      console.log(`Product ${i} validation:`, {
+        id: product.id,
+        idType: typeof product.id,
+        name: product.name,
+        nameType: typeof product.name
+      });
       
       if (!product.id || typeof product.id !== 'string' || product.id.trim().length === 0) {
         return { valid: false, error: `Product at index ${i}: id is required and must be a non-empty string` };

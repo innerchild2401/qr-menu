@@ -1,18 +1,4 @@
-// Import AI matcher with error handling
-let matchColumnsWithAI: ((headers: string[]) => Promise<Record<string, string | null>>) | null = null;
-
-// Dynamic import for AI matcher
-const loadAIMatcher = async () => {
-  try {
-    console.log('🔄 Loading AI column matcher...');
-    const aiModule = await import('./aiColumnMatcher');
-    console.log('✅ AI column matcher loaded successfully');
-    return aiModule.matchColumnsWithAI;
-  } catch (error) {
-    console.warn('⚠️ AI column matcher not available:', error);
-    return null;
-  }
-};
+// AI matcher removed - using new AI system via API
 
 export interface ColumnMapping {
   name: number | null;
@@ -169,54 +155,9 @@ export async function detectColumns(headers: string[]): Promise<ColumnMapping> {
     console.log(`🤖 Unmatched fields requiring AI: ${unmappedFields.join(', ')}`);
   }
   
-  try {
-    // Load AI matcher if not already loaded
-    if (!matchColumnsWithAI) {
-      matchColumnsWithAI = await loadAIMatcher();
-    }
-    
-    // Check if AI matcher is available
-    if (!matchColumnsWithAI) {
-      if (DEBUG_MODE) console.log('⚠️ AI matcher not available, using synonym results only');
-      return synonymResult.mapping;
-    }
-    
-    // Get AI matches for all headers
-    const aiMatches = await matchColumnsWithAI(headers);
-    
-    if (DEBUG_MODE) {
-      console.log('🧠 AI matching results:', aiMatches);
-    }
-    
-    // Merge AI results with synonym results
-    const finalMapping = { ...synonymResult.mapping };
-    
-    headers.forEach((header, index) => {
-      const aiMatch = aiMatches[header];
-      if (aiMatch && finalMapping[aiMatch as keyof ColumnMapping] === null) {
-        // Only use AI match if the field isn't already mapped by synonyms
-        finalMapping[aiMatch as keyof ColumnMapping] = index;
-        if (DEBUG_MODE) console.log(`🤖 AI matched "${header}" → ${aiMatch}`);
-      }
-    });
-    
-    const totalMatchedFields = Object.values(finalMapping).filter(index => index !== null).length;
-    
-    if (DEBUG_MODE) {
-      console.log(`🎯 Final hybrid result: ${totalMatchedFields}/4 fields matched`);
-      console.log('📊 Final mapping:', finalMapping);
-    }
-    
-    return finalMapping;
-    
-  } catch (error) {
-    if (DEBUG_MODE) {
-      console.error('❌ AI column detection failed, using synonym results only:', error);
-    }
-    
-    // Return synonym results if AI fails
-    return synonymResult.mapping;
-  }
+  // AI matching removed - using synonym results only
+  if (DEBUG_MODE) console.log('⚠️ AI matcher not available, using synonym results only');
+  return synonymResult.mapping;
 }
 
 /**
@@ -232,60 +173,12 @@ export async function detectColumnsWithDetails(headers: string[]): Promise<Colum
   const synonymResult = detectColumnsWithSynonyms(headers);
   const synonymMatchedFields = Object.values(synonymResult.mapping).filter(index => index !== null).length;
   
-  // Step 2: AI detection for unmatched fields
-  let aiMatches: Record<string, string | null> = {};
-  let detectionMethod: 'synonym' | 'ai' | 'hybrid' | 'manual' = 'synonym';
+  // Step 2: AI detection removed - using synonym results only
+  const aiMatches: Record<string, string | null> = {};
+  const detectionMethod: 'synonym' | 'ai' | 'hybrid' | 'manual' = 'synonym';
   
-  if (synonymMatchedFields < 4) {
-    console.log(`🤖 AI detection needed - only ${synonymMatchedFields}/4 fields matched with synonyms`);
-    try {
-      // Load AI matcher if not already loaded
-      if (!matchColumnsWithAI) {
-        matchColumnsWithAI = await loadAIMatcher();
-      }
-      
-      if (matchColumnsWithAI) {
-        console.log('🧠 Calling AI column matcher...');
-        aiMatches = await matchColumnsWithAI(headers);
-        
-        // Merge results
-        const finalMapping = { ...synonymResult.mapping };
-        headers.forEach((header, index) => {
-          const aiMatch = aiMatches[header];
-          if (aiMatch && finalMapping[aiMatch as keyof ColumnMapping] === null) {
-            finalMapping[aiMatch as keyof ColumnMapping] = index;
-          }
-        });
-        
-        const totalMatchedFields = Object.values(finalMapping).filter(index => index !== null).length;
-        detectionMethod = synonymMatchedFields > 0 ? 'hybrid' : 'ai';
-        
-        if (DEBUG_MODE) {
-          console.log(`🎯 Hybrid detection: ${totalMatchedFields}/4 fields matched`);
-        }
-        
-        const missingFields = Object.entries(finalMapping)
-          .filter(([, index]) => index === null)
-          .map(([field]) => field);
-        
-        return {
-          mapping: finalMapping,
-          headers,
-          previewData: [], // Will be populated by caller
-          missingFields,
-          allData: [], // Will be populated by caller
-          aiMatches,
-          synonymMatches: synonymResult.matches,
-          detectionMethod
-        };
-      }
-    } catch (error) {
-      if (DEBUG_MODE) {
-        console.error('❌ AI detection failed, using synonym results:', error);
-      }
-      detectionMethod = 'synonym';
-    }
-  }
+  // AI detection removed - using synonym results only
+  console.log(`⚠️ AI detection not available - using synonym results: ${synonymMatchedFields}/4 fields matched`);
   
   const missingFields = Object.entries(synonymResult.mapping)
     .filter(([, index]) => index === null)

@@ -158,7 +158,8 @@ export default function AdminProducts() {
         return;
       }
 
-      if (!product.id || typeof product.id !== 'string') {
+      // Handle both string and number IDs from the database
+      if (!product.id || (typeof product.id !== 'string' && typeof product.id !== 'number')) {
         console.error('Invalid product ID:', { id: product.id, type: typeof product.id });
         alert('Error: Invalid product ID for regeneration');
         return;
@@ -193,6 +194,8 @@ export default function AdminProducts() {
       };
 
       console.log('Request payload:', requestPayload);
+      console.log('ID type after conversion:', typeof requestPayload.products[0].id);
+      console.log('ID value after conversion:', requestPayload.products[0].id);
 
       const response = await authenticatedApiCall('/api/generate-product-data', {
         method: 'POST',
@@ -228,7 +231,8 @@ export default function AdminProducts() {
       // Get products that don't have AI-generated descriptions or recipes
       const productsNeedingGeneration = products.filter(product => {
         // Validate product data
-        if (!product.id || typeof product.id !== 'string') {
+        // Handle both string and number IDs from the database
+        if (!product.id || (typeof product.id !== 'string' && typeof product.id !== 'number')) {
           console.warn('Skipping product with invalid ID:', product);
           return false;
         }

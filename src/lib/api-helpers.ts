@@ -15,10 +15,11 @@ export async function authenticatedApiCall(
     throw new Error('No authenticated user found');
   }
 
-  // Prepare headers with user ID
+  // Prepare headers with user ID and session token
   const headers = {
     'Content-Type': 'application/json',
     'x-user-id': session.user.id,
+    'Authorization': `Bearer ${session.access_token}`,
     ...options.headers,
   };
 

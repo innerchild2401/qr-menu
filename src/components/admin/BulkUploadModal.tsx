@@ -14,7 +14,7 @@ import {
 } from '../../utils/columnMapper';
 import { MenuUploader } from '../../services/menuUploader';
 import { downloadMenuTemplate } from '../../utils/templateGenerator';
-import { generateDescriptionsBatch } from '../../lib/ai/generateDescription';
+// import { generateDescriptionsBatch } from '../../lib/ai/generateDescription'; // Removed - using new AI system
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -138,22 +138,7 @@ export default function BulkUploadModal({
       
       // Generate AI descriptions for products
       if (result.previewData.length > 0) {
-        setIsGeneratingAI(true);
-        try {
-          const productNames = result.previewData.map(row => row.name).filter(name => name.trim());
-          if (productNames.length > 0) {
-            const aiDescriptionsList = await generateDescriptionsBatch(productNames);
-            const aiDescriptionsMap: { [key: string]: string } = {};
-            productNames.forEach((name, index) => {
-              aiDescriptionsMap[name] = aiDescriptionsList[index];
-            });
-            setAiDescriptions(aiDescriptionsMap);
-          }
-        } catch (error) {
-          console.error('Error generating AI descriptions:', error);
-        } finally {
-          setIsGeneratingAI(false);
-        }
+        // AI description generation removed - using new AI system via API
       }
       
       if (result.missingFields.length > 0) {
