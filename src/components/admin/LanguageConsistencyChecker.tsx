@@ -18,6 +18,7 @@ interface Product {
   generated_description?: string;
   manual_language_override?: 'ro' | 'en';
   has_recipe?: boolean;
+  inconsistencyReason?: string;
 }
 
 interface LanguageConsistencyCheckerProps {
@@ -77,31 +78,57 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
 
       // Sample product names to determine primary language
       const sampleNames = products.slice(0, 10).map(p => p.name).join(' ');
-      const primaryLanguage = detectLanguage(sampleNames);
+      const primaryLanguageResult = detectLanguage(sampleNames);
+      const primaryLanguage = primaryLanguageResult.language;
 
       productsWithDescriptions.forEach(product => {
-        const descriptionLanguage = detectLanguage(product.generated_description || '');
+        const descriptionResult = detectLanguage(product.generated_description || '');
+        const descriptionLanguage = descriptionResult.language;
+        const isMixedLanguage = descriptionResult.isMixed;
+        
         languageBreakdown[descriptionLanguage] = (languageBreakdown[descriptionLanguage] || 0) + 1;
 
         console.log(`🔍 Product: ${product.name}`);
         console.log(`   Description: ${product.generated_description?.substring(0, 100)}...`);
         console.log(`   Detected Language: ${descriptionLanguage}`);
+        console.log(`   Is Mixed Language: ${isMixedLanguage}`);
+        console.log(`   Romanian Count: ${descriptionResult.romanianCount}, English Count: ${descriptionResult.englishCount}`);
         console.log(`   Manual Override: ${product.manual_language_override}`);
         console.log(`   Primary Language: ${primaryLanguage}`);
 
+        let isInconsistent = false;
+        let inconsistencyReason = '';
+
+        // Check for mixed language first (highest priority)
+        if (isMixedLanguage) {
+          isInconsistent = true;
+          inconsistencyReason = `Mixed language detected (${descriptionResult.romanianCount} Romanian, ${descriptionResult.englishCount} English words)`;
+          console.log(`   ❌ INCONSISTENT: ${inconsistencyReason}`);
+        }
         // Check if product has manual language override
-        if (product.manual_language_override) {
+        else if (product.manual_language_override) {
           if (product.manual_language_override !== primaryLanguage) {
-            console.log(`   ❌ INCONSISTENT: Manual override (${product.manual_language_override}) != Primary (${primaryLanguage})`);
-            inconsistentProducts.push(product);
+            isInconsistent = true;
+            inconsistencyReason = `Manual override (${product.manual_language_override}) != Primary (${primaryLanguage})`;
+            console.log(`   ❌ INCONSISTENT: ${inconsistencyReason}`);
           } else {
             console.log(`   ✅ CONSISTENT: Manual override matches primary language`);
           }
-        } else if (descriptionLanguage !== primaryLanguage) {
-          console.log(`   ❌ INCONSISTENT: Description language (${descriptionLanguage}) != Primary (${primaryLanguage})`);
-          inconsistentProducts.push(product);
+        } 
+        // Check if description language doesn't match primary language
+        else if (descriptionLanguage !== primaryLanguage) {
+          isInconsistent = true;
+          inconsistencyReason = `Description language (${descriptionLanguage}) != Primary (${primaryLanguage})`;
+          console.log(`   ❌ INCONSISTENT: ${inconsistencyReason}`);
         } else {
           console.log(`   ✅ CONSISTENT: Description language matches primary language`);
+        }
+
+        if (isInconsistent) {
+          inconsistentProducts.push({
+            ...product,
+            inconsistencyReason // Add the reason for debugging
+          });
         }
       });
 
@@ -132,8 +159,8 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
     }
   };
 
-  const detectLanguage = (text: string): string => {
-    if (!text || text.trim().length === 0) return 'unknown';
+  const detectLanguage = (text: string): { language: string; isMixed: boolean; romanianCount: number; englishCount: number } => {
+    if (!text || text.trim().length === 0) return { language: 'unknown', isMixed: false, romanianCount: 0, englishCount: 0 };
     
     // Enhanced language detection with more comprehensive word lists
     const romanianWords = [
@@ -146,7 +173,11 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
       'preparat', 'preparată', 'preparat', 'preparată', 'preparat', 'preparată', 'preparat', 'preparată',
       'servit', 'servită', 'servit', 'servită', 'servit', 'servită', 'servit', 'servită',
       'făcut', 'făcută', 'făcut', 'făcută', 'făcut', 'făcută', 'făcut', 'făcută',
-      'cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât'
+      'cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât',
+      // More Romanian words for better detection
+      'orez', 'prăjit', 'pui', 'legume', 'sos', 'soia', 'masă', 'gustoasă', 'consistentă', 'clasic', 'cheeseburger',
+      'carne', 'vită', 'topit', 'cheddar', 'brânză', 'proaspăt', 'lăptucă', 'roșie', 'tomato', 'ceapă', 'castravete',
+      'sos', 'mustar', 'ketchup', 'pâine', 'hamburger', 'sandwich', 'cartofi', 'prăjiți', 'frituri'
     ];
     
     const englishWords = [
@@ -157,7 +188,10 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
       // Additional English words
       'delicious', 'tasty', 'beautiful', 'good', 'great', 'amazing', 'wonderful', 'excellent', 'perfect',
       'prepared', 'cooked', 'made', 'served', 'fresh', 'hot', 'cold', 'warm', 'crispy', 'tender',
-      'flavorful', 'savory', 'sweet', 'spicy', 'mild', 'rich', 'creamy', 'juicy', 'succulent'
+      'flavorful', 'savory', 'sweet', 'spicy', 'mild', 'rich', 'creamy', 'juicy', 'succulent',
+      // More English words for better detection
+      'classic', 'cheeseburger', 'beef', 'patty', 'melted', 'cheese', 'lettuce', 'tomato', 'onion', 'pickle',
+      'sauce', 'mustard', 'ketchup', 'bread', 'bun', 'hamburger', 'sandwich', 'fries', 'fried', 'potatoes'
     ];
     
     const lowerText = text.toLowerCase();
@@ -180,8 +214,16 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
     console.log(`🔍 Language detection for: "${text.substring(0, 50)}..."`);
     console.log(`   Romanian count: ${romanianCount}, English count: ${englishCount}`);
     
-    if (romanianCount === 0 && englishCount === 0) return 'unknown';
-    return romanianCount > englishCount ? 'ro' : 'en';
+    // Determine if it's mixed language - more sensitive detection
+    // Consider it mixed if both languages are present and the difference is not too large
+    const isMixed = romanianCount > 0 && englishCount > 0 && Math.abs(romanianCount - englishCount) <= 10;
+    
+    if (romanianCount === 0 && englishCount === 0) {
+      return { language: 'unknown', isMixed: false, romanianCount: 0, englishCount: 0 };
+    }
+    
+    const language = romanianCount > englishCount ? 'ro' : 'en';
+    return { language, isMixed, romanianCount, englishCount };
   };
 
   const regenerateInconsistentProducts = async () => {
@@ -389,10 +431,17 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
                   <h4 className="font-medium text-gray-900 dark:text-white mb-2">
                     Inconsistent Products ({analysis.inconsistentProducts.length})
                   </h4>
-                  <div className="max-h-40 overflow-y-auto space-y-1">
+                  <div className="max-h-40 overflow-y-auto space-y-2">
                     {analysis.inconsistentProducts.map((product) => (
-                      <div key={product.id} className="text-sm text-gray-600 dark:text-gray-400">
-                        {product.name}
+                      <div key={product.id} className="text-sm">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {product.name}
+                        </div>
+                        {product.inconsistencyReason && (
+                          <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            {product.inconsistencyReason}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
