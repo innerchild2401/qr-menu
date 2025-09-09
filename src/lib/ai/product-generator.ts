@@ -281,11 +281,16 @@ export async function getProductsForGeneration(
     // Determine the primary language for the restaurant based on product names
     let primaryLanguage: SupportedLanguage = 'ro'; // Default to Romanian
     if (restaurantId && products.length > 0) {
-      // Sample a few product names to determine the primary language
-      const sampleNames = products.slice(0, 5).map(p => p.name);
-      const languageResult = getEffectiveLanguage(sampleNames.join(' '));
-      primaryLanguage = languageResult.language;
-      console.log('Detected primary language for restaurant:', primaryLanguage);
+      try {
+        // Sample a few product names to determine the primary language
+        const sampleNames = products.slice(0, 5).map(p => p.name);
+        const languageResult = getEffectiveLanguage(sampleNames.join(' '));
+        primaryLanguage = languageResult.language;
+        console.log('Detected primary language for restaurant:', primaryLanguage);
+      } catch (languageError) {
+        console.error('Error in language detection:', languageError);
+        // Continue with default language
+      }
     }
 
     const result = processProductsForGeneration(products, scenario, primaryLanguage);
