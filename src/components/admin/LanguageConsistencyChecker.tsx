@@ -174,6 +174,7 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
 
       if (successCount > 0) {
         alert(`Successfully regenerated ${successCount} products. ${errorCount > 0 ? `${errorCount} failed.` : ''}`);
+        console.log('🔄 Calling onUpdate to refresh parent data...');
         onUpdate();
         setAnalysis(null);
       } else {

@@ -72,6 +72,7 @@ export default function AdminProducts() {
 
   const loadData = useCallback(async () => {
     try {
+      console.log('🔄 loadData called - refreshing products data...');
       setIsLoading(true);
       
       // First, check if user has a restaurant
@@ -103,6 +104,12 @@ export default function AdminProducts() {
       const productsResponse = await authenticatedApiCall('/api/admin/products');
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
+        console.log('📦 Fresh products data loaded:', productsData.products?.length || 0, 'products');
+        // Log a few sample products to check if descriptions are updated
+        const sampleProducts = productsData.products?.slice(0, 3) || [];
+        sampleProducts.forEach((p, i) => {
+          console.log(`  ${i + 1}. ${p.name}: has_description=${!!p.generated_description}`);
+        });
         setProducts(productsData.products || []);
       } else {
         console.error('Failed to load products');
