@@ -5,6 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { authenticatedApiCall } from '@/lib/api-helpers';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Product {
   id: string;
@@ -176,6 +182,23 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
           if (response.ok) {
             successCount += batch.length;
             console.log(`Batch regenerated successfully: ${batch.length} products`);
+            
+            // DIRECT FIX: Update manual_language_override in database
+            console.log('🔧 Applying direct fix: updating manual_language_override in database...');
+            try {
+              const { error: updateError } = await supabase
+                .from('products')
+                .update({ manual_language_override: analysis.recommendedLanguage })
+                .in('id', batch.map(p => p.id));
+              
+              if (updateError) {
+                console.error('❌ Direct fix failed:', updateError);
+              } else {
+                console.log('✅ Direct fix applied: manual_language_override updated to', analysis.recommendedLanguage);
+              }
+            } catch (error) {
+              console.error('❌ Direct fix error:', error);
+            }
           } else {
             errorCount += batch.length;
             const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
