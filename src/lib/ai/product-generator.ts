@@ -368,7 +368,7 @@ export async function generateSingleProductData(
         recipe: [],
         nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         estimated_allergens: [],
-      }, restaurant_id);
+      }, restaurant_id, manual_language_override);
 
       return emptyResult;
     }
@@ -403,7 +403,7 @@ export async function generateSingleProductData(
       nutritional_values: enhancedNutrition,
     };
 
-    await cacheProductData(id, finalData, restaurant_id);
+    await cacheProductData(id, finalData, restaurant_id, manual_language_override);
 
     // 8. Log the GPT call
     await logGPTCall(

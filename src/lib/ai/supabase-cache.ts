@@ -116,7 +116,8 @@ export async function getCachedProductData(productId: string): Promise<CachedPro
 export async function cacheProductData(
   productId: string,
   generatedData: GeneratedProductData,
-  restaurantId?: string
+  restaurantId?: string,
+  manualLanguageOverride?: SupportedLanguage
 ): Promise<boolean> {
   try {
     const updateData = {
@@ -126,6 +127,7 @@ export async function cacheProductData(
       nutrition: generatedData.nutritional_values,
       ai_generated_at: new Date().toISOString(),
       ai_last_updated: new Date().toISOString(),
+      ...(manualLanguageOverride && { manual_language_override: manualLanguageOverride }),
     };
 
     const { error } = await supabaseAdmin
