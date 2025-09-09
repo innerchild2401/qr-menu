@@ -478,7 +478,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       name: input.name,
       manual_language_override: input.manual_language_override
     })));
-    const { results, summary } = await generateBatchProductData(generationInputs);
+    const forceRegeneration = scenario === 'force';
+    console.log('Force regeneration mode:', forceRegeneration);
+    const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration);
 
     // 10. Format response
     const responseResults = results.map(result => ({

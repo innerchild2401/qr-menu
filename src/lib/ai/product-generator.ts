@@ -460,7 +460,8 @@ export async function generateSingleProductData(
  * Generate data for multiple products with batching and concurrency limits
  */
 export async function generateBatchProductData(
-  inputs: ProductGenerationInput[]
+  inputs: ProductGenerationInput[],
+  forceRegeneration: boolean = false
 ): Promise<BatchGenerationResult> {
   const startTime = Date.now();
   
@@ -469,10 +470,24 @@ export async function generateBatchProductData(
     throw new Error(`Batch size exceeds limit. Maximum ${MAX_PRODUCTS_PER_BATCH} products per batch.`);
   }
 
-  // 1. Check which products need generation (filter out cached ones)
+  // 1. Check which products need generation (filter out cached ones unless forcing)
   const productIds = inputs.map(input => input.id);
-  const uncachedProducts = await getProductsNeedingGeneration(productIds);
-  const uncachedIds = new Set(uncachedProducts.map(p => p.id));
+  let uncachedProducts: Array<{ id: string; name: string; manual_language_override?: SupportedLanguage }> = [];
+  let uncachedIds: Set<string> = new Set();
+  
+  if (forceRegeneration) {
+    // For force regeneration, treat all products as uncached
+    uncachedProducts = inputs.map(input => ({
+      id: input.id,
+      name: input.name,
+      manual_language_override: input.manual_language_override
+    }));
+    uncachedIds = new Set(inputs.map(input => input.id));
+  } else {
+    // Normal behavior - filter out cached products
+    uncachedProducts = await getProductsNeedingGeneration(productIds);
+    uncachedIds = new Set(uncachedProducts.map(p => p.id));
+  }
 
   const results: ProductGenerationOutput[] = [];
   let totalCost = 0;
