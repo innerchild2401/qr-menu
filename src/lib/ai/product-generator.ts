@@ -169,72 +169,96 @@ async function withRetry<T>(
  */
 export async function getProductsForGeneration(
   productIds: string[],
-  scenario: 'new' | 'regenerate_all' | 'recipe_edited' | 'force'
+  scenario: 'new' | 'regenerate_all' | 'recipe_edited' | 'force',
+  restaurantId?: string
 ): Promise<Array<{ id: string; name: string; manual_language_override?: SupportedLanguage; reason: string }>> {
   try {
+    console.log('getProductsForGeneration called with:', { productIds, scenario, restaurantId });
+    
     const { data: products, error } = await supabaseAdmin
       .from('products')
-      .select('id, name, description, generated_description, recipe, manual_language_override, ai_generated_at')
+      .select('id, name, description, generated_description, recipe, manual_language_override, ai_generated_at, has_recipe, restaurant_id')
       .in('id', productIds);
+
+    console.log('getProductsForGeneration query result:', { products, error });
 
     if (error) {
       console.error('Error fetching products for generation:', error);
       return [];
     }
 
-    return products
+    // Determine the primary language for the restaurant based on product names
+    let primaryLanguage: SupportedLanguage = 'ro'; // Default to Romanian
+    if (restaurantId && products.length > 0) {
+      // Sample a few product names to determine the primary language
+      const sampleNames = products.slice(0, 5).map(p => p.name);
+      const languageResult = getEffectiveLanguage(sampleNames.join(' '));
+      primaryLanguage = languageResult.language;
+      console.log('Detected primary language for restaurant:', primaryLanguage);
+    }
+
+    const result = products
       .map(product => {
         let shouldGenerate = false;
         let reason = '';
 
-        switch (scenario) {
-          case 'new':
-            // Always generate for new products
-            shouldGenerate = true;
-            reason = 'New product';
-            break;
-
-          case 'regenerate_all':
-            // Only generate if missing description or recipe
-            const hasDescription = !!(product.generated_description || product.description);
-            const hasRecipe = !!(product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0);
-            
-            if (!hasDescription && !hasRecipe) {
+        // Only process products that have recipes
+        if (!product.has_recipe) {
+          shouldGenerate = false;
+          reason = 'No recipe - skipping';
+        } else {
+          switch (scenario) {
+            case 'new':
+              // Always generate for new products with recipes
               shouldGenerate = true;
-              reason = 'Missing description and recipe';
-            } else if (!hasDescription) {
-              shouldGenerate = true;
-              reason = 'Missing description';
-            } else if (!hasRecipe) {
-              shouldGenerate = true;
-              reason = 'Missing recipe';
-            }
-            break;
+              reason = 'New product with recipe';
+              break;
 
-          case 'recipe_edited':
-            // Only recalculate nutrition and allergens, skip description if unchanged
-            shouldGenerate = true;
-            reason = 'Recipe edited - nutrition update';
-            break;
+            case 'regenerate_all':
+              // Only generate if missing description or recipe
+              const hasDescription = !!(product.generated_description || product.description);
+              const hasRecipe = !!(product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0);
+              
+              if (!hasDescription && !hasRecipe) {
+                shouldGenerate = true;
+                reason = 'Missing description and recipe';
+              } else if (!hasDescription) {
+                shouldGenerate = true;
+                reason = 'Missing description';
+              } else if (!hasRecipe) {
+                shouldGenerate = true;
+                reason = 'Missing recipe';
+              }
+              break;
 
-          case 'force':
-            // Force regeneration regardless of existing data
-            shouldGenerate = true;
-            reason = 'Force regeneration';
-            break;
+            case 'recipe_edited':
+              // Only recalculate nutrition and allergens, skip description if unchanged
+              shouldGenerate = true;
+              reason = 'Recipe edited - nutrition update';
+              break;
+
+            case 'force':
+              // Force regeneration regardless of existing data
+              shouldGenerate = true;
+              reason = 'Force regeneration';
+              break;
+          }
         }
 
         if (shouldGenerate) {
           return {
             id: product.id,
             name: product.name,
-            manual_language_override: product.manual_language_override,
+            manual_language_override: product.manual_language_override || primaryLanguage,
             reason
           };
         }
         return null;
       })
       .filter((product): product is NonNullable<typeof product> => product !== null);
+
+    console.log('getProductsForGeneration final result:', result);
+    return result;
 
   } catch (error) {
     console.error('Error in getProductsForGeneration:', error);

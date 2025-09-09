@@ -58,6 +58,7 @@ export interface Product {
   is_frozen?: boolean; // Indicates if the product comes from frozen ingredients
   is_vegetarian?: boolean; // Indicates if the product is vegetarian
   is_spicy?: boolean; // Indicates if the product is spicy
+  has_recipe?: boolean; // Indicates if the product has a recipe (for AI generation)
   created_at: string;
 }
 

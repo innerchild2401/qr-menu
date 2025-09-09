@@ -10,6 +10,7 @@ import BulkUploadModal from '../../../components/admin/BulkUploadModal';
 import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
 import NoRestaurantMessage from '../../../components/admin/NoRestaurantMessage';
+import RecipeTagManager from '../../../components/admin/RecipeTagManager';
 
 interface Product {
   id: string;
@@ -31,6 +32,8 @@ interface Product {
   manual_language_override?: 'ro' | 'en';
   ai_generated_at?: string;
   ai_last_updated?: string;
+  // Recipe management
+  has_recipe?: boolean;
 }
 
 interface Category {
@@ -58,6 +61,7 @@ export default function AdminProducts() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regeneratingProductId, setRegeneratingProductId] = useState<string | null>(null);
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
+  const [showRecipeManager, setShowRecipeManager] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -241,11 +245,12 @@ export default function AdminProducts() {
           return false;
         }
         
-        return !product.generated_description && (!product.recipe || product.recipe.length === 0);
+        // Only include products that have recipes and don't have AI-generated content yet
+        return product.has_recipe && !product.generated_description && (!product.recipe || product.recipe.length === 0);
       });
 
       if (productsNeedingGeneration.length === 0) {
-        alert('All products already have AI-generated content.');
+        alert('No products need AI generation. Make sure products are marked as having recipes and don\'t already have AI-generated content.');
         return;
       }
 
@@ -255,8 +260,17 @@ export default function AdminProducts() {
 
       // Process in batches of 10 (API limit)
       const batchSize = 10;
+      console.log(`Starting batch regeneration for ${productsNeedingGeneration.length} products`);
+      console.log('Products needing generation:', productsNeedingGeneration.map(p => ({
+        id: p.id,
+        idType: typeof p.id,
+        name: p.name,
+        nameType: typeof p.name
+      })));
+      
       for (let i = 0; i < productsNeedingGeneration.length; i += batchSize) {
         const batch = productsNeedingGeneration.slice(i, i + batchSize);
+        console.log(`Processing batch ${Math.floor(i / batchSize) + 1} with ${batch.length} products`);
         
         const response = await authenticatedApiCall('/api/generate-product-data', {
           method: 'POST',
@@ -275,9 +289,21 @@ export default function AdminProducts() {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error(`Batch ${i / batchSize + 1} failed:`, errorData);
+          const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+          console.error(`Batch ${Math.floor(i / batchSize) + 1} failed:`, {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+          console.error(`Batch ${Math.floor(i / batchSize) + 1} products:`, batch.map(p => ({
+            id: p.id,
+            idType: typeof p.id,
+            name: p.name,
+            nameType: typeof p.name
+          })));
           // Continue with remaining batches
+        } else {
+          console.log(`Batch ${Math.floor(i / batchSize) + 1} completed successfully`);
         }
       }
 
@@ -365,6 +391,17 @@ export default function AdminProducts() {
               </Button>
 
               <Button 
+                onClick={() => setShowRecipeManager(!showRecipeManager)}
+                variant="outline"
+                className="flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {showRecipeManager ? 'Hide Recipe Manager' : 'Manage Recipe Tags'}
+              </Button>
+
+              <Button 
                 onClick={handleRegenerateAll}
                 variant="outline"
                 disabled={isRegeneratingAll || products.length === 0}
@@ -444,6 +481,15 @@ export default function AdminProducts() {
         editingProduct={editingProduct}
         user={user}
       />
+
+      {/* Recipe Tag Manager */}
+      {showRecipeManager && (
+        <RecipeTagManager
+          products={products}
+          categories={categories}
+          onUpdate={loadData}
+        />
+      )}
 
       {/* Products List */}
       <Card className={spacing.md}>

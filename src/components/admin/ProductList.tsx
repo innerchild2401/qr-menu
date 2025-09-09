@@ -23,6 +23,8 @@ interface Product {
   manual_language_override?: 'ro' | 'en';
   ai_generated_at?: string;
   ai_last_updated?: string;
+  // Recipe management
+  has_recipe?: boolean;
 }
 
 interface ProductListProps {
@@ -129,7 +131,14 @@ export default function ProductList({
                 </td>
                 <td className="py-3 px-4">
                   <div>
-                    <div className="font-medium text-foreground">{product.name}</div>
+                    <div className="font-medium text-foreground flex items-center gap-2">
+                      {product.name}
+                      {product.has_recipe && (
+                        <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                          Recipe
+                        </span>
+                      )}
+                    </div>
                     {product.description && (
                       <div className="text-sm text-muted-foreground truncate max-w-xs">
                         {product.description}
@@ -232,6 +241,11 @@ function ProductCard({ product, onEdit, onDelete, onRegenerate, isRegenerating }
               {product.ai_generated_at && (
                 <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
                   AI
+                </span>
+              )}
+              {product.has_recipe && (
+                <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                  Recipe
                 </span>
               )}
             </div>

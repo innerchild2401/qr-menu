@@ -161,6 +161,8 @@ async function validateProductOwnership(
   request: NextRequest
 ): Promise<{ valid: boolean; error?: string }> {
   try {
+    console.log('validateProductOwnership called with:', { productIds, restaurantId });
+    
     const supabase = createServerClient(
       env.SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY,
@@ -175,10 +177,13 @@ async function validateProductOwnership(
       }
     );
 
+    console.log('Querying products table for IDs:', productIds);
     const { data: products, error } = await supabase
       .from('products')
       .select('id, restaurant_id')
       .in('id', productIds);
+
+    console.log('Product ownership query result:', { products, error });
 
     if (error) {
       console.error('Error validating product ownership:', error);
@@ -186,14 +191,21 @@ async function validateProductOwnership(
     }
 
     // Check that all products belong to the user's restaurant
+    console.log('Checking product ownership for restaurant:', restaurantId);
+    console.log('Found products:', products);
+    
     const invalidProducts = products.filter(product => product.restaurant_id !== restaurantId);
+    console.log('Invalid products (not owned by restaurant):', invalidProducts);
+    
     if (invalidProducts.length > 0) {
+      console.error('Product ownership validation failed - products not owned by restaurant');
       return { 
         valid: false, 
         error: `Products ${invalidProducts.map(p => p.id).join(', ')} do not belong to your restaurant` 
       };
     }
 
+    console.log('Product ownership validation successful');
     return { valid: true };
   } catch (error) {
     console.error('Product ownership validation error:', error);
@@ -283,7 +295,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     let body;
     try {
       body = await request.json();
+      console.log('Received request body:', JSON.stringify(body, null, 2));
     } catch (error) {
+      console.error('JSON parsing error:', error);
       return NextResponse.json({
         success: false,
         error: 'Invalid JSON in request body',
@@ -301,26 +315,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // 3. Authenticate user
+    console.log('Authenticating user...');
     const authResult = await getAuthenticatedUser(request);
     if ('error' in authResult) {
+      console.error('Authentication failed:', authResult.error);
       return NextResponse.json({
         success: false,
         error: authResult.error,
         code: 'AUTHENTICATION_FAILED'
       }, { status: authResult.status });
     }
+    console.log('Authentication successful for user:', authResult.user?.email);
 
     const { user, restaurant } = authResult;
 
     // 4. Validate product ownership
     const allProductIds = requestData!.products.map(p => p.id);
+    console.log('Validating product ownership for products:', allProductIds);
+    console.log('Restaurant ID:', restaurant.id);
+    
     const { valid: ownershipValid, error: ownershipError } = await validateProductOwnership(
       allProductIds,
       restaurant.id,
       request
     );
 
+    console.log('Product ownership validation result:', { ownershipValid, ownershipError });
+
     if (!ownershipValid) {
+      console.error('Product ownership validation failed:', ownershipError);
       return NextResponse.json({
         success: false,
         error: ownershipError,
@@ -332,11 +355,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const scenario = requestData!.scenario || 'force';
     const respectCostLimits = requestData!.respect_cost_limits !== false; // Default to true
     
+    console.log('Determining generation scenario:', { scenario, respectCostLimits });
+    
     let productsToGenerate: Array<{ id: string; name: string; manual_language_override?: 'ro' | 'en'; reason: string }>;
     
     if (scenario === 'regenerate_all') {
       // Use intelligent filtering for "regenerate all"
-      productsToGenerate = await getProductsForGeneration(allProductIds, scenario);
+      console.log('Using getProductsForGeneration for regenerate_all scenario');
+      try {
+        productsToGenerate = await getProductsForGeneration(allProductIds, scenario, restaurant.id);
+        console.log('getProductsForGeneration result:', productsToGenerate);
+      } catch (error) {
+        console.error('Error in getProductsForGeneration:', error);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to determine products for generation',
+          code: 'GENERATION_FILTER_ERROR'
+        }, { status: 400 });
+      }
     } else {
       // For other scenarios, process all requested products
       productsToGenerate = requestData!.products.map(product => ({
@@ -366,22 +402,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // 6. Convert to internal format
+    console.log('Converting products to generation inputs:', productsToGenerate);
     const generationInputs: ProductGenerationInput[] = productsToGenerate.map(product => ({
-      id: product.id,
+      id: String(product.id), // Ensure ID is a string
       name: product.name,
       manual_language_override: product.manual_language_override,
       restaurant_id: restaurant.id,
     }));
 
     // 7. Validate generation inputs
+    console.log('Validating generation inputs:', generationInputs);
     const inputValidationError = validateBatchInput(generationInputs);
     if (inputValidationError) {
+      console.error('Generation input validation failed:', inputValidationError);
       return NextResponse.json({
         success: false,
         error: inputValidationError,
         code: 'INVALID_INPUT'
       }, { status: 400 });
     }
+    console.log('Generation input validation passed');
 
     // 8. Check cost limits if enabled
     let costLimitExceeded = false;
