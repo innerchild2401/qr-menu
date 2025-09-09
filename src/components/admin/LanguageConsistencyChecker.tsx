@@ -83,13 +83,25 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
         const descriptionLanguage = detectLanguage(product.generated_description || '');
         languageBreakdown[descriptionLanguage] = (languageBreakdown[descriptionLanguage] || 0) + 1;
 
+        console.log(`🔍 Product: ${product.name}`);
+        console.log(`   Description: ${product.generated_description?.substring(0, 100)}...`);
+        console.log(`   Detected Language: ${descriptionLanguage}`);
+        console.log(`   Manual Override: ${product.manual_language_override}`);
+        console.log(`   Primary Language: ${primaryLanguage}`);
+
         // Check if product has manual language override
         if (product.manual_language_override) {
           if (product.manual_language_override !== primaryLanguage) {
+            console.log(`   ❌ INCONSISTENT: Manual override (${product.manual_language_override}) != Primary (${primaryLanguage})`);
             inconsistentProducts.push(product);
+          } else {
+            console.log(`   ✅ CONSISTENT: Manual override matches primary language`);
           }
         } else if (descriptionLanguage !== primaryLanguage) {
+          console.log(`   ❌ INCONSISTENT: Description language (${descriptionLanguage}) != Primary (${primaryLanguage})`);
           inconsistentProducts.push(product);
+        } else {
+          console.log(`   ✅ CONSISTENT: Description language matches primary language`);
         }
       });
 
@@ -123,17 +135,50 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
   const detectLanguage = (text: string): string => {
     if (!text || text.trim().length === 0) return 'unknown';
     
-    // Simple language detection based on common words
-    const romanianWords = ['cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'cum', 'prea', 'foarte', 'mai', 'foarte', 'tot', 'toate', 'toți', 'toate', 'este', 'sunt', 'are', 'au', 'va', 'vor', 'am', 'ai', 'a', 'o', 'un', 'o', 'și', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'cum', 'prea', 'foarte', 'mai', 'foarte', 'tot', 'toate', 'toți', 'toate'];
-    const englishWords = ['with', 'and', 'of', 'the', 'in', 'for', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything', 'is', 'are', 'has', 'have', 'will', 'would', 'am', 'you', 'a', 'an', 'and', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything'];
+    // Enhanced language detection with more comprehensive word lists
+    const romanianWords = [
+      'cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 
+      'prea', 'foarte', 'mai', 'tot', 'toate', 'toți', 'este', 'sunt', 'are', 'au', 'va', 'vor', 'am', 'ai', 
+      'a', 'o', 'un', 'și', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'prea', 'foarte', 
+      'mai', 'tot', 'toate', 'toți', 'este', 'sunt', 'are', 'au', 'va', 'vor', 'am', 'ai', 'a', 'o', 'un',
+      // Additional Romanian words
+      'delicios', 'gustos', 'frumos', 'bun', 'bună', 'bună', 'bun', 'bună', 'bun', 'bună', 'bun', 'bună',
+      'preparat', 'preparată', 'preparat', 'preparată', 'preparat', 'preparată', 'preparat', 'preparată',
+      'servit', 'servită', 'servit', 'servită', 'servit', 'servită', 'servit', 'servită',
+      'făcut', 'făcută', 'făcut', 'făcută', 'făcut', 'făcută', 'făcut', 'făcută',
+      'cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât'
+    ];
+    
+    const englishWords = [
+      'with', 'and', 'of', 'the', 'in', 'for', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 
+      'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything', 'is', 'are', 'has', 'have', 
+      'will', 'would', 'am', 'you', 'a', 'an', 'and', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 
+      'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything',
+      // Additional English words
+      'delicious', 'tasty', 'beautiful', 'good', 'great', 'amazing', 'wonderful', 'excellent', 'perfect',
+      'prepared', 'cooked', 'made', 'served', 'fresh', 'hot', 'cold', 'warm', 'crispy', 'tender',
+      'flavorful', 'savory', 'sweet', 'spicy', 'mild', 'rich', 'creamy', 'juicy', 'succulent'
+    ];
     
     const lowerText = text.toLowerCase();
-    const romanianCount = romanianWords.reduce((count, word) => 
-      count + (lowerText.includes(word) ? 1 : 0), 0
-    );
-    const englishCount = englishWords.reduce((count, word) => 
-      count + (lowerText.includes(word) ? 1 : 0), 0
-    );
+    
+    // Count Romanian words
+    const romanianCount = romanianWords.reduce((count, word) => {
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
+      const matches = lowerText.match(regex);
+      return count + (matches ? matches.length : 0);
+    }, 0);
+    
+    // Count English words
+    const englishCount = englishWords.reduce((count, word) => {
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
+      const matches = lowerText.match(regex);
+      return count + (matches ? matches.length : 0);
+    }, 0);
+    
+    // Debug logging
+    console.log(`🔍 Language detection for: "${text.substring(0, 50)}..."`);
+    console.log(`   Romanian count: ${romanianCount}, English count: ${englishCount}`);
     
     if (romanianCount === 0 && englishCount === 0) return 'unknown';
     return romanianCount > englishCount ? 'ro' : 'en';

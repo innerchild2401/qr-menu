@@ -7,25 +7,24 @@ const supabase = createClient(
 );
 
 async function checkDescriptions() {
-  console.log('🔍 Checking product descriptions...\n');
+  console.log('🔍 Checking actual product descriptions...\n');
   
-  // First, let's see what products exist
-  const { data: allProducts, error: allError } = await supabase
+  const { data, error } = await supabase
     .from('products')
     .select('id, name, generated_description, manual_language_override')
-    .not('generated_description', 'is', null)
-    .limit(5);
+    .in('name', ['Classic CheeseBurger', 'Spicy Crispy Chicken', 'Chicken Curry'])
+    .limit(3);
   
-  if (allError) {
-    console.error('❌ Error:', allError);
+  if (error) {
+    console.error('❌ Error:', error);
     return;
   }
   
-  console.log('📋 Products with descriptions:');
-  allProducts.forEach(p => {
+  console.log('📋 Sample product descriptions:');
+  data.forEach(p => {
     console.log(`\n🍔 ${p.name} (ID: ${p.id}):`);
     console.log(`   Manual Override: ${p.manual_language_override}`);
-    console.log(`   Description: ${p.generated_description?.substring(0, 150)}...`);
+    console.log(`   Description: ${p.generated_description?.substring(0, 200)}...`);
     
     // Test the language detection logic
     const description = p.generated_description || '';
