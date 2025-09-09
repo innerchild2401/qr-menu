@@ -479,11 +479,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       manual_language_override: input.manual_language_override
     })));
     const forceRegeneration = scenario === 'force';
-    console.log('🔥 FORCE REGENERATION DEBUG:');
+    console.log('🔥🔥🔥 FORCE REGENERATION DEBUG - VERSION 2 🔥🔥🔥');
     console.log('🔥 Scenario:', scenario);
     console.log('🔥 Force regeneration mode:', forceRegeneration);
     console.log('🔥 Generation inputs count:', generationInputs.length);
     console.log('🔥 First input:', generationInputs[0]);
+    console.log('🔥 Timestamp:', new Date().toISOString());
     const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration);
 
     // 10. Format response
