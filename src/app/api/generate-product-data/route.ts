@@ -4,6 +4,8 @@
  * 
  * Generates product descriptions, recipes, nutrition, and allergens using OpenAI GPT-4o-mini
  * with intelligent caching and batching for cost optimization.
+ * 
+ * Version 2.0 - Cache bust fix
  */
 
 import { NextRequest, NextResponse } from 'next/server';
