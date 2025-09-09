@@ -33,6 +33,14 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
+  // Re-analyze when products change (after regeneration)
+  useEffect(() => {
+    if (analysis && products.length > 0) {
+      console.log('🔄 Products updated, re-analyzing language consistency...');
+      analyzeLanguageConsistency();
+    }
+  }, [products]);
+
   const analyzeLanguageConsistency = async () => {
     setIsAnalyzing(true);
     try {
@@ -176,7 +184,10 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
         alert(`Successfully regenerated ${successCount} products. ${errorCount > 0 ? `${errorCount} failed.` : ''}`);
         console.log('🔄 Calling onUpdate to refresh parent data...');
         onUpdate();
+        // Clear the analysis to force a fresh analysis next time
         setAnalysis(null);
+        // Also clear the showDetails to reset the UI
+        setShowDetails(false);
       } else {
         alert('Failed to regenerate products. Please try again.');
       }
