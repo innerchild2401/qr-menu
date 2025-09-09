@@ -465,6 +465,11 @@ export async function generateBatchProductData(
 ): Promise<BatchGenerationResult> {
   const startTime = Date.now();
   
+  console.log('🚀 BATCH GENERATION DEBUG:');
+  console.log('🚀 Inputs count:', inputs.length);
+  console.log('🚀 Force regeneration:', forceRegeneration);
+  console.log('🚀 First input:', inputs[0]);
+  
   // Validate batch size
   if (inputs.length > MAX_PRODUCTS_PER_BATCH) {
     throw new Error(`Batch size exceeds limit. Maximum ${MAX_PRODUCTS_PER_BATCH} products per batch.`);
@@ -477,16 +482,22 @@ export async function generateBatchProductData(
   
   if (forceRegeneration) {
     // For force regeneration, treat all products as uncached
+    console.log('🔥 FORCE REGENERATION PATH: Treating all products as uncached');
     uncachedProducts = inputs.map(input => ({
       id: input.id,
       name: input.name,
       manual_language_override: input.manual_language_override
     }));
     uncachedIds = new Set(inputs.map(input => input.id));
+    console.log('🔥 Force regeneration - uncached products:', uncachedProducts);
+    console.log('🔥 Force regeneration - uncached IDs:', Array.from(uncachedIds));
   } else {
     // Normal behavior - filter out cached products
+    console.log('📋 NORMAL PATH: Filtering out cached products');
     uncachedProducts = await getProductsNeedingGeneration(productIds);
     uncachedIds = new Set(uncachedProducts.map(p => p.id));
+    console.log('📋 Normal - uncached products:', uncachedProducts);
+    console.log('📋 Normal - uncached IDs:', Array.from(uncachedIds));
   }
 
   const results: ProductGenerationOutput[] = [];
