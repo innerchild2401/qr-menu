@@ -61,6 +61,7 @@ interface Product {
   id: string;
   name: string;
   description: string;
+  generated_description?: string;
   price: number;
   image_url?: string;
   nutrition?: {
@@ -553,7 +554,8 @@ function ProductCard({
   showAddedToast: boolean;
   restaurant: Restaurant;
 }) {
-  const description = product.description || '';
+  // Use AI generated description if available, otherwise fall back to regular description
+  const description = product.generated_description || product.description || '';
   const hasDescription = description.length > 0;
   const descriptionNeedsExpanding = description.length > 60;
   const productNameNeedsExpanding = product.name.length > 30; // Threshold for product name truncation

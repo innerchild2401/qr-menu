@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { authenticatedApiCall } from '@/lib/api-helpers';
+import RecipeEditor from './RecipeEditor';
 
 interface Product {
   id: string;
@@ -34,6 +35,7 @@ export default function RecipeTagManager({ products, categories, onUpdate }: Rec
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [isUpdating, setIsUpdating] = useState(false);
   const [showOnlyUntagged, setShowOnlyUntagged] = useState(true);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Filter products based on showOnlyUntagged setting
   const filteredProducts = showOnlyUntagged 
@@ -245,11 +247,21 @@ export default function RecipeTagManager({ products, categories, onUpdate }: Rec
                   <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                     {product.name}
                   </span>
-                  {product.has_recipe && (
-                    <Badge variant="default" className="text-xs">
-                      Has Recipe
-                    </Badge>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {product.has_recipe && (
+                      <Badge variant="default" className="text-xs">
+                        Has Recipe
+                      </Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingProduct(product)}
+                      className="text-xs px-2 py-1"
+                    >
+                      Edit Recipe
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -264,6 +276,15 @@ export default function RecipeTagManager({ products, categories, onUpdate }: Rec
             : 'No products found'
           }
         </div>
+      )}
+
+      {/* Recipe Editor Modal */}
+      {editingProduct && (
+        <RecipeEditor
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onUpdate={onUpdate}
+        />
       )}
     </Card>
   );

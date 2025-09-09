@@ -215,20 +215,10 @@ export async function getProductsForGeneration(
               break;
 
             case 'regenerate_all':
-              // Only generate if missing description or recipe
-              const hasDescription = !!(product.generated_description || product.description);
-              const hasRecipe = !!(product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0);
-              
-              if (!hasDescription && !hasRecipe) {
-                shouldGenerate = true;
-                reason = 'Missing description and recipe';
-              } else if (!hasDescription) {
-                shouldGenerate = true;
-                reason = 'Missing description';
-              } else if (!hasRecipe) {
-                shouldGenerate = true;
-                reason = 'Missing recipe';
-              }
+              // Always regenerate for products with recipes to ensure consistency
+              // This ensures AI content is updated when product names or recipes change
+              shouldGenerate = true;
+              reason = 'Regenerate all - ensuring consistency';
               break;
 
             case 'recipe_edited':
