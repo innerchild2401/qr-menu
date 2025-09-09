@@ -365,12 +365,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       try {
         productsToGenerate = await getProductsForGeneration(allProductIds, scenario, restaurant.id);
         console.log('getProductsForGeneration result:', productsToGenerate);
+        
+        if (!productsToGenerate || productsToGenerate.length === 0) {
+          console.log('No products to generate after filtering');
+          return NextResponse.json({
+            success: true,
+            results: [],
+            message: 'No products need AI generation after filtering'
+          });
+        }
       } catch (error) {
         console.error('Error in getProductsForGeneration:', error);
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         return NextResponse.json({
           success: false,
           error: 'Failed to determine products for generation',
-          code: 'GENERATION_FILTER_ERROR'
+          code: 'GENERATION_FILTER_ERROR',
+          details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 400 });
       }
     } else {

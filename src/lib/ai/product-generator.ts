@@ -243,8 +243,11 @@ export async function getProductsForGeneration(
 
     if (error) {
       console.error('Error fetching products for generation:', error);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      
       // If has_recipe column doesn't exist, try without it
-      if (error.message && error.message.includes('has_recipe')) {
+      if (error.message && (error.message.includes('has_recipe') || error.message.includes('column') || error.code === 'PGRST116')) {
         console.log('has_recipe column not found, trying without it...');
         const { data: productsWithoutRecipe, error: errorWithoutRecipe } = await supabaseAdmin
           .from('products')
@@ -255,6 +258,8 @@ export async function getProductsForGeneration(
           console.error('Error fetching products without has_recipe:', errorWithoutRecipe);
           return [];
         }
+        
+        console.log('Successfully fetched products without has_recipe:', productsWithoutRecipe?.length || 0);
         
         // Add has_recipe as undefined for all products
         const productsWithUndefinedRecipe = productsWithoutRecipe?.map(p => ({ ...p, has_recipe: undefined })) || [];
