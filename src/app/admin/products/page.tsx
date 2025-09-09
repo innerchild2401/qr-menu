@@ -193,7 +193,9 @@ export default function AdminProducts() {
         products: [{
           id: String(product.id).trim(), // Ensure it's a string and trimmed
           name: String(product.name).trim(), // Ensure it's a string and trimmed
-          manual_language_override: product.manual_language_override || undefined
+          ...(product.manual_language_override && ['ro', 'en'].includes(product.manual_language_override) 
+            ? { manual_language_override: product.manual_language_override } 
+            : {})
         }],
         scenario: 'force' as const,
         respect_cost_limits: true
@@ -285,7 +287,9 @@ export default function AdminProducts() {
             products: batch.map(product => ({
               id: String(product.id).trim(),
               name: String(product.name).trim(),
-              manual_language_override: product.manual_language_override || undefined
+              ...(product.manual_language_override && ['ro', 'en'].includes(product.manual_language_override) 
+                ? { manual_language_override: product.manual_language_override } 
+                : {})
             })),
             scenario: 'regenerate_all' as const,
             respect_cost_limits: true
