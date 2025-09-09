@@ -136,27 +136,35 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
 
       for (const batch of productBatches) {
         try {
+          const requestPayload = {
+            products: batch.map(p => ({
+              id: p.id,
+              name: p.name,
+              ...(analysis.recommendedLanguage && ['ro', 'en'].includes(analysis.recommendedLanguage) 
+                ? { manual_language_override: analysis.recommendedLanguage } 
+                : {})
+            })),
+            scenario: 'force'
+          };
+          
+          console.log('Regenerating batch with payload:', JSON.stringify(requestPayload, null, 2));
+          console.log('Recommended language:', analysis.recommendedLanguage);
+          
           const response = await authenticatedApiCall('/api/generate-product-data', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              products: batch.map(p => ({
-                id: p.id,
-                name: p.name,
-                ...(analysis.recommendedLanguage && ['ro', 'en'].includes(analysis.recommendedLanguage) 
-                  ? { manual_language_override: analysis.recommendedLanguage } 
-                  : {})
-              })),
-              scenario: 'force'
-            })
+            body: JSON.stringify(requestPayload)
           });
 
           if (response.ok) {
             successCount += batch.length;
+            console.log(`Batch regenerated successfully: ${batch.length} products`);
           } else {
             errorCount += batch.length;
+            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+            console.error(`Batch regeneration failed (${response.status}):`, errorData);
           }
         } catch (error) {
           console.error('Error regenerating batch:', error);
