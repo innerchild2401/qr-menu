@@ -320,9 +320,11 @@ export async function generateSingleProductData(
     // 1. Check if product already has cached data
     const cachedData = await getCachedProductData(id);
     
-    // Only use cached data if the product name hasn't changed
-    // This ensures regeneration happens when name or recipe is updated
-    if (cachedData && cachedData.generated_description && cachedData.name === name) {
+    // Only use cached data if the product name and language override haven't changed
+    // This ensures regeneration happens when name, recipe, or language override is updated
+    if (cachedData && cachedData.generated_description && cachedData.name === name && 
+        cachedData.manual_language_override === manual_language_override) {
+      console.log(`📦 Using cached data for ${name} (language: ${cachedData.manual_language_override})`);
       return {
         id,
         language: cachedData.manual_language_override || 'ro',
@@ -348,6 +350,7 @@ export async function generateSingleProductData(
 
     // 3. Determine effective language
     const { language } = getEffectiveLanguage(name, manual_language_override);
+    console.log(`🔄 Generating new data for ${name} (language: ${language}, manual_override: ${manual_language_override})`);
 
     // 4. Check if it's a bottled drink (skip AI generation)
     if (isBottledDrinkEnhanced(name)) {
