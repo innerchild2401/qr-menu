@@ -107,7 +107,7 @@ export default function AdminProducts() {
         console.log('📦 Fresh products data loaded:', productsData.products?.length || 0, 'products');
         // Log a few sample products to check if descriptions are updated
         const sampleProducts = productsData.products?.slice(0, 3) || [];
-        sampleProducts.forEach((p, i) => {
+        sampleProducts.forEach((p: any, i: number) => {
           console.log(`  ${i + 1}. ${p.name}: has_description=${!!p.generated_description}`);
         });
         setProducts(productsData.products || []);
