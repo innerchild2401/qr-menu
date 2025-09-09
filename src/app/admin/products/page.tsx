@@ -247,8 +247,10 @@ export default function AdminProducts() {
           return false;
         }
         
-        // Only include products that have recipes and don't have AI-generated content yet
-        return product.has_recipe && !product.generated_description && (!product.recipe || product.recipe.length === 0);
+        // Only include products that don't have AI-generated content yet
+        // If has_recipe column exists, only include products with recipes
+        const hasRecipe = product.has_recipe !== false; // true if has_recipe is true or undefined
+        return hasRecipe && !product.generated_description && (!product.recipe || product.recipe.length === 0);
       });
 
       if (productsNeedingGeneration.length === 0) {

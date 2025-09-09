@@ -36,10 +36,19 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
   const analyzeLanguageConsistency = async () => {
     setIsAnalyzing(true);
     try {
-      // Filter products that have AI generated descriptions
+      // Filter products that have AI generated descriptions (regardless of has_recipe status)
       const productsWithDescriptions = products.filter(p => 
-        p.has_recipe && p.generated_description && p.generated_description.trim().length > 0
+        p.generated_description && p.generated_description.trim().length > 0
       );
+
+      console.log('Language consistency check:', {
+        totalProducts: products.length,
+        productsWithDescriptions: productsWithDescriptions.length,
+        sampleDescriptions: productsWithDescriptions.slice(0, 3).map(p => ({
+          name: p.name,
+          description: p.generated_description?.substring(0, 100) + '...'
+        }))
+      });
 
       if (productsWithDescriptions.length === 0) {
         setAnalysis({
@@ -91,9 +100,11 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
   };
 
   const detectLanguage = (text: string): string => {
+    if (!text || text.trim().length === 0) return 'unknown';
+    
     // Simple language detection based on common words
-    const romanianWords = ['cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'cum', 'prea', 'foarte', 'mai', 'foarte', 'tot', 'toate', 'toți', 'toate'];
-    const englishWords = ['with', 'and', 'of', 'the', 'in', 'for', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything'];
+    const romanianWords = ['cu', 'și', 'de', 'la', 'în', 'pentru', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'cum', 'prea', 'foarte', 'mai', 'foarte', 'tot', 'toate', 'toți', 'toate', 'este', 'sunt', 'are', 'au', 'va', 'vor', 'am', 'ai', 'a', 'o', 'un', 'o', 'și', 'sau', 'dar', 'când', 'cum', 'ce', 'care', 'unde', 'cât', 'cum', 'prea', 'foarte', 'mai', 'foarte', 'tot', 'toate', 'toți', 'toate'];
+    const englishWords = ['with', 'and', 'of', 'the', 'in', 'for', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything', 'is', 'are', 'has', 'have', 'will', 'would', 'am', 'you', 'a', 'an', 'and', 'or', 'but', 'when', 'how', 'what', 'which', 'where', 'how', 'too', 'very', 'more', 'very', 'all', 'every', 'everyone', 'everything'];
     
     const lowerText = text.toLowerCase();
     const romanianCount = romanianWords.reduce((count, word) => 
@@ -103,6 +114,7 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
       count + (lowerText.includes(word) ? 1 : 0), 0
     );
     
+    if (romanianCount === 0 && englishCount === 0) return 'unknown';
     return romanianCount > englishCount ? 'ro' : 'en';
   };
 

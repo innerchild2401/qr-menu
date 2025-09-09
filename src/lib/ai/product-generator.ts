@@ -165,6 +165,65 @@ async function withRetry<T>(
 }
 
 /**
+ * Process products for generation based on scenario
+ */
+function processProductsForGeneration(
+  products: Array<{ id: string; name: string; has_recipe?: boolean; manual_language_override?: SupportedLanguage }>,
+  scenario: 'new' | 'regenerate_all' | 'recipe_edited' | 'force',
+  primaryLanguage: SupportedLanguage
+): Array<{ id: string; name: string; manual_language_override?: SupportedLanguage; reason: string }> {
+  return products
+    .map(product => {
+      let shouldGenerate = false;
+      let reason = '';
+
+      // Only process products that have recipes (if has_recipe column exists)
+      if (product.has_recipe === false) {
+        shouldGenerate = false;
+        reason = 'No recipe - skipping';
+      } else {
+        switch (scenario) {
+          case 'new':
+            // Always generate for new products with recipes
+            shouldGenerate = true;
+            reason = 'New product with recipe';
+            break;
+
+          case 'regenerate_all':
+            // Always regenerate for products with recipes to ensure consistency
+            // This ensures AI content is updated when product names or recipes change
+            shouldGenerate = true;
+            reason = 'Regenerate all - ensuring consistency';
+            break;
+
+          case 'recipe_edited':
+            // Only recalculate nutrition and allergens, skip description if unchanged
+            shouldGenerate = true;
+            reason = 'Recipe edited - nutrition update';
+            break;
+
+          case 'force':
+            // Force regeneration regardless of existing data
+            shouldGenerate = true;
+            reason = 'Force regeneration';
+            break;
+        }
+      }
+
+      if (shouldGenerate) {
+        return {
+          id: product.id,
+          name: product.name,
+          manual_language_override: product.manual_language_override || primaryLanguage,
+          reason
+        };
+      }
+      return null;
+    })
+    .filter((product): product is NonNullable<typeof product> => product !== null);
+}
+
+/**
  * Intelligent product filtering for different generation scenarios
  */
 export async function getProductsForGeneration(
@@ -184,6 +243,32 @@ export async function getProductsForGeneration(
 
     if (error) {
       console.error('Error fetching products for generation:', error);
+      // If has_recipe column doesn't exist, try without it
+      if (error.message && error.message.includes('has_recipe')) {
+        console.log('has_recipe column not found, trying without it...');
+        const { data: productsWithoutRecipe, error: errorWithoutRecipe } = await supabaseAdmin
+          .from('products')
+          .select('id, name, description, generated_description, recipe, manual_language_override, ai_generated_at, restaurant_id')
+          .in('id', productIds);
+        
+        if (errorWithoutRecipe) {
+          console.error('Error fetching products without has_recipe:', errorWithoutRecipe);
+          return [];
+        }
+        
+        // Add has_recipe as undefined for all products
+        const productsWithUndefinedRecipe = productsWithoutRecipe?.map(p => ({ ...p, has_recipe: undefined })) || [];
+        
+        // Determine primary language for fallback case
+        let fallbackPrimaryLanguage: SupportedLanguage = 'ro';
+        if (restaurantId && productsWithUndefinedRecipe.length > 0) {
+          const sampleNames = productsWithUndefinedRecipe.slice(0, 5).map(p => p.name);
+          const languageResult = getEffectiveLanguage(sampleNames.join(' '));
+          fallbackPrimaryLanguage = languageResult.language;
+        }
+        
+        return processProductsForGeneration(productsWithUndefinedRecipe, scenario, fallbackPrimaryLanguage);
+      }
       return [];
     }
 
@@ -197,56 +282,7 @@ export async function getProductsForGeneration(
       console.log('Detected primary language for restaurant:', primaryLanguage);
     }
 
-    const result = products
-      .map(product => {
-        let shouldGenerate = false;
-        let reason = '';
-
-        // Only process products that have recipes
-        if (!product.has_recipe) {
-          shouldGenerate = false;
-          reason = 'No recipe - skipping';
-        } else {
-          switch (scenario) {
-            case 'new':
-              // Always generate for new products with recipes
-              shouldGenerate = true;
-              reason = 'New product with recipe';
-              break;
-
-            case 'regenerate_all':
-              // Always regenerate for products with recipes to ensure consistency
-              // This ensures AI content is updated when product names or recipes change
-              shouldGenerate = true;
-              reason = 'Regenerate all - ensuring consistency';
-              break;
-
-            case 'recipe_edited':
-              // Only recalculate nutrition and allergens, skip description if unchanged
-              shouldGenerate = true;
-              reason = 'Recipe edited - nutrition update';
-              break;
-
-            case 'force':
-              // Force regeneration regardless of existing data
-              shouldGenerate = true;
-              reason = 'Force regeneration';
-              break;
-          }
-        }
-
-        if (shouldGenerate) {
-          return {
-            id: product.id,
-            name: product.name,
-            manual_language_override: product.manual_language_override || primaryLanguage,
-            reason
-          };
-        }
-        return null;
-      })
-      .filter((product): product is NonNullable<typeof product> => product !== null);
-
+    const result = processProductsForGeneration(products, scenario, primaryLanguage);
     console.log('getProductsForGeneration final result:', result);
     return result;
 
