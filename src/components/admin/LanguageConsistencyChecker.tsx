@@ -138,8 +138,8 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
         try {
           const requestPayload = {
             products: batch.map(p => ({
-              id: p.id,
-              name: p.name,
+              id: String(p.id).trim(), // Ensure ID is a string
+              name: String(p.name).trim(), // Ensure name is a string
               ...(analysis.recommendedLanguage && ['ro', 'en'].includes(analysis.recommendedLanguage) 
                 ? { manual_language_override: analysis.recommendedLanguage } 
                 : {})
