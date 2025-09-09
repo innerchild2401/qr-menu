@@ -145,7 +145,9 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
               products: batch.map(p => ({
                 id: p.id,
                 name: p.name,
-                manual_language_override: analysis.recommendedLanguage
+                ...(analysis.recommendedLanguage && ['ro', 'en'].includes(analysis.recommendedLanguage) 
+                  ? { manual_language_override: analysis.recommendedLanguage } 
+                  : {})
               })),
               scenario: 'force'
             })
