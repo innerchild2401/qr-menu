@@ -178,6 +178,7 @@ function processProductsForGeneration(
       let reason = '';
 
       // Only process products that have recipes (if has_recipe column exists)
+      // Skip only if explicitly set to false, allow null/undefined (default behavior)
       if (product.has_recipe === false) {
         shouldGenerate = false;
         reason = 'No recipe - skipping';
@@ -313,7 +314,10 @@ export async function generateSingleProductData(
   try {
     // 1. Check if product already has cached data
     const cachedData = await getCachedProductData(id);
-    if (cachedData && cachedData.generated_description) {
+    
+    // Only use cached data if the product name hasn't changed
+    // This ensures regeneration happens when name or recipe is updated
+    if (cachedData && cachedData.generated_description && cachedData.name === name) {
       return {
         id,
         language: cachedData.manual_language_override || 'ro',

@@ -67,6 +67,7 @@ export default function RecipeEditor({ product, onClose, onUpdate }: RecipeEdito
 
     setIsUpdating(true);
     try {
+      // First, save the recipe
       const response = await authenticatedApiCall(`/api/admin/products/${product.id}`, {
         method: 'PUT',
         headers: {
@@ -79,8 +80,32 @@ export default function RecipeEditor({ product, onClose, onUpdate }: RecipeEdito
       });
 
       if (response.ok) {
-        onUpdate();
-        onClose();
+        // After saving recipe, automatically trigger AI regeneration
+        console.log('Recipe saved, triggering AI regeneration...');
+        
+        const regenerateResponse = await authenticatedApiCall('/api/generate-product-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            products: [{
+              id: product.id,
+              name: product.name
+            }],
+            scenario: 'force'
+          })
+        });
+
+        if (regenerateResponse.ok) {
+          onUpdate();
+          onClose();
+          alert('Recipe saved and AI content regenerated successfully!');
+        } else {
+          onUpdate();
+          onClose();
+          alert('Recipe saved, but AI regeneration failed. You can manually regenerate later.');
+        }
       } else {
         const errorData = await response.json();
         alert(`Failed to update recipe: ${errorData.error || 'Unknown error'}`);

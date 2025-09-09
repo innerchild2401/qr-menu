@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../../lib/supabase-server';
 import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
+import { generateBatchProductData } from '@/lib/ai/product-generator';
 
 export async function PUT(
   request: NextRequest,
@@ -36,7 +37,7 @@ export async function PUT(
     }
 
     // Parse request body
-    const { name, description, price, category_id, image_url, nutrition, is_frozen, is_vegetarian, is_spicy } = await request.json();
+    const { name, description, price, category_id, image_url, nutrition, is_frozen, is_vegetarian, is_spicy, recipe, has_recipe } = await request.json();
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -55,6 +56,27 @@ export async function PUT(
 
     const { id } = await params;
 
+    // Get current product data to detect changes
+    const { data: currentProduct, error: fetchError } = await supabaseAdmin
+      .from('products')
+      .select('name, recipe, has_recipe, generated_description')
+      .eq('id', id)
+      .eq('restaurant_id', restaurant.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching current product:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch current product data' },
+        { status: 500 }
+      );
+    }
+
+    // Detect if name or recipe has changed (triggers AI regeneration)
+    const nameChanged = currentProduct.name !== name.trim();
+    const recipeChanged = JSON.stringify(currentProduct.recipe) !== JSON.stringify(recipe);
+    const shouldRegenerateAI = (nameChanged || recipeChanged) && has_recipe;
+
     // Update product
     const { data: updatedProduct, error: updateError } = await supabaseAdmin
       .from('products')
@@ -67,7 +89,9 @@ export async function PUT(
         nutrition: nutrition || null,
         is_frozen: is_frozen || false,
         is_vegetarian: is_vegetarian || false,
-        is_spicy: is_spicy || false
+        is_spicy: is_spicy || false,
+        recipe: recipe || null,
+        has_recipe: has_recipe || false
       })
       .eq('id', id)
       .eq('restaurant_id', restaurant.id)
