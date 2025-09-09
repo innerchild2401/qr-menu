@@ -120,6 +120,8 @@ export async function cacheProductData(
   manualLanguageOverride?: SupportedLanguage
 ): Promise<boolean> {
   try {
+    console.log(`🗄️ cacheProductData called for product ${productId} with manualLanguageOverride:`, manualLanguageOverride);
+    
     const updateData = {
       generated_description: generatedData.description,
       recipe: generatedData.recipe,
@@ -129,6 +131,8 @@ export async function cacheProductData(
       ai_last_updated: new Date().toISOString(),
       ...(manualLanguageOverride && { manual_language_override: manualLanguageOverride }),
     };
+    
+    console.log(`🗄️ Database update data for product ${productId}:`, updateData);
 
     const { error } = await supabaseAdmin
       .from('products')

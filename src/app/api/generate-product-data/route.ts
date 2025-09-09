@@ -473,6 +473,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // 9. Generate product data with optimizations
+    console.log('About to generate products with inputs:', generationInputs.map(input => ({
+      id: input.id,
+      name: input.name,
+      manual_language_override: input.manual_language_override
+    })));
     const { results, summary } = await generateBatchProductData(generationInputs);
 
     // 10. Format response
