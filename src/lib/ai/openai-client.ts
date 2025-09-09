@@ -180,6 +180,13 @@ export async function generateProductData(
     ? `Generează date pentru produsul: "${request.name}"`
     : `Generate data for product: "${request.name}"`;
   
+  // Debug logging
+  console.log('🤖 GPT Generation Debug:');
+  console.log(`   Product: ${request.name}`);
+  console.log(`   Language: ${request.language}`);
+  console.log(`   Prompt: ${prompt}`);
+  console.log(`   System Prompt: ${PRODUCT_SYSTEM_PROMPT.substring(0, 100)}...`);
+  
   try {
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -205,6 +212,11 @@ export async function generateProductData(
     
     const result = await response.json();
     const content = result.choices[0]?.message?.content;
+    
+    // Debug logging
+    console.log('🤖 GPT Response Debug:');
+    console.log(`   Raw response: ${JSON.stringify(result, null, 2)}`);
+    console.log(`   Content: ${content}`);
     
     if (!content) {
       throw new Error('No content in OpenAI response');
