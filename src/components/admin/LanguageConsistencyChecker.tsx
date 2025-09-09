@@ -33,13 +33,8 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Re-analyze when products change (after regeneration)
-  useEffect(() => {
-    if (analysis && products.length > 0) {
-      console.log('🔄 Products updated, re-analyzing language consistency...');
-      analyzeLanguageConsistency();
-    }
-  }, [products]);
+  // Note: We don't auto-re-analyze after regeneration to avoid infinite loops
+  // Users need to manually click "Check Consistency" again to see updated results
 
   const analyzeLanguageConsistency = async () => {
     setIsAnalyzing(true);
@@ -54,7 +49,8 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
         productsWithDescriptions: productsWithDescriptions.length,
         sampleDescriptions: productsWithDescriptions.slice(0, 3).map(p => ({
           name: p.name,
-          description: p.generated_description?.substring(0, 100) + '...'
+          description: p.generated_description?.substring(0, 100) + '...',
+          manual_language_override: p.manual_language_override
         }))
       });
 
@@ -89,6 +85,17 @@ export default function LanguageConsistencyChecker({ products, onUpdate }: Langu
         } else if (descriptionLanguage !== primaryLanguage) {
           inconsistentProducts.push(product);
         }
+      });
+
+      console.log('Language analysis results:', {
+        languageBreakdown,
+        inconsistentProductsCount: inconsistentProducts.length,
+        inconsistentProducts: inconsistentProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          manual_language_override: p.manual_language_override
+        })),
+        recommendedLanguage: primaryLanguage
       });
 
       setAnalysis({
