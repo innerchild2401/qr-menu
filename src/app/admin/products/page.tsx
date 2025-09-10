@@ -109,6 +109,15 @@ export default function AdminProducts() {
         const sampleProducts = productsData.products?.slice(0, 3) || [];
         sampleProducts.forEach((p: Product, i: number) => {
           console.log(`  ${i + 1}. ${p.name}: has_description=${!!p.generated_description}`);
+          if (p.id === '349' || p.id === '349') {
+            console.log(`  🔍 DETAILED CHECK for Classic CheeseBurger (ID: ${p.id}):`, {
+              id: p.id,
+              name: p.name,
+              generated_description: p.generated_description,
+              ai_last_updated: p.ai_last_updated,
+              manual_language_override: p.manual_language_override
+            });
+          }
         });
         setProducts(productsData.products || []);
       } else {

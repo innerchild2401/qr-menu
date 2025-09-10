@@ -71,12 +71,13 @@ For each food or cocktail, generate:
 3. Nutritional values per portion: calories, protein, carbs, fat (in grams except calories)
 4. List potential allergen-containing ingredients
 
-IMPORTANT:
+CRITICAL LANGUAGE REQUIREMENTS:
 - Return ONLY valid JSON, no other text
-- Use the exact language requested (Romanian or English)
-- For cocktails, include all liquid and garnish ingredients
-- Nutritional values should be realistic for a typical serving
-- Include ingredient names that might contain common allergens
+- ALL content must be in the requested language (Romanian or English)
+- Description, ingredient names, and allergen names must ALL be in the requested language
+- Do NOT mix languages - use only the requested language throughout
+- For Romanian: use Romanian ingredient names (e.g., "Chiflă" not "Bun", "Carne de vită" not "Beef")
+- For English: use English ingredient names (e.g., "Beef" not "Carne de vită")
 
 Example Romanian response:
 {
@@ -176,9 +177,10 @@ export async function generateProductData(
     };
   }
   
+  const timestamp = new Date().toISOString();
   const prompt = request.language === 'ro' 
-    ? `Generează date pentru produsul: "${request.name}"`
-    : `Generate data for product: "${request.name}"`;
+    ? `Generează date pentru produsul: "${request.name}" în limba română. Toate răspunsurile trebuie să fie în română, inclusiv descrierea, ingredientele și alerganii. Timestamp: ${timestamp}`
+    : `Generate data for product: "${request.name}" in English. All responses must be in English, including description, ingredients, and allergens. Timestamp: ${timestamp}`;
   
   // Debug logging
   console.log('🤖 GPT Generation Debug:');
@@ -186,6 +188,15 @@ export async function generateProductData(
   console.log(`   Language: ${request.language}`);
   console.log(`   Prompt: ${prompt}`);
   console.log(`   System Prompt: ${PRODUCT_SYSTEM_PROMPT.substring(0, 100)}...`);
+  console.log(`   Request body:`, JSON.stringify({
+    model: MODEL,
+    messages: [
+      { role: 'system', content: PRODUCT_SYSTEM_PROMPT },
+      { role: 'user', content: prompt }
+    ],
+    max_tokens: MAX_TOKENS,
+    temperature: 0.7,
+  }, null, 2));
   
   try {
     const response = await fetch(OPENAI_API_URL, {
