@@ -142,10 +142,31 @@ export async function cacheProductData(
 
     if (error) {
       console.error('❌ Error caching product data:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      return false;
+    }
+
+    if (!data || data.length === 0) {
+      console.error('❌ No data returned from update - product may not exist or update failed');
       return false;
     }
 
     console.log(`✅ Database update successful for product ${productId}:`, data);
+    
+    // Verify the update actually worked by checking the returned data
+    const updatedProduct = data[0];
+    if (!updatedProduct.generated_description || updatedProduct.generated_description !== updateData.generated_description) {
+      console.error('❌ Database update verification failed - description not updated correctly');
+      console.error('❌ Expected:', updateData.generated_description);
+      console.error('❌ Actual:', updatedProduct.generated_description);
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error('Error in cacheProductData:', error);

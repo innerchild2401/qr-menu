@@ -234,6 +234,11 @@ export default function AdminProducts() {
             error: data.results[0].error
           });
         }
+        
+        // Add a small delay to ensure database changes are propagated
+        console.log('⏳ Waiting 2 seconds before reloading data to ensure database propagation...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         await loadData(); // Reload products to show updated data
         alert(`Product "${product.name}" successfully regenerated with AI data!`);
       } else {

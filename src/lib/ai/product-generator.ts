@@ -437,6 +437,29 @@ export async function generateSingleProductData(
         description: verificationData?.generated_description,
         lastUpdated: verificationData?.ai_last_updated
       });
+      
+      // Also do a direct database query to double-check
+      console.log(`🔍 FORCE REGENERATION: Direct database check for ${name}...`);
+      try {
+        const { data: directCheck, error: directError } = await supabaseAdmin
+          .from('products')
+          .select('id, generated_description, ai_last_updated')
+          .eq('id', id)
+          .single();
+        
+        if (directError) {
+          console.error(`❌ Direct database check failed for ${name}:`, directError);
+        } else {
+          console.log(`🔍 FORCE REGENERATION: Direct database result for ${name}:`, {
+            id: directCheck?.id,
+            hasDescription: !!directCheck?.generated_description,
+            description: directCheck?.generated_description,
+            lastUpdated: directCheck?.ai_last_updated
+          });
+        }
+      } catch (error) {
+        console.error(`❌ Direct database check error for ${name}:`, error);
+      }
     }
 
     // 8. Log the GPT call
