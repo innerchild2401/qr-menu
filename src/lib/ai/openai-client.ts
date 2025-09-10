@@ -178,9 +178,10 @@ export async function generateProductData(
   }
   
   const timestamp = new Date().toISOString();
+  const randomId = Math.random().toString(36).substring(7);
   const prompt = request.language === 'ro' 
-    ? `Generează date pentru produsul: "${request.name}" în limba română. Toate răspunsurile trebuie să fie în română, inclusiv descrierea, ingredientele și alerganii. Timestamp: ${timestamp}`
-    : `Generate data for product: "${request.name}" in English. All responses must be in English, including description, ingredients, and allergens. Timestamp: ${timestamp}`;
+    ? `Generează date pentru produsul: "${request.name}" în limba română. Toate răspunsurile trebuie să fie în română, inclusiv descrierea, ingredientele și alerganii. Timestamp: ${timestamp} | Request ID: ${randomId}`
+    : `Generate data for product: "${request.name}" in English. All responses must be in English, including description, ingredients, and allergens. Timestamp: ${timestamp} | Request ID: ${randomId}`;
   
   // Debug logging
   console.log('🤖 GPT Generation Debug:');
@@ -197,6 +198,8 @@ export async function generateProductData(
     max_tokens: MAX_TOKENS,
     temperature: 0.7,
   }, null, 2));
+  console.log(`   Unique request ID: ${randomId}`);
+  console.log(`   Timestamp: ${timestamp}`);
   
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -228,6 +231,10 @@ export async function generateProductData(
     console.log('🤖 GPT Response Debug:');
     console.log(`   Raw response: ${JSON.stringify(result, null, 2)}`);
     console.log(`   Content: ${content}`);
+    console.log(`   Response ID: ${result.id}`);
+    console.log(`   Response created: ${result.created}`);
+    console.log(`   Description: "${JSON.parse(content).description}"`);
+    console.log(`   Description length: ${JSON.parse(content).description?.length || 0}`);
     
     if (!content) {
       throw new Error('No content in OpenAI response');

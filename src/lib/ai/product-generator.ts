@@ -479,6 +479,7 @@ export async function generateSingleProductData(
       recipe: generatedData.recipe,
       nutritional_values: enhancedNutrition,
       allergens: allergenCodes,
+      cached: false, // Force regeneration always returns false
       processing_time_ms: Date.now() - startTime,
       cost_estimate: usage.estimated_cost_usd,
     };
