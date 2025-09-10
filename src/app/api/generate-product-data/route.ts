@@ -38,6 +38,7 @@ interface RequestBody {
   }>;
   scenario?: 'new' | 'regenerate_all' | 'recipe_edited' | 'force';
   respect_cost_limits?: boolean;
+  regenerationMode?: 'description' | 'recipe';
 }
 
 interface ApiResponse {
@@ -486,7 +487,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     console.log('🔥 Generation inputs count:', generationInputs.length);
     console.log('🔥 First input:', generationInputs[0]);
     console.log('🔥 Timestamp:', new Date().toISOString());
-    const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration, restaurant.menu_language as 'ro' | 'en' | undefined);
+    const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration, restaurant.menu_language as 'ro' | 'en' | undefined, requestData?.regenerationMode);
 
     // 10. Format response
     const responseResults = results.map(result => ({

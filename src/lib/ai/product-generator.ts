@@ -300,7 +300,8 @@ export async function getProductsForGeneration(
 export async function generateSingleProductData(
   input: ProductGenerationInput,
   forceRegeneration: boolean = false,
-  restaurantMenuLanguage?: SupportedLanguage
+  restaurantMenuLanguage?: SupportedLanguage,
+  regenerationMode?: 'description' | 'recipe'
 ): Promise<ProductGenerationOutput> {
   const startTime = Date.now();
   const { id, name, manual_language_override, restaurant_id } = input;
@@ -370,11 +371,30 @@ export async function generateSingleProductData(
       return emptyResult;
     }
 
-    // 5. Generate product data using OpenAI with retry logic
+    // 5. Fetch existing recipe if in description-only mode
+    let existingRecipe: Array<{ ingredient: string; quantity: string }> | undefined;
+    if (regenerationMode === 'description') {
+      try {
+        const cachedData = await getCachedProductData(id);
+        if (cachedData?.recipe && Array.isArray(cachedData.recipe)) {
+          existingRecipe = cachedData.recipe;
+          console.log(`📋 Using existing recipe for description-only regeneration:`, existingRecipe);
+        } else {
+          console.log(`⚠️ No existing recipe found for description-only regeneration, falling back to full generation`);
+        }
+      } catch (error) {
+        console.error('Error fetching existing recipe:', error);
+        console.log(`⚠️ Error fetching existing recipe, falling back to full generation`);
+      }
+    }
+
+    // 6. Generate product data using OpenAI with retry logic
     const request: ProductGenerationRequest = {
       name,
       language: effectiveLanguage,
       restaurant_id,
+      regenerationMode,
+      existingRecipe,
     };
 
     console.log(`🔥 FORCE REGENERATION: Making API call for ${name} with request:`, request);
@@ -406,11 +426,19 @@ export async function generateSingleProductData(
       nutritional_values: enhancedNutrition,
     };
 
+    // If in description-only mode and we have an existing recipe, preserve it
+    if (regenerationMode === 'description' && existingRecipe) {
+      finalData.recipe = existingRecipe;
+      console.log(`📋 Preserving existing recipe for description-only regeneration:`, existingRecipe);
+    }
+
     console.log(`🔥 FORCE REGENERATION: Caching results for ${name}:`, {
       id,
       description: finalData.description,
       descriptionLength: finalData.description?.length || 0,
-      manualLanguageOverride: manual_language_override
+      manualLanguageOverride: manual_language_override,
+      regenerationMode,
+      recipePreserved: regenerationMode === 'description' && !!existingRecipe
     });
     const cacheResult = await cacheProductData(id, finalData, restaurant_id, manual_language_override);
     console.log(`🔥 FORCE REGENERATION: Cache result for ${name}:`, cacheResult);
@@ -508,7 +536,8 @@ export async function generateSingleProductData(
 export async function generateBatchProductData(
   inputs: ProductGenerationInput[],
   forceRegeneration: boolean = false,
-  restaurantMenuLanguage?: SupportedLanguage
+  restaurantMenuLanguage?: SupportedLanguage,
+  regenerationMode?: 'description' | 'recipe'
 ): Promise<BatchGenerationResult> {
   const startTime = Date.now();
   
@@ -558,7 +587,7 @@ export async function generateBatchProductData(
   for (const input of inputs) {
     if (!uncachedIds.has(input.id)) {
       try {
-        const cachedResult = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage);
+        const cachedResult = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage, regenerationMode);
         results.push(cachedResult);
         if (cachedResult.cached) {
           cachedCount++;
@@ -592,7 +621,7 @@ export async function generateBatchProductData(
     const batchPromises = batch.map(async (input) => {
       try {
         console.log(`🔥 BATCH: Calling generateSingleProductData for ${input.name} with forceRegeneration: ${forceRegeneration}`);
-        const result = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage);
+        const result = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage, regenerationMode);
         console.log(`🔥 BATCH: Result for ${input.name}:`, {
           id: result.id,
           cached: result.cached,

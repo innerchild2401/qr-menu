@@ -16,6 +16,11 @@ export interface ProductGenerationRequest {
   name: string;
   language: 'ro' | 'en';
   restaurant_id?: string;
+  regenerationMode?: 'description' | 'recipe';
+  existingRecipe?: Array<{
+    ingredient: string;
+    quantity: string;
+  }>;
 }
 
 export interface IngredientNutritionRequest {
@@ -81,6 +86,31 @@ CRITICAL LANGUAGE REQUIREMENTS:
 - Do NOT mix languages - use only the requested language throughout
 - For Romanian: use Romanian ingredient names (e.g., "Chiflă" not "Bun", "Carne de vită" not "Beef")
 - For English: use English ingredient names (e.g., "Beef" not "Carne de vită")
+
+Example Romanian response:
+{
+  "description": "Burger suculent cu piept de pui la grătar și legume proaspete",
+  "recipe": [
+    {"ingredient": "Piept de pui", "quantity": "150g"},
+    {"ingredient": "Chiflă", "quantity": "1 buc"}
+  ],
+  "nutritional_values": {"calories": 420, "protein": 28, "carbs": 32, "fat": 18},
+  "estimated_allergens": ["Chiflă", "Maioneză"]
+}`;
+
+const DESCRIPTION_ONLY_SYSTEM_PROMPT = `You are an expert food menu assistant for SmartMenu.
+You will be provided with an existing recipe and must:
+1. Generate a NEW, engaging description in the requested language (max 150 characters)
+2. Recalculate nutritional values based on the EXACT ingredients provided
+3. List potential allergen-containing ingredients from the provided recipe
+
+CRITICAL REQUIREMENTS:
+- Return ONLY valid JSON, no other text
+- Do NOT modify the recipe - use the provided ingredients exactly as-is
+- ALL content must be in the requested language (Romanian or English)
+- Description and allergen names must be in the requested language
+- For Romanian: use Romanian ingredient names
+- For English: use English ingredient names
 
 Example Romanian response:
 {
@@ -182,21 +212,39 @@ export async function generateProductData(
   
   const timestamp = new Date().toISOString();
   const randomId = Math.random().toString(36).substring(7);
-  const prompt = request.language === 'ro' 
-    ? `Generează date pentru produsul: "${request.name}" în limba română. Toate răspunsurile trebuie să fie în română, inclusiv descrierea, ingredientele și alerganii. Timestamp: ${timestamp} | Request ID: ${randomId}`
-    : `Generate data for product: "${request.name}" in English. All responses must be in English, including description, ingredients, and allergens. Timestamp: ${timestamp} | Request ID: ${randomId}`;
+  
+  // Determine which system prompt and user prompt to use based on regeneration mode
+  let systemPrompt: string;
+  let userPrompt: string;
+  
+  if (request.regenerationMode === 'description' && request.existingRecipe) {
+    // Description-only mode: use existing recipe
+    systemPrompt = DESCRIPTION_ONLY_SYSTEM_PROMPT;
+    const recipeText = request.existingRecipe.map(ing => `${ing.ingredient}: ${ing.quantity}`).join(', ');
+    userPrompt = request.language === 'ro' 
+      ? `Generează o descriere nouă și valorile nutriționale pentru produsul: "${request.name}" folosind EXACT această rețetă: ${recipeText}. Do NOT modifica rețeta. Folosește ingredientele exacte pentru a crea descrierea și datele nutriționale. Timestamp: ${timestamp} | Request ID: ${randomId}`
+      : `Generate a new description and nutritional values for product: "${request.name}" using EXACTLY this recipe: ${recipeText}. Do NOT modify the recipe. Use these exact ingredients to create the description and nutritional data. Timestamp: ${timestamp} | Request ID: ${randomId}`;
+  } else {
+    // Full generation mode: generate everything
+    systemPrompt = PRODUCT_SYSTEM_PROMPT;
+    userPrompt = request.language === 'ro' 
+      ? `Generează date pentru produsul: "${request.name}" în limba română. Toate răspunsurile trebuie să fie în română, inclusiv descrierea, ingredientele și alerganii. Timestamp: ${timestamp} | Request ID: ${randomId}`
+      : `Generate data for product: "${request.name}" in English. All responses must be in English, including description, ingredients, and allergens. Timestamp: ${timestamp} | Request ID: ${randomId}`;
+  }
   
   // Debug logging
   console.log('🤖 GPT Generation Debug:');
   console.log(`   Product: ${request.name}`);
   console.log(`   Language: ${request.language}`);
-  console.log(`   Prompt: ${prompt}`);
-  console.log(`   System Prompt: ${PRODUCT_SYSTEM_PROMPT.substring(0, 100)}...`);
+  console.log(`   Regeneration Mode: ${request.regenerationMode || 'full'}`);
+  console.log(`   Has Existing Recipe: ${!!request.existingRecipe}`);
+  console.log(`   Prompt: ${userPrompt}`);
+  console.log(`   System Prompt: ${systemPrompt.substring(0, 100)}...`);
   console.log(`   Request body:`, JSON.stringify({
     model: MODEL,
     messages: [
-      { role: 'system', content: PRODUCT_SYSTEM_PROMPT },
-      { role: 'user', content: prompt }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ],
     max_tokens: MAX_TOKENS,
     temperature: 0.7,
@@ -214,8 +262,8 @@ export async function generateProductData(
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: PRODUCT_SYSTEM_PROMPT },
-          { role: 'user', content: prompt }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
         max_tokens: MAX_TOKENS,
         temperature: 0.7,

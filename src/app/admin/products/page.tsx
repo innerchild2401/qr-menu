@@ -11,6 +11,7 @@ import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
 import NoRestaurantMessage from '../../../components/admin/NoRestaurantMessage';
 import RecipeTagManager from '../../../components/admin/RecipeTagManager';
+import RegenerationModeModal from '../../../components/admin/RegenerationModeModal';
 
 interface Product {
   id: string;
@@ -62,6 +63,8 @@ export default function AdminProducts() {
   const [regeneratingProductId, setRegeneratingProductId] = useState<string | null>(null);
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [showRecipeManager, setShowRecipeManager] = useState(false);
+  const [showRegenerationModal, setShowRegenerationModal] = useState(false);
+  const [selectedProductForRegeneration, setSelectedProductForRegeneration] = useState<Product | null>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -170,39 +173,49 @@ export default function AdminProducts() {
 
   // AI Regeneration Functions
   const handleRegenerate = async (product: Product) => {
+    // Validate product data before proceeding
+    if (!product) {
+      console.error('No product provided to handleRegenerate');
+      alert('Error: No product data available for regeneration');
+      return;
+    }
+
+    // Handle both string and number IDs from the database
+    if (!product.id || (typeof product.id !== 'string' && typeof product.id !== 'number')) {
+      console.error('Invalid product ID:', { id: product.id, type: typeof product.id });
+      alert('Error: Invalid product ID for regeneration');
+      return;
+    }
+
+    if (!product.name || typeof product.name !== 'string' || product.name.trim().length === 0) {
+      console.error('Invalid product name:', { name: product.name, type: typeof product.name });
+      alert('Error: Invalid product name for regeneration');
+      return;
+    }
+
+    // Show modal to let user choose regeneration mode
+    setSelectedProductForRegeneration(product);
+    setShowRegenerationModal(true);
+  };
+
+  const handleRegenerationModeSelected = async (mode: 'description' | 'recipe') => {
+    if (!selectedProductForRegeneration || !user) return;
+
+    const product = selectedProductForRegeneration;
+    console.log('Product for regeneration:', {
+      id: product.id,
+      name: product.name,
+      manual_language_override: product.manual_language_override,
+      mode: mode,
+      idType: typeof product.id,
+      nameType: typeof product.name
+    });
+
+    setIsRegenerating(true);
+    setRegeneratingProductId(product.id);
+    setShowRegenerationModal(false);
+
     try {
-      // Validate product data before proceeding
-      if (!product) {
-        console.error('No product provided to handleRegenerate');
-        alert('Error: No product data available for regeneration');
-        return;
-      }
-
-      // Handle both string and number IDs from the database
-      if (!product.id || (typeof product.id !== 'string' && typeof product.id !== 'number')) {
-        console.error('Invalid product ID:', { id: product.id, type: typeof product.id });
-        alert('Error: Invalid product ID for regeneration');
-        return;
-      }
-
-      if (!product.name || typeof product.name !== 'string' || product.name.trim().length === 0) {
-        console.error('Invalid product name:', { name: product.name, type: typeof product.name });
-        alert('Error: Invalid product name for regeneration');
-        return;
-      }
-
-      setIsRegenerating(true);
-      setRegeneratingProductId(product.id);
-
-      // Debug logging
-      console.log('Product for regeneration:', {
-        id: product.id,
-        name: product.name,
-        manual_language_override: product.manual_language_override,
-        idType: typeof product.id,
-        nameType: typeof product.name
-      });
-
       const requestPayload = {
         products: [{
           id: String(product.id).trim(), // Ensure it's a string and trimmed
@@ -212,7 +225,8 @@ export default function AdminProducts() {
             : {})
         }],
         scenario: 'force' as const,
-        respect_cost_limits: true
+        respect_cost_limits: true,
+        regenerationMode: mode
       };
 
       console.log('Request payload:', requestPayload);
@@ -259,6 +273,7 @@ export default function AdminProducts() {
     } finally {
       setIsRegenerating(false);
       setRegeneratingProductId(null);
+      setSelectedProductForRegeneration(null);
     }
   };
 
@@ -530,6 +545,19 @@ export default function AdminProducts() {
         />
       )}
 
+
+      {/* Regeneration Mode Modal */}
+      {showRegenerationModal && selectedProductForRegeneration && (
+        <RegenerationModeModal
+          isOpen={showRegenerationModal}
+          onClose={() => {
+            setShowRegenerationModal(false);
+            setSelectedProductForRegeneration(null);
+          }}
+          onSelectMode={handleRegenerationModeSelected}
+          productName={selectedProductForRegeneration.name}
+        />
+      )}
 
       {/* Products List */}
       <Card className={spacing.md}>
