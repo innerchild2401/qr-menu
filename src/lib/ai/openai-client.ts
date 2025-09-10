@@ -259,6 +259,12 @@ export async function generateProductData(
     userPrompt = request.language === 'ro' 
       ? `Generează o descriere nouă și valorile nutriționale pentru produsul: "${request.name}" folosind EXACT această rețetă: ${recipeText}. Do NOT modifica rețeta. Folosește ingredientele exacte pentru a crea descrierea și datele nutriționale. Timestamp: ${timestamp} | Request ID: ${randomId}`
       : `Generate a new description and nutritional values for product: "${request.name}" using EXACTLY this recipe: ${recipeText}. Do NOT modify the recipe. Use these exact ingredients to create the description and nutritional data. Timestamp: ${timestamp} | Request ID: ${randomId}`;
+    
+    // Update the request with normalized ingredients for the final data
+    request.existingRecipe = normalizedIngredients.map(ing => ({
+      ingredient: ing.normalized,
+      quantity: ing.quantity
+    }));
   } else {
     // Full generation mode: generate everything
     systemPrompt = PRODUCT_SYSTEM_PROMPT;
@@ -343,10 +349,15 @@ export async function generateProductData(
         console.log('🔧 Normalized recipe:', normalizedRecipe);
       }
       
+      // For description-only mode, use the normalized existing recipe
+      const finalRecipe = (request.regenerationMode === 'description' && request.existingRecipe) 
+        ? request.existingRecipe 
+        : normalizedRecipe;
+      
       generatedData = {
         language: request.language,
         description: parsed.description || '',
-        recipe: normalizedRecipe,
+        recipe: finalRecipe,
         nutritional_values: {
           calories: parsed.nutritional_values?.calories || 0,
           protein: parsed.nutritional_values?.protein || 0,
