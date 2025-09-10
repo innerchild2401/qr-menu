@@ -311,35 +311,40 @@ export async function getProductsForGeneration(
  * Generate data for a single product with full caching support
  */
 export async function generateSingleProductData(
-  input: ProductGenerationInput
+  input: ProductGenerationInput,
+  forceRegeneration: boolean = false
 ): Promise<ProductGenerationOutput> {
   const startTime = Date.now();
   const { id, name, manual_language_override, restaurant_id } = input;
 
   try {
-    // 1. Check if product already has cached data
-    const cachedData = await getCachedProductData(id);
-    
-    // Only use cached data if the product name and language override haven't changed
-    // This ensures regeneration happens when name, recipe, or language override is updated
-    if (cachedData && cachedData.generated_description && cachedData.name === name && 
-        cachedData.manual_language_override === manual_language_override) {
-      console.log(`📦 Using cached data for ${name} (language: ${cachedData.manual_language_override})`);
-      return {
-        id,
-        language: cachedData.manual_language_override || 'ro',
-        generated_description: cachedData.generated_description,
-        recipe: cachedData.recipe || [],
-        nutritional_values: cachedData.nutrition || {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-        allergens: cachedData.allergens || [],
-        cached: true,
-        processing_time_ms: Date.now() - startTime,
-      };
+    // 1. Check if product already has cached data (skip if force regeneration)
+    if (!forceRegeneration) {
+      const cachedData = await getCachedProductData(id);
+      
+      // Only use cached data if the product name and language override haven't changed
+      // This ensures regeneration happens when name, recipe, or language override is updated
+      if (cachedData && cachedData.generated_description && cachedData.name === name && 
+          cachedData.manual_language_override === manual_language_override) {
+        console.log(`📦 Using cached data for ${name} (language: ${cachedData.manual_language_override})`);
+        return {
+          id,
+          language: cachedData.manual_language_override || 'ro',
+          generated_description: cachedData.generated_description,
+          recipe: cachedData.recipe || [],
+          nutritional_values: cachedData.nutrition || {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          },
+          allergens: cachedData.allergens || [],
+          cached: true,
+          processing_time_ms: Date.now() - startTime,
+        };
+      }
+    } else {
+      console.log(`🔥 FORCE REGENERATION: Bypassing cache for ${name}`);
     }
 
     // 2. Check cost threshold first
@@ -514,7 +519,7 @@ export async function generateBatchProductData(
   for (const input of inputs) {
     if (!uncachedIds.has(input.id)) {
       try {
-        const cachedResult = await generateSingleProductData(input);
+        const cachedResult = await generateSingleProductData(input, forceRegeneration);
         results.push(cachedResult);
         if (cachedResult.cached) {
           cachedCount++;
@@ -547,7 +552,7 @@ export async function generateBatchProductData(
     
     const batchPromises = batch.map(async (input) => {
       try {
-        const result = await generateSingleProductData(input);
+        const result = await generateSingleProductData(input, forceRegeneration);
         if (result.error) {
           failedCount++;
         } else {
