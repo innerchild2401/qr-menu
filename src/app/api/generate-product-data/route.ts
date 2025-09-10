@@ -495,6 +495,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       recipe: result.recipe,
       nutritional_values: result.nutritional_values,
       allergens: result.allergens,
+      cached: result.cached,
+      processing_time_ms: result.processing_time_ms,
+      cost_estimate: result.cost_estimate,
       ...(result.error && { error: result.error })
     }));
 

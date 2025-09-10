@@ -566,7 +566,14 @@ export async function generateBatchProductData(
     
     const batchPromises = batch.map(async (input) => {
       try {
+        console.log(`🔥 BATCH: Calling generateSingleProductData for ${input.name} with forceRegeneration: ${forceRegeneration}`);
         const result = await generateSingleProductData(input, forceRegeneration);
+        console.log(`🔥 BATCH: Result for ${input.name}:`, {
+          id: result.id,
+          cached: result.cached,
+          hasDescription: !!result.generated_description,
+          error: result.error
+        });
         if (result.error) {
           failedCount++;
         } else {
@@ -575,6 +582,7 @@ export async function generateBatchProductData(
         }
         return result;
       } catch (error) {
+        console.error(`🔥 BATCH: Error for ${input.name}:`, error);
         failedCount++;
         return {
           id: input.id,
