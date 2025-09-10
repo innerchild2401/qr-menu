@@ -345,6 +345,7 @@ export async function generateSingleProductData(
       }
     } else {
       console.log(`🔥 FORCE REGENERATION: Bypassing cache for ${name}`);
+      console.log(`🔥 FORCE REGENERATION: Product ID: ${id}, Name: ${name}, Language Override: ${manual_language_override}`);
     }
 
     // 2. Check cost threshold first
@@ -388,8 +389,14 @@ export async function generateSingleProductData(
       restaurant_id,
     };
 
+    console.log(`🔥 FORCE REGENERATION: Making API call for ${name} with request:`, request);
     const { data: generatedData, usage } = await withRetry(async () => {
       return await generateProductData(request);
+    });
+    console.log(`🔥 FORCE REGENERATION: API call completed for ${name}, got data:`, {
+      hasDescription: !!generatedData.description,
+      descriptionLength: generatedData.description?.length || 0,
+      recipeLength: generatedData.recipe?.length || 0
     });
 
     // 6. Process ingredients for better nutrition data
@@ -411,7 +418,14 @@ export async function generateSingleProductData(
       nutritional_values: enhancedNutrition,
     };
 
-    await cacheProductData(id, finalData, restaurant_id, manual_language_override);
+    console.log(`🔥 FORCE REGENERATION: Caching results for ${name}:`, {
+      id,
+      description: finalData.description,
+      descriptionLength: finalData.description?.length || 0,
+      manualLanguageOverride: manual_language_override
+    });
+    const cacheResult = await cacheProductData(id, finalData, restaurant_id, manual_language_override);
+    console.log(`🔥 FORCE REGENERATION: Cache result for ${name}:`, cacheResult);
 
     // 8. Log the GPT call
     await logGPTCall(

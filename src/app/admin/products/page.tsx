@@ -223,6 +223,17 @@ export default function AdminProducts() {
       if (response.ok) {
         const data = await response.json();
         console.log('AI regeneration successful:', data);
+        console.log('Response results:', data.results);
+        console.log('Response summary:', data.summary);
+        if (data.results && data.results.length > 0) {
+          console.log('First result details:', {
+            id: data.results[0].id,
+            language: data.results[0].language,
+            description: data.results[0].generated_description,
+            cached: data.results[0].cached,
+            error: data.results[0].error
+          });
+        }
         await loadData(); // Reload products to show updated data
         alert(`Product "${product.name}" successfully regenerated with AI data!`);
       } else {
