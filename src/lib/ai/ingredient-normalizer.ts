@@ -53,8 +53,18 @@ export async function normalizeIngredients(
 3. Standardize quantity formats
 4. Categorize ingredients by type (meat, vegetable, spice, etc.)
 5. Suggest corrections for typos or unclear ingredient names
+6. FILTER OUT cooking mediums that are not consumed
 
-Rules:
+CRITICAL FILTERING RULES:
+- EXCLUDE cooking mediums like:
+  * Oil for frying (vegetable oil, olive oil, etc.)
+  * Water for boiling
+  * Cooking sprays
+  * Pan greasing materials
+- INCLUDE only consumable ingredients that are actually eaten
+- For fried items, estimate reasonable oil absorption (typically 10-20% of frying oil)
+
+Normalization Rules:
 - Use the most common, professional name for each ingredient
 - Group similar ingredients together (e.g., "tomato" and "tomatoes" should be normalized to the same name)
 - Standardize quantity formats (e.g., "1 cup" instead of "1c" or "one cup")

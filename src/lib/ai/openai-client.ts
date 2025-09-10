@@ -88,6 +88,28 @@ CRITICAL LANGUAGE REQUIREMENTS:
 - For Romanian: use Romanian ingredient names (e.g., "Chiflă" not "Bun", "Carne de vită" not "Beef")
 - For English: use English ingredient names (e.g., "Beef" not "Carne de vită")
 
+CRITICAL RECIPE REQUIREMENTS:
+- Include ONLY consumable ingredients that are actually eaten by the customer
+- NEVER include cooking mediums like:
+  * Oil for frying (vegetable oil, olive oil, etc.)
+  * Water for boiling
+  * Cooking sprays
+  * Pan greasing materials
+- NEVER include equipment, utensils, or cooking processes
+- Focus on the final assembled product, not the cooking process
+- For fried items, estimate reasonable oil absorption (typically 10-20% of frying oil)
+
+EXAMPLES OF WHAT TO INCLUDE:
+✅ Chicken breast, bread, lettuce, tomato, cheese, sauce
+✅ Flour, eggs, spices (if they become part of the final product)
+✅ Marinades, seasonings, condiments
+
+EXAMPLES OF WHAT TO EXCLUDE:
+❌ "Vegetable oil for frying"
+❌ "Water for boiling"
+❌ "Oil for cooking"
+❌ "Cooking spray"
+
 Example Romanian response:
 {
   "description": "Burger suculent cu piept de pui la grătar și legume proaspete",
@@ -112,6 +134,12 @@ CRITICAL REQUIREMENTS:
 - Description and allergen names must be in the requested language
 - For Romanian: use Romanian ingredient names
 - For English: use English ingredient names
+
+NUTRITIONAL CALCULATION NOTES:
+- Calculate based on the actual consumable ingredients only
+- If the recipe includes cooking mediums (oil for frying, water, etc.), exclude them from nutritional calculations
+- For fried items, estimate reasonable oil absorption (typically 10-20% of any frying oil)
+- Focus on ingredients that are actually consumed by the customer
 
 Example Romanian response:
 {
