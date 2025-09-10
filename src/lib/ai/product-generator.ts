@@ -426,6 +426,18 @@ export async function generateSingleProductData(
     });
     const cacheResult = await cacheProductData(id, finalData, restaurant_id, manual_language_override);
     console.log(`🔥 FORCE REGENERATION: Cache result for ${name}:`, cacheResult);
+    
+    // Verify the database update by reading back the data
+    if (cacheResult) {
+      console.log(`🔍 FORCE REGENERATION: Verifying database update for ${name}...`);
+      const verificationData = await getCachedProductData(id);
+      console.log(`🔍 FORCE REGENERATION: Verification result for ${name}:`, {
+        id: verificationData?.id,
+        hasDescription: !!verificationData?.generated_description,
+        description: verificationData?.generated_description,
+        lastUpdated: verificationData?.ai_last_updated
+      });
+    }
 
     // 8. Log the GPT call
     await logGPTCall(

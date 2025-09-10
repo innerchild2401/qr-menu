@@ -134,16 +134,18 @@ export async function cacheProductData(
     
     console.log(`🗄️ Database update data for product ${productId}:`, updateData);
 
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('products')
       .update(updateData)
-      .eq('id', productId);
+      .eq('id', productId)
+      .select('id, generated_description, ai_last_updated');
 
     if (error) {
-      console.error('Error caching product data:', error);
+      console.error('❌ Error caching product data:', error);
       return false;
     }
 
+    console.log(`✅ Database update successful for product ${productId}:`, data);
     return true;
   } catch (error) {
     console.error('Error in cacheProductData:', error);
