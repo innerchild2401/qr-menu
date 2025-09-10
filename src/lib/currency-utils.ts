@@ -19,6 +19,9 @@ export const formatCurrency = (amount: number, currency: Currency = 'RON'): stri
 // Language utilities for nutritional values
 export type NutritionLanguage = 'EN' | 'RO' | 'FR' | 'DE' | 'ES';
 
+// Language utilities for AI-generated menu content
+export type MenuLanguage = 'ro' | 'en';
+
 export const NUTRITION_LANGUAGES: { value: NutritionLanguage; label: string }[] = [
   { value: 'EN', label: 'English' },
   { value: 'RO', label: 'Română' },
@@ -73,3 +76,9 @@ export const NUTRITION_LABELS: Record<NutritionLanguage, Record<string, string>>
 export const getNutritionLabel = (key: string, language: NutritionLanguage = 'EN'): string => {
   return NUTRITION_LABELS[language]?.[key] || NUTRITION_LABELS.EN[key] || key;
 };
+
+// Menu language options for AI generation
+export const MENU_LANGUAGES: { value: MenuLanguage; label: string; description: string }[] = [
+  { value: 'ro', label: 'Română', description: 'AI will generate descriptions in Romanian' },
+  { value: 'en', label: 'English', description: 'AI will generate descriptions in English' }
+];

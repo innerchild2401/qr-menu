@@ -11,7 +11,6 @@ import ProductForm from '../../../components/admin/ProductForm';
 import ProductList from '../../../components/admin/ProductList';
 import NoRestaurantMessage from '../../../components/admin/NoRestaurantMessage';
 import RecipeTagManager from '../../../components/admin/RecipeTagManager';
-import LanguageConsistencyChecker from '../../../components/admin/LanguageConsistencyChecker';
 
 interface Product {
   id: string;
@@ -63,7 +62,6 @@ export default function AdminProducts() {
   const [regeneratingProductId, setRegeneratingProductId] = useState<string | null>(null);
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [showRecipeManager, setShowRecipeManager] = useState(false);
-  const [showLanguageChecker, setShowLanguageChecker] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -441,16 +439,6 @@ export default function AdminProducts() {
                 {showRecipeManager ? 'Hide Recipe Manager' : 'Manage Recipe Tags'}
               </Button>
 
-              <Button 
-                onClick={() => setShowLanguageChecker(!showLanguageChecker)}
-                variant="outline"
-                className="flex items-center justify-center bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
-                {showLanguageChecker ? 'Hide Language Checker' : 'Check Language Consistency'}
-              </Button>
 
               <Button 
                 onClick={handleRegenerateAll}
@@ -542,13 +530,6 @@ export default function AdminProducts() {
         />
       )}
 
-      {/* Language Consistency Checker */}
-      {showLanguageChecker && (
-        <LanguageConsistencyChecker
-          products={products}
-          onUpdate={loadData}
-        />
-      )}
 
       {/* Products List */}
       <Card className={spacing.md}>

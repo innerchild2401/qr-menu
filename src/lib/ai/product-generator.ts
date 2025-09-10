@@ -14,7 +14,6 @@ import {
 } from './openai-client';
 
 import { 
-  getEffectiveLanguage,
   type SupportedLanguage 
 } from './language-detector';
 
@@ -233,7 +232,8 @@ function processProductsForGeneration(
 export async function getProductsForGeneration(
   productIds: string[],
   scenario: 'new' | 'regenerate_all' | 'recipe_edited' | 'force',
-  restaurantId?: string
+  restaurantId?: string,
+  restaurantMenuLanguage?: SupportedLanguage
 ): Promise<Array<{ id: string; name: string; manual_language_override?: SupportedLanguage; reason: string }>> {
   try {
     console.log('getProductsForGeneration called with:', { productIds, scenario, restaurantId });
@@ -268,33 +268,17 @@ export async function getProductsForGeneration(
         // Add has_recipe as undefined for all products
         const productsWithUndefinedRecipe = productsWithoutRecipe?.map(p => ({ ...p, has_recipe: undefined })) || [];
         
-        // Determine primary language for fallback case
-        let fallbackPrimaryLanguage: SupportedLanguage = 'ro';
-        if (restaurantId && productsWithUndefinedRecipe.length > 0) {
-          const sampleNames = productsWithUndefinedRecipe.slice(0, 5).map(p => p.name);
-          const languageResult = getEffectiveLanguage(sampleNames.join(' '));
-          fallbackPrimaryLanguage = languageResult.language;
-        }
+        // Use restaurant menu language for fallback case
+        const fallbackPrimaryLanguage: SupportedLanguage = restaurantMenuLanguage || 'ro';
         
         return processProductsForGeneration(productsWithUndefinedRecipe, scenario, fallbackPrimaryLanguage);
       }
       return [];
     }
 
-    // Determine the primary language for the restaurant based on product names
-    let primaryLanguage: SupportedLanguage = 'ro'; // Default to Romanian
-    if (restaurantId && products.length > 0) {
-      try {
-        // Sample a few product names to determine the primary language
-        const sampleNames = products.slice(0, 5).map(p => p.name);
-        const languageResult = getEffectiveLanguage(sampleNames.join(' '));
-        primaryLanguage = languageResult.language;
-        console.log('Detected primary language for restaurant:', primaryLanguage);
-      } catch (languageError) {
-        console.error('Error in language detection:', languageError);
-        // Continue with default language
-      }
-    }
+    // Use restaurant menu language setting instead of detection
+    const primaryLanguage: SupportedLanguage = restaurantMenuLanguage || 'ro'; // Default to Romanian
+    console.log('Using restaurant menu language:', primaryLanguage);
 
     const result = processProductsForGeneration(products, scenario, primaryLanguage);
     console.log('getProductsForGeneration final result:', result);
@@ -315,7 +299,8 @@ export async function getProductsForGeneration(
  */
 export async function generateSingleProductData(
   input: ProductGenerationInput,
-  forceRegeneration: boolean = false
+  forceRegeneration: boolean = false,
+  restaurantMenuLanguage?: SupportedLanguage
 ): Promise<ProductGenerationOutput> {
   const startTime = Date.now();
   const { id, name, manual_language_override, restaurant_id } = input;
@@ -357,15 +342,15 @@ export async function generateSingleProductData(
       throw new Error(`Daily cost threshold exceeded for restaurant ${restaurant_id}`);
     }
 
-    // 3. Determine effective language
-    const { language } = getEffectiveLanguage(name, manual_language_override);
-    console.log(`🔄 Generating new data for ${name} (language: ${language}, manual_override: ${manual_language_override})`);
+    // 3. Determine effective language - use restaurant menu language as default
+    const effectiveLanguage = manual_language_override || restaurantMenuLanguage || 'ro';
+    console.log(`🔄 Generating new data for ${name} (language: ${effectiveLanguage}, manual_override: ${manual_language_override}, restaurant_menu_language: ${restaurantMenuLanguage})`);
 
     // 4. Check if it's a bottled drink (skip AI generation)
     if (isBottledDrinkEnhanced(name)) {
       const emptyResult: ProductGenerationOutput = {
         id,
-        language,
+        language: effectiveLanguage,
         generated_description: '',
         recipe: [],
         nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
@@ -375,7 +360,7 @@ export async function generateSingleProductData(
 
       // Cache the empty result
       await cacheProductData(id, {
-        language,
+        language: effectiveLanguage,
         description: '',
         recipe: [],
         nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
@@ -388,7 +373,7 @@ export async function generateSingleProductData(
     // 5. Generate product data using OpenAI with retry logic
     const request: ProductGenerationRequest = {
       name,
-      language,
+      language: effectiveLanguage,
       restaurant_id,
     };
 
@@ -406,13 +391,13 @@ export async function generateSingleProductData(
     const enhancedNutrition = await enhanceNutritionalData(
       generatedData.recipe,
       generatedData.nutritional_values,
-      language
+      effectiveLanguage
     );
 
     // 7. Map allergens
     const allergenCodes = await mapIngredientsToAllergens(
       generatedData.estimated_allergens,
-      language
+      effectiveLanguage
     );
 
     // 7. Cache the results
@@ -477,7 +462,7 @@ export async function generateSingleProductData(
 
     return {
       id,
-      language,
+      language: effectiveLanguage,
       generated_description: generatedData.description,
       recipe: generatedData.recipe,
       nutritional_values: enhancedNutrition,
@@ -522,7 +507,8 @@ export async function generateSingleProductData(
  */
 export async function generateBatchProductData(
   inputs: ProductGenerationInput[],
-  forceRegeneration: boolean = false
+  forceRegeneration: boolean = false,
+  restaurantMenuLanguage?: SupportedLanguage
 ): Promise<BatchGenerationResult> {
   const startTime = Date.now();
   
@@ -572,7 +558,7 @@ export async function generateBatchProductData(
   for (const input of inputs) {
     if (!uncachedIds.has(input.id)) {
       try {
-        const cachedResult = await generateSingleProductData(input, forceRegeneration);
+        const cachedResult = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage);
         results.push(cachedResult);
         if (cachedResult.cached) {
           cachedCount++;
@@ -606,7 +592,7 @@ export async function generateBatchProductData(
     const batchPromises = batch.map(async (input) => {
       try {
         console.log(`🔥 BATCH: Calling generateSingleProductData for ${input.name} with forceRegeneration: ${forceRegeneration}`);
-        const result = await generateSingleProductData(input, forceRegeneration);
+        const result = await generateSingleProductData(input, forceRegeneration, restaurantMenuLanguage);
         console.log(`🔥 BATCH: Result for ${input.name}:`, {
           id: result.id,
           cached: result.cached,

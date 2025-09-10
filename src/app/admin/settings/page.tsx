@@ -8,7 +8,7 @@ import { typography, spacing } from '@/lib/design-system';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PDFMenuGenerator from '../../../components/admin/PDFMenuGenerator';
-import { CURRENCIES, NUTRITION_LANGUAGES, type Currency, type NutritionLanguage } from '@/lib/currency-utils';
+import { CURRENCIES, NUTRITION_LANGUAGES, MENU_LANGUAGES, type Currency, type NutritionLanguage, type MenuLanguage } from '@/lib/currency-utils';
 
 interface Restaurant {
   id: string;
@@ -20,6 +20,7 @@ interface Restaurant {
   cover_url?: string;
   currency?: Currency;
   nutrition_language?: NutritionLanguage;
+  menu_language?: MenuLanguage;
   // Google Business Profile integration - TEMPORARILY DISABLED
   /*
   google_business_location_id?: string;
@@ -522,7 +523,7 @@ export default function AdminSettings() {
           Menu Settings
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Currency
@@ -545,6 +546,26 @@ export default function AdminSettings() {
           
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
+              Menu Language
+            </label>
+            <select
+              value={restaurant.menu_language || 'ro'}
+              onChange={(e) => handleInputChange('menu_language', e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+            >
+              {MENU_LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Language for AI-generated descriptions
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
               Nutrition Language
             </label>
             <select
@@ -561,6 +582,24 @@ export default function AdminSettings() {
             <p className="text-xs text-muted-foreground mt-1">
               Language for nutritional value labels
             </p>
+          </div>
+        </div>
+        
+        {/* Menu Language Information */}
+        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-start">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                AI Description Language
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                This setting determines the language that ChatGPT will use when generating product descriptions, recipes, and nutritional information. 
+                All AI-generated content will be created in the selected language, ensuring consistency across your menu.
+              </p>
+            </div>
           </div>
         </div>
       </Card>

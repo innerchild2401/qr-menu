@@ -128,7 +128,8 @@ async function getAuthenticatedUser(request: NextRequest) {
         restaurants!inner (
           id,
           name,
-          slug
+          slug,
+          menu_language
         )
       `)
       .eq('user_id', user.id)
@@ -365,7 +366,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       // Use intelligent filtering for "regenerate all"
       console.log('Using getProductsForGeneration for regenerate_all scenario');
       try {
-        productsToGenerate = await getProductsForGeneration(allProductIds, scenario, restaurant.id);
+        productsToGenerate = await getProductsForGeneration(allProductIds, scenario, restaurant.id, restaurant.menu_language as 'ro' | 'en' | undefined);
         console.log('getProductsForGeneration result:', productsToGenerate);
         
         if (!productsToGenerate || productsToGenerate.length === 0) {
@@ -485,7 +486,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     console.log('🔥 Generation inputs count:', generationInputs.length);
     console.log('🔥 First input:', generationInputs[0]);
     console.log('🔥 Timestamp:', new Date().toISOString());
-    const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration);
+    const { results, summary } = await generateBatchProductData(generationInputs, forceRegeneration, restaurant.menu_language as 'ro' | 'en' | undefined);
 
     // 10. Format response
     const responseResults = results.map(result => ({
