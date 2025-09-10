@@ -1,20 +1,25 @@
 /**
- * Ingredient Normalization using GPT 4o-mini
+ * Ingredient Normalization using GPT 4o-mini with Semantic Similarity
  * 
  * This utility normalizes ingredient names to ensure consistency in the database.
- * It uses GPT to standardize ingredient names, quantities, and detect duplicates.
+ * It uses semantic similarity to match against existing ingredients in the database.
  */
 
 import { env } from '@/lib/env';
+import { normalizeIngredientsSemantic } from './semantic-ingredient-normalizer';
 
+interface RecipeIngredient {
+  ingredient: string;
+  quantity: string;
+}
 
-interface NormalizedIngredient {
+export interface NormalizedIngredient {
   original: string;
   normalized: string;
   quantity: string;
   category?: string;
-  isDuplicate?: boolean;
-  duplicateOf?: string;
+  is_duplicate?: boolean;
+  suggestion?: string;
 }
 
 interface IngredientNormalizationResponse {
@@ -26,57 +31,81 @@ interface IngredientNormalizationResponse {
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 /**
- * Normalize ingredients using GPT 4o-mini
+ * Normalize ingredients using semantic similarity with existing database ingredients
+ * This is the main function that should be used for ingredient normalization
  */
 export async function normalizeIngredients(
-  ingredients: Array<{ ingredient: string; quantity: string }>,
-  language: 'ro' | 'en' = 'en'
+  ingredients: RecipeIngredient[],
+  language: 'ro' | 'en',
+  restaurantId?: string
 ): Promise<NormalizedIngredient[]> {
-  if (!env.OPENAI_API_KEY) {
-    console.warn('OpenAI API key not configured, returning original ingredients');
-    return ingredients.map(ing => ({
-      original: ing.ingredient,
-      normalized: ing.ingredient,
-      quantity: ing.quantity
+  // If restaurantId is provided, use semantic normalization
+  if (restaurantId) {
+    console.log('🔍 Using semantic ingredient normalization...');
+    const semanticResults = await normalizeIngredientsSemantic(ingredients, language, restaurantId);
+    
+    // Convert semantic results to the expected format
+    return semanticResults.map(result => ({
+      original: result.original,
+      normalized: result.normalized,
+      quantity: result.quantity,
+      category: undefined,
+      is_duplicate: result.confidence === 'low',
+      suggestion: result.confidence === 'low' ? 'No good match found' : undefined
     }));
   }
 
-  if (ingredients.length === 0) {
-    return [];
-  }
+  // Fallback to original GPT-based normalization
+  console.log('🔧 Using GPT-based ingredient normalization (fallback)...');
+  return normalizeIngredientsGPT(ingredients, language);
+}
 
+/**
+ * Original GPT-based ingredient normalization (fallback method)
+ */
+async function normalizeIngredientsGPT(
+  ingredients: RecipeIngredient[],
+  language: 'ro' | 'en'
+): Promise<NormalizedIngredient[]> {
   try {
-    const systemPrompt = `You are an expert food ingredient normalizer. Your task is to:
+    const systemPrompt = `You are an expert ingredient normalizer for a restaurant management system.
 
-1. Normalize ingredient names to their most common, standardized form
-2. Detect and identify duplicate ingredients (even with different spellings/variations)
-3. Standardize quantity formats
-4. Categorize ingredients by type (meat, vegetable, spice, etc.)
-5. Suggest corrections for typos or unclear ingredient names
-6. FILTER OUT cooking mediums that are not consumed
+Your task is to normalize ingredient names to ensure consistency in the database.
 
 CRITICAL FILTERING RULES:
-- EXCLUDE cooking mediums like:
-  * Oil for frying (vegetable oil, olive oil, etc.)
-  * Water for boiling
-  * Cooking sprays
-  * Pan greasing materials
-- INCLUDE only consumable ingredients that are actually eaten
-- For fried items, estimate reasonable oil absorption (typically 10-20% of frying oil)
+- EXCLUDE cooking mediums: oil for frying, water for boiling, cooking sprays, etc.
+- EXCLUDE non-consumable items: toothpicks, skewers, decorative elements
+- INCLUDE only ingredients that are actually consumed by the customer
+- For fried items, estimate reasonable oil absorption (typically 10-20% of any frying oil)
 
-Normalization Rules:
-- Use the most common, professional name for each ingredient
-- Group similar ingredients together (e.g., "tomato" and "tomatoes" should be normalized to the same name)
-- Standardize quantity formats (e.g., "1 cup" instead of "1c" or "one cup")
-- Be consistent with language: ${language === 'ro' ? 'Romanian' : 'English'}
-- Preserve the original ingredient name for reference
-- Mark duplicates clearly
+Normalization rules:
+1. Standardize ingredient names (e.g., "chifla burger" → "Chiflă")
+2. Use consistent language (Romanian or English as requested)
+3. Standardize quantities (e.g., "110 gr" → "110g")
+4. Detect and flag duplicates
+5. Categorize ingredients (meat, vegetable, dairy, etc.)
 
-Return a JSON array with normalized ingredients.`;
+Language: ${language === 'ro' ? 'Romanian' : 'English'}
 
-    const userPrompt = `Please normalize these ingredients:
+Return as JSON in this format:
+{
+  "normalized_ingredients": [
+    {
+      "original": "original ingredient name",
+      "normalized": "standardized ingredient name", 
+      "quantity": "standardized quantity",
+      "category": "ingredient category",
+      "isDuplicate": false,
+      "duplicateOf": null
+    }
+  ],
+  "duplicates_found": ["list of duplicate ingredient names"],
+  "suggestions": ["suggestions for improvement"]
+}`;
 
-${ingredients.map((ing, index) => `${index + 1}. ${ing.ingredient} (${ing.quantity})`).join('\n')}
+    const userPrompt = `Normalize these ingredients for a restaurant database:
+
+${ingredients.map(ing => `- ${ing.ingredient} (${ing.quantity})`).join('\n')}
 
 Language: ${language === 'ro' ? 'Romanian' : 'English'}
 
@@ -145,58 +174,4 @@ Return as JSON in this format:
       quantity: ing.quantity
     }));
   }
-}
-
-/**
- * Check if two ingredient names are likely the same
- */
-export function areIngredientsSimilar(ingredient1: string, ingredient2: string): boolean {
-  const normalize = (str: string) => str.toLowerCase().trim().replace(/[^\w\s]/g, '');
-  const norm1 = normalize(ingredient1);
-  const norm2 = normalize(ingredient2);
-  
-  // Exact match
-  if (norm1 === norm2) return true;
-  
-  // Check if one contains the other (for plurals, etc.)
-  if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
-  
-  // Check for common variations
-  const variations = [
-    ['tomato', 'tomatoes'],
-    ['onion', 'onions'],
-    ['garlic', 'garlic clove', 'garlic cloves'],
-    ['cheese', 'cheeses'],
-    ['pepper', 'peppers'],
-    ['salt', 'sea salt', 'table salt'],
-    ['oil', 'olive oil', 'vegetable oil'],
-    ['flour', 'all-purpose flour', 'plain flour'],
-    ['sugar', 'white sugar', 'granulated sugar']
-  ];
-  
-  for (const variation of variations) {
-    if (variation.includes(norm1) && variation.includes(norm2)) return true;
-  }
-  
-  return false;
-}
-
-/**
- * Get ingredient suggestions for a given ingredient name
- */
-export function getIngredientSuggestions(ingredient: string): string[] {
-  const suggestions: Record<string, string[]> = {
-    'tomato': ['tomatoes', 'cherry tomatoes', 'roma tomatoes'],
-    'onion': ['onions', 'red onion', 'yellow onion', 'white onion'],
-    'garlic': ['garlic clove', 'garlic cloves', 'minced garlic'],
-    'cheese': ['cheddar cheese', 'mozzarella', 'parmesan', 'swiss cheese'],
-    'pepper': ['bell pepper', 'red pepper', 'green pepper', 'black pepper'],
-    'salt': ['sea salt', 'table salt', 'kosher salt'],
-    'oil': ['olive oil', 'vegetable oil', 'coconut oil', 'canola oil'],
-    'flour': ['all-purpose flour', 'plain flour', 'bread flour', 'cake flour'],
-    'sugar': ['white sugar', 'granulated sugar', 'brown sugar', 'powdered sugar']
-  };
-  
-  const normalized = ingredient.toLowerCase().trim();
-  return suggestions[normalized] || [];
 }

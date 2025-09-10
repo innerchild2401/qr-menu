@@ -227,9 +227,24 @@ export default function ProductForm({
 
     setIsNormalizingIngredients(true);
     try {
+      // Get restaurant ID for semantic normalization
+      const response = await fetch('/api/admin/me/restaurant', {
+        headers: {
+          'x-user-id': user?.id || ''
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get restaurant information');
+      }
+      
+      const restaurantData = await response.json();
+      const restaurantId = restaurantData.restaurant?.id;
+      
       const normalizedIngredients = await normalizeIngredients(
         formData.recipe, 
-        formData.manual_language_override || 'en'
+        formData.manual_language_override || 'en',
+        restaurantId
       );
       
       const normalizedRecipe = normalizedIngredients.map(ing => ({

@@ -252,7 +252,7 @@ export async function generateProductData(
     
     // Normalize ingredients before using them
     console.log('🔧 Normalizing ingredients before processing...');
-    const normalizedIngredients = await normalizeIngredients(request.existingRecipe, request.language);
+    const normalizedIngredients = await normalizeIngredients(request.existingRecipe, request.language, request.restaurant_id);
     console.log('🔧 Normalized ingredients:', normalizedIngredients);
     
     const recipeText = normalizedIngredients.map(ing => `${ing.normalized}: ${ing.quantity}`).join(', ');
@@ -341,7 +341,7 @@ export async function generateProductData(
       let normalizedRecipe = parsed.recipe || [];
       if (normalizedRecipe.length > 0) {
         console.log('🔧 Normalizing generated recipe ingredients...');
-        const normalizedIngredients = await normalizeIngredients(normalizedRecipe, request.language);
+        const normalizedIngredients = await normalizeIngredients(normalizedRecipe, request.language, request.restaurant_id);
         normalizedRecipe = normalizedIngredients.map(ing => ({
           ingredient: ing.normalized,
           quantity: ing.quantity
