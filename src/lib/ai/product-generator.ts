@@ -1,6 +1,9 @@
 /**
  * Product Data Generator - Main Orchestrator
  * Combines OpenAI, language detection, and caching for optimal performance
+ * 
+ * IMPORTANT: See docs/gpt-prompt-uniqueness.md for critical information about
+ * GPT prompt uniqueness requirements and caching behavior.
  */
 
 import { 

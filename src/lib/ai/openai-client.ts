@@ -1,6 +1,9 @@
 /**
  * OpenAI GPT-4o-mini Integration for SmartMenu
  * Generates product descriptions, recipes, and nutritional data
+ * 
+ * IMPORTANT: See docs/gpt-prompt-uniqueness.md for critical information about
+ * GPT prompt uniqueness requirements and caching behavior.
  */
 
 import { env } from '../env';
