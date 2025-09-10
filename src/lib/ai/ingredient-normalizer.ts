@@ -125,7 +125,15 @@ Return as JSON in this format:
       throw new Error('No content in OpenAI response');
     }
 
-    const parsedResponse: IngredientNormalizationResponse = JSON.parse(content);
+    // Handle markdown-wrapped JSON responses
+    let jsonContent = content.trim();
+    if (jsonContent.startsWith('```json')) {
+      jsonContent = jsonContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (jsonContent.startsWith('```')) {
+      jsonContent = jsonContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    const parsedResponse: IngredientNormalizationResponse = JSON.parse(jsonContent);
     return parsedResponse.normalized_ingredients;
 
   } catch (error) {
