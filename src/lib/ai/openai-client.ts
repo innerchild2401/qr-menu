@@ -7,6 +7,7 @@
  */
 
 import { env } from '../env';
+import { normalizeIngredients } from './ingredient-normalizer';
 
 // =============================================================================
 // TYPES
@@ -220,7 +221,13 @@ export async function generateProductData(
   if (request.regenerationMode === 'description' && request.existingRecipe) {
     // Description-only mode: use existing recipe
     systemPrompt = DESCRIPTION_ONLY_SYSTEM_PROMPT;
-    const recipeText = request.existingRecipe.map(ing => `${ing.ingredient}: ${ing.quantity}`).join(', ');
+    
+    // Normalize ingredients before using them
+    console.log('🔧 Normalizing ingredients before processing...');
+    const normalizedIngredients = await normalizeIngredients(request.existingRecipe, request.language);
+    console.log('🔧 Normalized ingredients:', normalizedIngredients);
+    
+    const recipeText = normalizedIngredients.map(ing => `${ing.normalized}: ${ing.quantity}`).join(', ');
     userPrompt = request.language === 'ro' 
       ? `Generează o descriere nouă și valorile nutriționale pentru produsul: "${request.name}" folosind EXACT această rețetă: ${recipeText}. Do NOT modifica rețeta. Folosește ingredientele exacte pentru a crea descrierea și datele nutriționale. Timestamp: ${timestamp} | Request ID: ${randomId}`
       : `Generate a new description and nutritional values for product: "${request.name}" using EXACTLY this recipe: ${recipeText}. Do NOT modify the recipe. Use these exact ingredients to create the description and nutritional data. Timestamp: ${timestamp} | Request ID: ${randomId}`;
@@ -295,10 +302,23 @@ export async function generateProductData(
     let generatedData: GeneratedProductData;
     try {
       const parsed = JSON.parse(content);
+      
+      // Normalize generated recipe ingredients
+      let normalizedRecipe = parsed.recipe || [];
+      if (normalizedRecipe.length > 0) {
+        console.log('🔧 Normalizing generated recipe ingredients...');
+        const normalizedIngredients = await normalizeIngredients(normalizedRecipe, request.language);
+        normalizedRecipe = normalizedIngredients.map(ing => ({
+          ingredient: ing.normalized,
+          quantity: ing.quantity
+        }));
+        console.log('🔧 Normalized recipe:', normalizedRecipe);
+      }
+      
       generatedData = {
         language: request.language,
         description: parsed.description || '',
-        recipe: parsed.recipe || [],
+        recipe: normalizedRecipe,
         nutritional_values: {
           calories: parsed.nutritional_values?.calories || 0,
           protein: parsed.nutritional_values?.protein || 0,

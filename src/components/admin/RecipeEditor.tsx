@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface RecipeIngredient {
@@ -17,6 +16,7 @@ interface Product {
   name: string;
   recipe?: RecipeIngredient[];
   has_recipe?: boolean;
+  manual_language_override?: 'ro' | 'en';
 }
 
 interface RecipeEditorProps {
@@ -90,10 +90,13 @@ export default function RecipeEditor({ product, onClose, onUpdate }: RecipeEdito
           },
           body: JSON.stringify({
             products: [{
-              id: product.id,
-              name: product.name
+              id: product.id.toString(),
+              name: product.name,
+              manual_language_override: product.manual_language_override
             }],
-            scenario: 'force'
+            scenario: 'force',
+            respect_cost_limits: true,
+            regenerationMode: 'description' // Use description-only mode to preserve the edited recipe
           })
         });
 
@@ -132,10 +135,13 @@ export default function RecipeEditor({ product, onClose, onUpdate }: RecipeEdito
         },
         body: JSON.stringify({
           products: [{
-            id: product.id,
-            name: product.name
+            id: product.id.toString(),
+            name: product.name,
+            manual_language_override: product.manual_language_override
           }],
-          scenario: 'force'
+          scenario: 'force',
+          respect_cost_limits: true,
+          regenerationMode: 'description' // Use description-only mode to preserve the edited recipe
         })
       });
 

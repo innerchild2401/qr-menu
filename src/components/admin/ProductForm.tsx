@@ -5,7 +5,8 @@ import { authenticatedApiCallWithBody } from '../../../lib/api-helpers';
 // import { generateDescription } from '../../lib/ai/generateDescription'; // Removed - using new AI system
 import { typography, spacing } from '@/lib/design-system';
 import { Button } from '@/components/ui/button';
-import { Snowflake, Leaf, Flame } from 'lucide-react';
+import { Snowflake, Leaf, Flame, Wand2 } from 'lucide-react';
+import { normalizeIngredients } from '@/lib/ai/ingredient-normalizer';
 
 interface Product {
   id: string;
@@ -88,6 +89,7 @@ export default function ProductForm({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [aiDescription, setAiDescription] = useState<string>('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isNormalizingIngredients, setIsNormalizingIngredients] = useState(false);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -217,6 +219,34 @@ export default function ProductForm({
     setIsGeneratingAI(false);
   };
 
+  const handleNormalizeIngredients = async () => {
+    if (formData.recipe.length === 0) {
+      alert('No ingredients to normalize');
+      return;
+    }
+
+    setIsNormalizingIngredients(true);
+    try {
+      const normalizedIngredients = await normalizeIngredients(
+        formData.recipe, 
+        formData.manual_language_override || 'en'
+      );
+      
+      const normalizedRecipe = normalizedIngredients.map(ing => ({
+        ingredient: ing.normalized,
+        quantity: ing.quantity
+      }));
+      
+      setFormData({ ...formData, recipe: normalizedRecipe });
+      alert('Ingredients normalized successfully!');
+    } catch (error) {
+      console.error('Error normalizing ingredients:', error);
+      alert('Failed to normalize ingredients. Please try again.');
+    } finally {
+      setIsNormalizingIngredients(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -260,7 +290,8 @@ export default function ProductForm({
         // AI-generated fields
         generated_description: formData.generated_description || null,
         recipe: formData.recipe.length > 0 ? formData.recipe : null,
-        allergens: formData.allergens.length > 0 ? formData.allergens : null
+        allergens: formData.allergens.length > 0 ? formData.allergens : null,
+        has_recipe: formData.recipe.length > 0
       };
 
       const response = await authenticatedApiCallWithBody(url, submitData, {
@@ -487,13 +518,46 @@ export default function ProductForm({
             )}
 
             {/* Recipe */}
-            {formData.recipe.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-foreground">
                   Recipe Ingredients
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-lg p-3">
-                  {formData.recipe.map((item, index) => (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNormalizeIngredients}
+                    disabled={isNormalizingIngredients || formData.recipe.length === 0}
+                    className="text-xs"
+                  >
+                    <Wand2 className="w-3 h-3 mr-1" />
+                    {isNormalizingIngredients ? 'Normalizing...' : 'Normalize'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFormData({ 
+                        ...formData, 
+                        recipe: [...formData.recipe, { ingredient: '', quantity: '' }] 
+                      });
+                    }}
+                    className="text-xs"
+                  >
+                    + Add Ingredient
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-lg p-3">
+                {formData.recipe.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No ingredients added yet. Click &ldquo;Add Ingredient&rdquo; to start building the recipe.
+                  </p>
+                ) : (
+                  formData.recipe.map((item, index) => (
                     <div key={index} className="flex gap-2 items-center">
                       <input
                         type="text"
@@ -504,7 +568,7 @@ export default function ProductForm({
                           setFormData({ ...formData, recipe: newRecipe });
                         }}
                         className="flex-1 px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-ring focus:border-transparent bg-background text-foreground"
-                        placeholder="Ingredient"
+                        placeholder="Ingredient name"
                       />
                       <input
                         type="text"
@@ -514,8 +578,8 @@ export default function ProductForm({
                           newRecipe[index] = { ...item, quantity: e.target.value };
                           setFormData({ ...formData, recipe: newRecipe });
                         }}
-                        className="w-20 px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-ring focus:border-transparent bg-background text-foreground"
-                        placeholder="Qty"
+                        className="w-24 px-2 py-1 text-sm border border-input rounded focus:ring-1 focus:ring-ring focus:border-transparent bg-background text-foreground"
+                        placeholder="Quantity"
                       />
                       <button
                         type="button"
@@ -523,15 +587,21 @@ export default function ProductForm({
                           const newRecipe = formData.recipe.filter((_, i) => i !== index);
                           setFormData({ ...formData, recipe: newRecipe });
                         }}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        className="text-red-500 hover:text-red-700 text-sm px-2 py-1 hover:bg-red-50 rounded"
+                        title="Remove ingredient"
                       >
                         ×
                       </button>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-            )}
+              {formData.recipe.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Recipe will be used for AI-generated nutritional values and descriptions.
+                </p>
+              )}
+            </div>
 
             {/* Allergens */}
             {formData.allergens.length > 0 && (

@@ -145,7 +145,7 @@ export default function RecipeTagManager({ products, categories, onUpdate }: Rec
             Recipe Tag Management
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Mark products that have recipes for AI description generation
+            Bulk manage which products have recipes. Products with recipes will use their specific ingredients for AI generation instead of inferring from the product name.
           </p>
         </div>
         <div className="flex items-center space-x-4">
