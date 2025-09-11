@@ -19,14 +19,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing user ID' }, { status: 401 });
     }
 
-    // Get the user's restaurant
+    // First, try to find restaurant through user_restaurants table
     const { data: userRestaurant, error: userRestaurantError } = await supabase
       .from('user_restaurants')
       .select('restaurant_id')
       .eq('user_id', userId)
       .single();
 
-    if (userRestaurantError || !userRestaurant) {
+    let restaurantId = null;
+
+    if (userRestaurant && userRestaurant.restaurant_id) {
+      restaurantId = userRestaurant.restaurant_id;
+    } else {
+      // Fallback: try to find restaurant by owner_id
+      const { data: ownerRestaurant, error: ownerError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (ownerRestaurant && ownerRestaurant.id) {
+        restaurantId = ownerRestaurant.id;
+      }
+    }
+
+    if (!restaurantId) {
       return NextResponse.json({ error: 'No restaurant found for user' }, { status: 404 });
     }
 
@@ -34,7 +53,7 @@ export async function GET(request: NextRequest) {
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .select('*')
-      .eq('id', userRestaurant.restaurant_id)
+      .eq('id', restaurantId)
       .single();
 
     if (restaurantError || !restaurant) {

@@ -120,10 +120,10 @@ export default function AdminSettings() {
       
       if (response.ok) {
         const data = await response.json();
-        if (data.restaurant) {
-          setRestaurant(data.restaurant);
-          setLogoPreview(data.restaurant.logo_url || '');
-          setCoverPreview(data.restaurant.cover_url || '');
+        if (data.success && data.data) {
+          setRestaurant(data.data);
+          setLogoPreview(data.data.logo_url || '');
+          setCoverPreview(data.data.cover_url || '');
           setHasRestaurant(true);
         } else {
           setHasRestaurant(false);

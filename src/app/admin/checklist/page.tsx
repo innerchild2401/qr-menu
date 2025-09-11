@@ -39,10 +39,10 @@ export default function AdminChecklist() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
           const data = await response.json();
-          if (!data.restaurant) {
+          if (!data.success || !data.data) {
             throw new Error('Restaurant data not found');
           }
-          return `Restaurant: ${data.restaurant.name}`;
+          return `Restaurant: ${data.data.name}`;
         }
       },
       {
@@ -122,7 +122,7 @@ export default function AdminChecklist() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
           const data = await response.json();
-          if (!data.restaurant || !data.categories || !data.products) {
+          if (!data.success || !data.data || !data.categories || !data.products) {
             throw new Error('Invalid menu response structure');
           }
           return `Menu API: ${data.products.length} products in ${data.categories.length} categories`;

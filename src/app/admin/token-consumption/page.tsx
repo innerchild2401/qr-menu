@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { typography } from '@/lib/design-system';
 import { authenticatedApiCall } from '@/lib/api-helpers';
+import { supabase } from '@/lib/auth-supabase';
 
 interface TokenConsumption {
   id: string;
@@ -72,19 +73,21 @@ export default function TokenConsumptionPage() {
   useEffect(() => {
     const checkAuthorization = async () => {
       try {
-        const response = await authenticatedApiCall('/api/admin/me/restaurant');
-        const data = await response.json();
+        // Get user session to check email
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (data.success && data.data) {
-          // Check if user is authorized (afilip.mme@gmail.com)
-          const isAdmin = data.data.email === 'afilip.mme@gmail.com';
-          setIsAuthorized(isAdmin);
-          
-          if (isAdmin) {
-            await loadData();
-          }
-        } else {
+        if (!session?.user) {
           setIsAuthorized(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user is authorized (afilip.mme@gmail.com)
+        const isAdmin = session.user.email === 'afilip.mme@gmail.com';
+        setIsAuthorized(isAdmin);
+        
+        if (isAdmin) {
+          await loadData();
         }
       } catch (error) {
         console.error('Authorization check failed:', error);
