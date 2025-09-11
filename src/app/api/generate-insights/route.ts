@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       .from('products')
       .select('*')
       .eq('restaurant_id', restaurantId)
-      .eq('is_visible', true)
+      .eq('available', true)
       .order('sort_order');
 
     // Prepare context for GPT
