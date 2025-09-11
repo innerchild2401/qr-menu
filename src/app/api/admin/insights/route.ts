@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,29 +17,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user authentication
-    const cookieStore = await cookies();
-    const token = cookieStore.get('sb-access-token')?.value;
+    // Check authentication
+    const userId = request.headers.get('x-user-id');
+    const authHeader = request.headers.get('authorization');
     
-    if (!token) {
+    if (!userId || !authHeader) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Verify restaurant ownership
-    const { data: restaurant, error: restaurantError } = await supabase
-      .from('restaurants')
-      .select('id, user_id')
-      .eq('id', restaurantId)
+    // Verify the user has access to the restaurant
+    const { data: userRestaurant, error: userRestaurantError } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', userId)
+      .eq('restaurant_id', restaurantId)
       .single();
 
-    if (restaurantError || !restaurant) {
-      return NextResponse.json(
-        { success: false, error: 'Restaurant not found' },
-        { status: 404 }
-      );
+    if (userRestaurantError || !userRestaurant) {
+      // Fallback: check if user is owner
+      const { data: ownerRestaurant, error: ownerError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('id', restaurantId)
+        .eq('owner_id', userId)
+        .single();
+
+      if (ownerError || !ownerRestaurant) {
+        return NextResponse.json(
+          { success: false, error: 'Access denied to restaurant' },
+          { status: 403 }
+        );
+      }
     }
 
     // Save insight folder
@@ -99,29 +109,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify user authentication
-    const cookieStore = await cookies();
-    const token = cookieStore.get('sb-access-token')?.value;
+    // Check authentication
+    const userId = request.headers.get('x-user-id');
+    const authHeader = request.headers.get('authorization');
     
-    if (!token) {
+    if (!userId || !authHeader) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Verify restaurant ownership
-    const { data: restaurant, error: restaurantError } = await supabase
-      .from('restaurants')
-      .select('id, user_id')
-      .eq('id', restaurantId)
+    // Verify the user has access to the restaurant
+    const { data: userRestaurant, error: userRestaurantError } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', userId)
+      .eq('restaurant_id', restaurantId)
       .single();
 
-    if (restaurantError || !restaurant) {
-      return NextResponse.json(
-        { success: false, error: 'Restaurant not found' },
-        { status: 404 }
-      );
+    if (userRestaurantError || !userRestaurant) {
+      // Fallback: check if user is owner
+      const { data: ownerRestaurant, error: ownerError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('id', restaurantId)
+        .eq('owner_id', userId)
+        .single();
+
+      if (ownerError || !ownerRestaurant) {
+        return NextResponse.json(
+          { success: false, error: 'Access denied to restaurant' },
+          { status: 403 }
+        );
+      }
     }
 
     // Fetch insight folders
