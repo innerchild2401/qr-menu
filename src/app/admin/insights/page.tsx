@@ -17,9 +17,19 @@ import {
   FileText,
   Sparkles,
   BarChart3,
-  Target
+  Target,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { typography, spacing } from '@/lib/design-system';
+import { 
+  generateRestaurantInsights, 
+  saveInsightFolder, 
+  getInsightFolders,
+  type GPTInsightResponse,
+  type APIFixedCost
+} from '@/lib/api/gpt-insights';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface FixedCost {
   id: string;
@@ -34,8 +44,14 @@ interface InsightFolder {
   title: string;
   summary: string;
   createdAt: string;
-  costs: FixedCost[];
+  data: GPTInsightResponse;
   isExpanded: boolean;
+}
+
+interface Restaurant {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 const predefinedCosts: Omit<FixedCost, 'id'>[] = [
@@ -54,15 +70,43 @@ export default function AdminInsights() {
   const [insightFolders, setInsightFolders] = useState<InsightFolder[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Initialize predefined costs
+  // Load restaurant data and existing insights
   useEffect(() => {
-    const initialCosts = predefinedCosts.map((cost, index) => ({
-      ...cost,
-      id: `predefined-${index}`,
-    }));
-    setFixedCosts(initialCosts);
-    setIsLoading(false);
+    const loadData = async () => {
+      try {
+        // Load restaurant data
+        const restaurantResponse = await authenticatedApiCall('/api/admin/me/restaurant');
+        const restaurantData = await restaurantResponse.json();
+        
+        if (restaurantData.success && restaurantData.data) {
+          setRestaurant(restaurantData.data);
+          
+          // Load existing insight folders
+          const insightsResponse = await getInsightFolders(restaurantData.data.id);
+          if (insightsResponse.success && insightsResponse.data) {
+            setInsightFolders(insightsResponse.data);
+          }
+        }
+
+        // Initialize predefined costs
+        const initialCosts = predefinedCosts.map((cost, index) => ({
+          ...cost,
+          id: `predefined-${index}`,
+        }));
+        setFixedCosts(initialCosts);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setError('Failed to load restaurant data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const addCustomCost = () => {
@@ -96,40 +140,56 @@ export default function AdminInsights() {
   };
 
   const generateInsights = async () => {
+    if (!restaurant) {
+      setError('Restaurant data not available');
+      return;
+    }
+
     setIsGenerating(true);
+    setError(null);
+    setSuccess(null);
     
     try {
-      // Simulate API call to generate insights
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare fixed costs for API
+      const apiFixedCosts: APIFixedCost[] = fixedCosts.map(cost => ({
+        label: cost.label,
+        amount: cost.amount,
+        isPercentage: cost.isPercentage,
+        category: cost.category,
+      }));
+
+      // Generate insights using GPT API
+      const insightData = await generateRestaurantInsights({
+        fixedCosts: apiFixedCosts,
+        restaurantId: restaurant.id,
+        userCountry: 'US', // TODO: Get from user location
+      });
+
+      // Save insight folder to database
+      const saveResult = await saveInsightFolder(insightData, restaurant.id);
       
-      const newInsight: InsightFolder = {
-        id: `insight-${Date.now()}`,
-        title: `Insight Analysis - ${new Date().toLocaleDateString()}`,
-        summary: `Based on your fixed costs analysis, here are the key insights for your restaurant operations:
-
-**Cost Breakdown:**
-${fixedCosts.map(cost => 
-  `• ${cost.label}: ${cost.isPercentage ? `${cost.amount}%` : `$${cost.amount.toLocaleString()}`}`
-).join('\n')}
-
-**Key Recommendations:**
-1. **Labor Optimization**: Consider implementing scheduling software to optimize labor costs
-2. **Energy Efficiency**: Review utility usage patterns and implement energy-saving measures
-3. **Marketing ROI**: Track marketing spend effectiveness and adjust strategies accordingly
-4. **Tax Planning**: Ensure proper tax planning to minimize business tax burden
-
-**Next Steps:**
-- Monitor these costs monthly for trend analysis
-- Set up automated reporting for better visibility
-- Consider seasonal adjustments for variable costs`,
-        createdAt: new Date().toISOString(),
-        costs: [...fixedCosts],
-        isExpanded: false,
-      };
-      
-      setInsightFolders([newInsight, ...insightFolders]);
+      if (saveResult.success && saveResult.id) {
+        const newInsight: InsightFolder = {
+          id: saveResult.id,
+          title: `Insight Analysis - ${new Date().toLocaleDateString()}`,
+          summary: insightData.summary,
+          createdAt: new Date().toISOString(),
+          data: insightData,
+          isExpanded: false,
+        };
+        
+        setInsightFolders([newInsight, ...insightFolders]);
+        setSuccess('Insights generated successfully!');
+      } else {
+        throw new Error(saveResult.error || 'Failed to save insights');
+      }
     } catch (error) {
       console.error('Error generating insights:', error);
+      setError(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to generate insights. Please try again.'
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -173,6 +233,27 @@ ${fixedCosts.map(cost =>
           AI-driven analyst for your restaurant operations
         </p>
       </div>
+
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center gap-3">
+          <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium text-red-800 dark:text-red-200">Error</h3>
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium text-green-800 dark:text-green-200">Success</h3>
+            <p className="text-sm text-green-700 dark:text-green-300">{success}</p>
+          </div>
+        </div>
+      )}
 
       {/* Fixed Costs Section */}
       <Card className={`${spacing.lg} bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border-blue-200 dark:border-blue-800`}>
@@ -345,18 +426,99 @@ ${fixedCosts.map(cost =>
                   </div>
 
                   {insight.isExpanded && (
-                    <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      {/* Summary */}
                       <div className="prose prose-sm max-w-none dark:prose-invert">
                         <div className="whitespace-pre-line text-medium-contrast leading-relaxed">
                           {insight.summary}
                         </div>
                       </div>
+
+                      {/* Structured Data Display */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Break Even Analysis */}
+                        {insight.data.breakEvenAnalysis && insight.data.breakEvenAnalysis.length > 0 && (
+                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                              <BarChart3 className="w-4 h-4" />
+                              Break Even Analysis
+                            </h4>
+                            <div className="space-y-2">
+                              {insight.data.breakEvenAnalysis.slice(0, 3).map((item, index) => (
+                                <div key={index} className="text-sm">
+                                  <div className="font-medium text-blue-800 dark:text-blue-200">{item.menuItem}</div>
+                                  <div className="text-blue-700 dark:text-blue-300">
+                                    Margin: {item.profitMargin.toFixed(1)}% | 
+                                    {item.isProfitable ? ' Profitable' : ' Needs Review'}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Profitability Suggestions */}
+                        {insight.data.profitabilitySuggestions && insight.data.profitabilitySuggestions.length > 0 && (
+                          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                            <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4" />
+                              Profitability Tips
+                            </h4>
+                            <div className="space-y-2">
+                              {insight.data.profitabilitySuggestions.slice(0, 3).map((suggestion, index) => (
+                                <div key={index} className="text-sm">
+                                  <div className="font-medium text-green-800 dark:text-green-200">{suggestion.menuItem}</div>
+                                  <div className="text-green-700 dark:text-green-300">
+                                    +${suggestion.expectedProfitIncrease.toFixed(2)} potential
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upsell Ideas */}
+                        {insight.data.upsellIdeas && insight.data.upsellIdeas.length > 0 && (
+                          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                            <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4" />
+                              Upsell Opportunities
+                            </h4>
+                            <div className="space-y-2">
+                              {insight.data.upsellIdeas.slice(0, 3).map((idea, index) => (
+                                <div key={index} className="text-sm">
+                                  <div className="font-medium text-purple-800 dark:text-purple-200">{idea.menuItem}</div>
+                                  <div className="text-purple-700 dark:text-purple-300">
+                                    +${idea.additionalRevenue.toFixed(2)} with {idea.upsellItem}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Marketing Popups */}
+                        {insight.data.marketingPopups && insight.data.marketingPopups.length > 0 && (
+                          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
+                            <h4 className="font-semibold text-orange-900 dark:text-orange-100 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Marketing Ideas
+                            </h4>
+                            <div className="space-y-2">
+                              {insight.data.marketingPopups.slice(0, 2).map((popup, index) => (
+                                <div key={index} className="text-sm">
+                                  <div className="font-medium text-orange-800 dark:text-orange-200">{popup.title}</div>
+                                  <div className="text-orange-700 dark:text-orange-300">{popup.message}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-2 pt-2 text-sm text-medium-contrast">
                         <Target className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm text-medium-contrast">
-                          {insight.costs.length} cost categories analyzed
-                        </span>
+                        <span>Generated on {new Date(insight.createdAt).toLocaleString()}</span>
                       </div>
                     </div>
                   )}
