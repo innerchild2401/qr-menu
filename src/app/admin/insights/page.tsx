@@ -27,7 +27,9 @@ import {
   Lightbulb,
   ArrowRight,
   Clock,
-  Shield
+  Shield,
+  Coins,
+  Database
 } from 'lucide-react';
 import { typography } from '@/lib/design-system';
 import { 
@@ -77,10 +79,16 @@ export default function AdminInsights() {
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([]);
   const [insightFolders, setInsightFolders] = useState<InsightFolder[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCalculatingCosts, setIsCalculatingCosts] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [costCalculationResult, setCostCalculationResult] = useState<{
+    total_ingredients: number;
+    existing_costs: number;
+    new_costs: number;
+  } | null>(null);
 
   // Load restaurant data and existing insights
   useEffect(() => {
@@ -201,6 +209,82 @@ export default function AdminInsights() {
       );
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const calculateIngredientCosts = async () => {
+    if (!restaurant) return;
+    
+    setIsCalculatingCosts(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      // First, get all products with recipes to extract ingredients
+      const productsResponse = await authenticatedApiCall('/api/products', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!productsResponse.ok) {
+        throw new Error('Failed to fetch products');
+      }
+
+      const productsData = await productsResponse.json();
+      const products = productsData.data || [];
+      const productsWithRecipes = products.filter((product: { recipe?: Array<{ ingredient: string; quantity: string }> }) => 
+        product.recipe && Array.isArray(product.recipe) && product.recipe.length > 0
+      );
+
+      if (productsWithRecipes.length === 0) {
+        setError('No products with recipes found. Please add recipes to your products first.');
+        return;
+      }
+
+      // Extract all unique ingredients
+      const allIngredients = new Set<string>();
+      productsWithRecipes.forEach((product: { recipe: Array<{ ingredient: string; quantity: string }> }) => {
+        product.recipe.forEach((ingredient: { ingredient: string; quantity: string }) => {
+          allIngredients.add(ingredient.ingredient);
+        });
+      });
+
+      const ingredientsArray = Array.from(allIngredients);
+      console.log(`Found ${ingredientsArray.length} unique ingredients across ${productsWithRecipes.length} products`);
+
+      // Call the ingredient costs API
+      const costResponse = await authenticatedApiCall('/api/calculate-ingredient-costs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ingredients: ingredientsArray,
+          language: 'ro', // Default to Romanian
+          restaurantId: restaurant.id,
+          userId: 'current-user' // This will be replaced by the API
+        }),
+      });
+
+      if (!costResponse.ok) {
+        throw new Error('Failed to calculate ingredient costs');
+      }
+
+      const costData = await costResponse.json();
+      setCostCalculationResult(costData.data);
+      setSuccess(`Successfully calculated costs for ${costData.data.total_ingredients} ingredients! ${costData.data.new_costs} new costs added, ${costData.data.existing_costs} were already cached.`);
+
+    } catch (error) {
+      console.error('Error calculating ingredient costs:', error);
+      setError(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to calculate ingredient costs. Please try again.'
+      );
+    } finally {
+      setIsCalculatingCosts(false);
     }
   };
 
@@ -501,6 +585,76 @@ export default function AdminInsights() {
                 </div>
               </Button>
             </motion.div>
+
+            {/* Ingredient Costs Button */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button
+                onClick={calculateIngredientCosts}
+                disabled={isCalculatingCosts || !restaurant}
+                size="lg"
+                className="w-full h-16 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white shadow-2xl border-0 rounded-2xl font-semibold text-lg relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center gap-3">
+                  {isCalculatingCosts ? (
+                    <>
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
+                      <span>Calculating Costs...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Coins className="w-6 h-6" />
+                        <div className="absolute inset-0 animate-ping">
+                          <Coins className="w-6 h-6 opacity-30" />
+                        </div>
+                      </div>
+                      <span>Calculate Ingredient Costs</span>
+                      <Database className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    </>
+                  )}
+                </div>
+              </Button>
+            </motion.div>
+
+            {/* Cost Calculation Result */}
+            {costCalculationResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-xl">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="font-semibold text-emerald-800 dark:text-emerald-200">Cost Calculation Complete</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {costCalculationResult.total_ingredients}
+                    </div>
+                    <div className="text-emerald-700 dark:text-emerald-300">Total Ingredients</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                      {costCalculationResult.existing_costs}
+                    </div>
+                    <div className="text-teal-700 dark:text-teal-300">Already Cached</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                      {costCalculationResult.new_costs}
+                    </div>
+                    <div className="text-cyan-700 dark:text-cyan-300">New Costs Added</div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* AI Insights Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">

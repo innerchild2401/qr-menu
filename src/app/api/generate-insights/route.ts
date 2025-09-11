@@ -72,7 +72,23 @@ export async function POST(request: NextRequest) {
       .eq('available', true)
       .order('sort_order');
 
-    // Prepare context for GPT (full data with 128k token limit)
+    // Create a condensed product summary to stay within token limits
+    // while still giving AI the full menu context
+    const productSummary = (products || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      category: product.category_name,
+      available: product.available,
+      // Only include essential fields to reduce token usage
+      description: product.description?.substring(0, 100) || '', // Truncate long descriptions
+      cost: product.cost || 0,
+      preparation_time: product.preparation_time || 0,
+    }));
+
+    console.log(`Processing ${(products || []).length} products with condensed summary approach`);
+
+    // Prepare full menu context with condensed product data
     const menuContext = {
       restaurant: {
         name: restaurant.name,
@@ -80,12 +96,14 @@ export async function POST(request: NextRequest) {
         location: restaurant.location,
       },
       categories: categories || [],
-      products: products || [],
+      products: productSummary, // Use condensed product data
       fixedCosts,
       userCountry: userCountry || 'US',
+      totalProducts: (products || []).length,
+      note: "Product data has been condensed to fit within token limits while preserving essential information for comprehensive menu analysis."
     };
 
-    // Call GPT-4o mini API
+    // Call GPT-4o mini API with full menu context
     const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -101,11 +119,11 @@ export async function POST(request: NextRequest) {
           },
           {
             role: 'user',
-            content: `Please analyze this restaurant data and provide insights:\n\n${JSON.stringify(menuContext, null, 2)}`,
+            content: `Please analyze this restaurant data and provide comprehensive insights for the entire menu:\n\n${JSON.stringify(menuContext, null, 2)}`,
           },
         ],
         temperature: 0.7,
-        max_tokens: 80000,
+        max_tokens: 16000,
       }),
     });
 
@@ -182,8 +200,9 @@ export async function POST(request: NextRequest) {
           profitabilitySuggestions: [],
           upsellIdeas: [],
           marketingPopups: [],
+          strategicRecommendations: [],
           categoryOptimization: {
-            currentOrder: [],
+            currentOrder: categories?.map(c => c.name) || [],
             suggestedOrder: [],
             reasoning: 'Unable to parse AI response',
             expectedRevenueIncrease: 0,
@@ -194,8 +213,6 @@ export async function POST(request: NextRequest) {
         };
       }
     }
-
-    // Transform and ensure all required fields exist
     const structuredResponse = {
       normalizedIngredients: Array.isArray(insightData.normalizedIngredients) 
         ? insightData.normalizedIngredients.map((ing: string | object) => typeof ing === 'string' ? { ingredient: ing, normalized: ing, quantity: '1', category: 'unknown' } : ing)

@@ -28,6 +28,12 @@ import {
   getGPTUsageStats
 } from './supabase-cache';
 import { supabaseAdmin } from '../supabase-server';
+import { 
+  getIngredientCosts, 
+  calculateRecipeCost, 
+  hasCompleteCostData,
+  type CalculatedRecipeCost 
+} from '../ingredient-costs';
 
 // =============================================================================
 // TYPES
@@ -54,6 +60,8 @@ export interface ProductGenerationOutput {
     fat: number;
   };
   allergens: string[];
+  recipe_cost?: CalculatedRecipeCost;
+  cost_data_complete: boolean;
   error?: string;
   cached?: boolean;
   processing_time_ms?: number;
@@ -318,6 +326,22 @@ export async function generateSingleProductData(
       if (cachedData && cachedData.generated_description && cachedData.name === name && 
           cachedData.manual_language_override === manual_language_override) {
         console.log(`📦 Using cached data for ${name} (language: ${cachedData.manual_language_override})`);
+        
+        // Calculate recipe cost for cached data if we have a recipe
+        let recipeCost: CalculatedRecipeCost | undefined;
+        let costDataComplete = false;
+        
+        if (cachedData.recipe && cachedData.recipe.length > 0) {
+          try {
+            const ingredientNames = cachedData.recipe.map(ing => ing.ingredient);
+            const ingredientCosts = await getIngredientCosts(ingredientNames, cachedData.manual_language_override || 'ro');
+            recipeCost = calculateRecipeCost(cachedData.recipe, ingredientCosts);
+            costDataComplete = hasCompleteCostData(cachedData.recipe, ingredientCosts);
+          } catch (error) {
+            console.error(`Error calculating recipe cost for cached ${name}:`, error);
+          }
+        }
+        
         return {
           id,
           language: cachedData.manual_language_override || 'ro',
@@ -330,6 +354,8 @@ export async function generateSingleProductData(
             fat: 0,
           },
           allergens: cachedData.allergens || [],
+          recipe_cost: recipeCost,
+          cost_data_complete: costDataComplete,
           cached: true,
           processing_time_ms: Date.now() - startTime,
         };
@@ -358,6 +384,8 @@ export async function generateSingleProductData(
         recipe: [],
         nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         allergens: [],
+        recipe_cost: undefined,
+        cost_data_complete: false,
         processing_time_ms: Date.now() - startTime,
       };
 
@@ -482,7 +510,33 @@ export async function generateSingleProductData(
       }
     }
 
-    // 8. Log the GPT call
+    // 8. Calculate recipe cost if we have a recipe
+    let recipeCost: CalculatedRecipeCost | undefined;
+    let costDataComplete = false;
+    
+    if (finalData.recipe && finalData.recipe.length > 0) {
+      try {
+        // Get ingredient costs from database
+        const ingredientNames = finalData.recipe.map(ing => ing.ingredient);
+        const ingredientCosts = await getIngredientCosts(ingredientNames, effectiveLanguage);
+        
+        // Calculate recipe cost
+        recipeCost = calculateRecipeCost(finalData.recipe, ingredientCosts);
+        costDataComplete = hasCompleteCostData(finalData.recipe, ingredientCosts);
+        
+        console.log(`💰 Recipe cost calculated for ${name}:`, {
+          total_cost: recipeCost.total_cost,
+          currency: recipeCost.currency,
+          confidence: recipeCost.confidence_score,
+          complete: costDataComplete
+        });
+      } catch (error) {
+        console.error(`Error calculating recipe cost for ${name}:`, error);
+        costDataComplete = false;
+      }
+    }
+
+    // 9. Log the GPT call
     await logGPTCall(
       'product_description',
       request as unknown as Record<string, unknown>,
@@ -499,6 +553,8 @@ export async function generateSingleProductData(
       recipe: generatedData.recipe,
       nutritional_values: enhancedNutrition,
       allergens: allergenCodes,
+      recipe_cost: recipeCost,
+      cost_data_complete: costDataComplete,
       cached: false, // Force regeneration always returns false
       processing_time_ms: Date.now() - startTime,
       cost_estimate: usage.estimated_cost_usd,
@@ -524,6 +580,8 @@ export async function generateSingleProductData(
       recipe: [],
       nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
       allergens: [],
+      recipe_cost: undefined,
+      cost_data_complete: false,
       error: errorMessage,
       processing_time_ms: Date.now() - startTime,
     };
@@ -605,6 +663,8 @@ export async function generateBatchProductData(
           recipe: [],
           nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
           allergens: [],
+          recipe_cost: undefined,
+          cost_data_complete: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
@@ -649,6 +709,8 @@ export async function generateBatchProductData(
           recipe: [],
           nutritional_values: { calories: 0, protein: 0, carbs: 0, fat: 0 },
           allergens: [],
+          recipe_cost: undefined,
+          cost_data_complete: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         } as ProductGenerationOutput;
       }
