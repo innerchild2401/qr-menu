@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       .eq('available', true)
       .order('sort_order');
 
-    // Prepare context for GPT
+    // Prepare context for GPT (full data with 128k token limit)
     const menuContext = {
       restaurant: {
         name: restaurant.name,
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           },
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 80000,
       }),
     });
 
@@ -201,7 +201,17 @@ export async function POST(request: NextRequest) {
         ? insightData.normalizedIngredients.map((ing: string | object) => typeof ing === 'string' ? { ingredient: ing, normalized: ing, quantity: '1', category: 'unknown' } : ing)
         : [],
       priceCheck: insightData.priceCheck || [],
-      breakEvenAnalysis: insightData.breakEvenAnalysis || [],
+      breakEvenAnalysis: Array.isArray(insightData.breakEvenAnalysis)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? insightData.breakEvenAnalysis.map((item: any) => ({
+            menuItem: item.menuItem || 'Unknown Item',
+            monthlyBreakEvenUnits: item.monthlyBreakEvenUnits || 0,
+            cogs: item.cogs || 0,
+            price: item.price || 0,
+            contributionMargin: item.contributionMargin || 0,
+            reasoning: item.reasoning || 'No reasoning provided'
+          }))
+        : [],
       profitabilitySuggestions: Array.isArray(insightData.profitabilitySuggestions)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? insightData.profitabilitySuggestions.map((suggestion: any) => ({

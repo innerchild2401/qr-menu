@@ -606,14 +606,14 @@ export default function AdminInsights() {
                                                 <div>
                                                   <div className="font-medium text-blue-800 dark:text-blue-200">{item.menuItem}</div>
                                                   <div className="text-sm text-blue-600 dark:text-blue-300">
-                                                    {item.isProfitable ? '✓ Profitable' : '⚠ Needs Review'}
+                                                    ${(item.price || 0).toFixed(2)} - ${(item.cogs || 0).toFixed(2)} = ${(item.contributionMargin || 0).toFixed(2)}
                                                   </div>
                                                 </div>
                                                 <div className="text-right">
                                                   <div className="font-bold text-blue-900 dark:text-blue-100">
-                                                    {(item.profitMargin || 0).toFixed(1)}%
+                                                    {(item.monthlyBreakEvenUnits || 0).toFixed(0)}
                                                   </div>
-                                                  <div className="text-xs text-blue-600 dark:text-blue-400">Margin</div>
+                                                  <div className="text-xs text-blue-600 dark:text-blue-400">units/month</div>
                                                 </div>
                                               </div>
                                             ))}

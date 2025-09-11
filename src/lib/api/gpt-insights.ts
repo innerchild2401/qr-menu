@@ -30,12 +30,11 @@ export interface PriceCheck {
 
 export interface BreakEvenAnalysis {
   menuItem: string;
-  currentPrice: number;
-  estimatedCOGS: number;
-  breakevenPrice: number;
-  profitMargin: number;
-  isProfitable: boolean;
-  recommendations: string[];
+  monthlyBreakEvenUnits: number;
+  cogs: number;
+  price: number;
+  contributionMargin: number;
+  reasoning: string;
 }
 
 export interface ProfitabilitySuggestion {
@@ -104,7 +103,9 @@ export async function generateRestaurantInsights(
 ): Promise<GPTInsightResponse> {
   try {
     const systemPrompt = `You are an AI financial analyst for restaurants. 
-Analyze the provided menu data and generate actionable insights.
+Analyze ALL provided menu items and generate actionable insights for each product.
+
+CRITICAL: You must analyze EVERY SINGLE product in the menu data provided. Do not skip any products.
 
 REQUIRED JSON STRUCTURE:
 {
@@ -115,7 +116,7 @@ REQUIRED JSON STRUCTURE:
     {"ingredient": "ingredient name", "price": 4.50, "source": "online source"}
   ],
   "breakEvenAnalysis": [
-    {"menuItem": "Item Name", "isProfitable": true, "profitMargin": 25.5, "cogs": 8.50, "price": 12.00, "reasoning": "explanation"}
+    {"menuItem": "Item Name", "monthlyBreakEvenUnits": 45, "cogs": 8.50, "price": 12.00, "contributionMargin": 3.50, "reasoning": "explanation"}
   ],
   "profitabilitySuggestions": [
     {"menuItem": "Item Name", "reasoning": "why this combo works", "expectedProfitIncrease": 15.50, "suggestedCombo": ["Side 1", "Side 2"]}
@@ -137,12 +138,15 @@ REQUIRED JSON STRUCTURE:
 }
 
 IMPORTANT: 
-- breakEvenAnalysis must have menuItem, isProfitable, profitMargin fields
+- breakEvenAnalysis must include EVERY product from the menu data
+- Calculate monthlyBreakEvenUnits for each product: monthlyBreakEvenUnits = totalFixedCosts / contributionMargin
+- contributionMargin = price - cogs
 - profitabilitySuggestions must have menuItem, reasoning, expectedProfitIncrease fields  
 - upsellIdeas must have menuItem, upsellItem, additionalRevenue fields
 - marketingPopups must have title, message, targetItems fields
 - All numeric values should be actual numbers, not strings
-- Provide realistic, actionable insights based on the menu data
+- Provide realistic, actionable insights based on ALL menu data provided
+- Do not limit analysis to only a few products - analyze everything
 
 Fixed costs provided:
 ${request.fixedCosts.map(cost => 
