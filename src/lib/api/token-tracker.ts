@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 // Create Supabase client only when needed (server-side)
 function getSupabaseClient() {
+  console.log('🔍 Environment variables check:', {
+    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set',
+    SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Not set'
+  });
+  
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -33,6 +38,14 @@ const PRICING = {
 
 export async function trackTokenConsumption(data: TokenConsumptionData): Promise<void> {
   try {
+    console.log('🔍 Token tracking called with data:', {
+      userId: data.userId,
+      userEmail: data.userEmail,
+      apiEndpoint: data.apiEndpoint,
+      usage: data.usage,
+      model: data.model
+    });
+    
     const pricing = PRICING[data.model as keyof typeof PRICING] || PRICING['gpt-4o-mini'];
     
     const promptCost = data.usage.prompt_tokens * pricing.prompt;
@@ -53,7 +66,9 @@ export async function trackTokenConsumption(data: TokenConsumptionData): Promise
       model: data.model
     };
 
+    console.log('🔍 Creating Supabase client for token tracking...');
     const supabase = getSupabaseClient();
+    console.log('🔍 Supabase client created, inserting record:', consumptionRecord);
     const { error } = await supabase
       .from('token_consumption_logs')
       .insert(consumptionRecord);
