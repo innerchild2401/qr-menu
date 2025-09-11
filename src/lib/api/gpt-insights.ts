@@ -1,4 +1,4 @@
-import { authenticatedApiCallWithBody } from '../api-helpers';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '../api-helpers';
 
 export interface APIFixedCost {
   label: string;
@@ -135,13 +135,10 @@ ${request.fixedCosts.map(cost =>
 Provide actionable, data-driven insights that will help optimize restaurant profitability.`;
 
     const response = await authenticatedApiCallWithBody('/api/generate-insights', {
-      method: 'POST',
-      body: {
-        systemPrompt,
-        restaurantId: request.restaurantId,
-        fixedCosts: request.fixedCosts,
-        userCountry: request.userCountry,
-      },
+      systemPrompt,
+      restaurantId: request.restaurantId,
+      fixedCosts: request.fixedCosts,
+      userCountry: request.userCountry,
     });
 
     const data = await response.json();
@@ -167,11 +164,8 @@ export async function saveInsightFolder(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const response = await authenticatedApiCallWithBody('/api/admin/insights', {
-      method: 'POST',
-      body: {
-        restaurantId,
-        insight,
-      },
+      restaurantId,
+      insight,
     });
 
     const data = await response.json();
@@ -189,9 +183,7 @@ export async function getInsightFolders(
   restaurantId: string
 ): Promise<{ success: boolean; data?: InsightFolder[]; error?: string }> {
   try {
-    const response = await authenticatedApiCallWithBody(`/api/admin/insights?restaurantId=${restaurantId}`, {
-      method: 'GET',
-    });
+    const response = await authenticatedApiCall(`/api/admin/insights?restaurantId=${restaurantId}`);
 
     const data = await response.json();
     return data;
