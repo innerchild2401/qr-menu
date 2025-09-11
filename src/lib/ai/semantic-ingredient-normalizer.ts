@@ -1,8 +1,10 @@
-import { env } from '@/lib/env';
 import { createClient } from '@supabase/supabase-js';
 import { trackTokenConsumption, extractTokenUsageFromResponse } from '@/lib/api/token-tracker';
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface RecipeIngredient {
   ingredient: string;
@@ -118,7 +120,7 @@ For each ingredient:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -242,7 +244,7 @@ Normalize each ingredient using proper naming conventions and standardize quanti
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
