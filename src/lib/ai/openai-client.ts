@@ -8,6 +8,7 @@
 
 import { env } from '../env';
 import { normalizeIngredients } from './ingredient-normalizer';
+import { trackTokenConsumption, extractTokenUsageFromResponse } from '../api/token-tracker';
 
 // =============================================================================
 // TYPES
@@ -22,6 +23,8 @@ export interface ProductGenerationRequest {
     ingredient: string;
     quantity: string;
   }>;
+  userId?: string;
+  userEmail?: string;
 }
 
 export interface IngredientNutritionRequest {
@@ -331,6 +334,22 @@ export async function generateProductData(
     if (!content) {
       throw new Error('No content in OpenAI response');
     }
+
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(result);
+      await trackTokenConsumption({
+        userId: request.userId || request.restaurant_id || 'unknown',
+        userEmail: request.userEmail || 'unknown@example.com',
+        apiEndpoint: '/api/generate-product-data',
+        requestId: result.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
+    } catch (error) {
+      console.error('Failed to track token consumption:', error);
+      // Don't fail the main request if tracking fails
+    }
     
     // Parse the JSON response
     let generatedData: GeneratedProductData;
@@ -438,6 +457,22 @@ export async function generateIngredientNutrition(
     
     if (!content) {
       throw new Error('No content in OpenAI response');
+    }
+
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(result);
+      await trackTokenConsumption({
+        userId: 'unknown', // Ingredient nutrition doesn't have user context
+        userEmail: 'unknown@example.com',
+        apiEndpoint: '/api/generate-ingredient-nutrition',
+        requestId: result.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
+    } catch (error) {
+      console.error('Failed to track token consumption for ingredient nutrition:', error);
+      // Don't fail the main request if tracking fails
     }
     
     // Parse the JSON response

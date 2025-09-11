@@ -38,6 +38,8 @@ export interface ProductGenerationInput {
   name: string;
   manual_language_override?: SupportedLanguage;
   restaurant_id: string;
+  userId?: string;
+  userEmail?: string;
 }
 
 export interface ProductGenerationOutput {
@@ -395,6 +397,8 @@ export async function generateSingleProductData(
       restaurant_id,
       regenerationMode,
       existingRecipe,
+      userId: input.userId,
+      userEmail: input.userEmail,
     };
 
     console.log(`🔥 FORCE REGENERATION: Making API call for ${name} with request:`, request);

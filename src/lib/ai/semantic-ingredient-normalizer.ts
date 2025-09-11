@@ -1,5 +1,6 @@
 import { env } from '@/lib/env';
 import { createClient } from '@supabase/supabase-js';
+import { trackTokenConsumption, extractTokenUsageFromResponse } from '@/lib/api/token-tracker';
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
@@ -142,6 +143,22 @@ For each ingredient:
       throw new Error('No content in OpenAI response');
     }
 
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(data);
+      await trackTokenConsumption({
+        userId: 'unknown', // Semantic normalization doesn't have user context
+        userEmail: 'unknown@example.com',
+        apiEndpoint: '/api/normalize-ingredients-semantic',
+        requestId: data.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
+    } catch (error) {
+      console.error('Failed to track token consumption for semantic ingredient normalization:', error);
+      // Don't fail the main request if tracking fails
+    }
+
     // Handle markdown-wrapped JSON responses
     let jsonContent = content.trim();
     if (jsonContent.startsWith('```json')) {
@@ -248,6 +265,22 @@ Normalize each ingredient using proper naming conventions and standardize quanti
 
     if (!content) {
       throw new Error('No content in OpenAI response');
+    }
+
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(data);
+      await trackTokenConsumption({
+        userId: 'unknown', // Semantic normalization doesn't have user context
+        userEmail: 'unknown@example.com',
+        apiEndpoint: '/api/normalize-ingredients-semantic',
+        requestId: data.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
+    } catch (error) {
+      console.error('Failed to track token consumption for semantic ingredient normalization:', error);
+      // Don't fail the main request if tracking fails
     }
 
     // Handle markdown-wrapped JSON responses

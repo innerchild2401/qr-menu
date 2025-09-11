@@ -7,6 +7,7 @@
 
 import { env } from '@/lib/env';
 import { normalizeIngredientsSemantic } from './semantic-ingredient-normalizer';
+import { trackTokenConsumption, extractTokenUsageFromResponse } from '@/lib/api/token-tracker';
 
 interface RecipeIngredient {
   ingredient: string;
@@ -152,6 +153,22 @@ Return as JSON in this format:
 
     if (!content) {
       throw new Error('No content in OpenAI response');
+    }
+
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(data);
+      await trackTokenConsumption({
+        userId: 'unknown', // Ingredient normalization doesn't have user context
+        userEmail: 'unknown@example.com',
+        apiEndpoint: '/api/normalize-ingredients',
+        requestId: data.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
+    } catch (error) {
+      console.error('Failed to track token consumption for ingredient normalization:', error);
+      // Don't fail the main request if tracking fails
     }
 
     // Handle markdown-wrapped JSON responses

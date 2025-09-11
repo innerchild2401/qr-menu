@@ -426,6 +426,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       name: product.name,
       manual_language_override: product.manual_language_override,
       restaurant_id: restaurant.id,
+      userId: user.id,
+      userEmail: user.email || 'unknown@example.com',
     }));
 
     // 7. Validate generation inputs
