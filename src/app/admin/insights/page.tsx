@@ -175,14 +175,15 @@ export default function AdminInsights() {
 
       // Save insight folder to database
       const saveResult = await saveInsightFolder(insightData, restaurant.id);
+      console.log('Save result:', saveResult);
       
-      if (saveResult.success && saveResult.id) {
+      if (saveResult.success && saveResult.data?.id) {
         const newInsight: InsightFolder = {
-          id: saveResult.id,
-          title: `Insight Analysis - ${new Date().toLocaleDateString()}`,
-          summary: insightData.summary,
-          createdAt: new Date().toISOString(),
-          data: insightData,
+          id: saveResult.data.id,
+          title: saveResult.data.title,
+          summary: saveResult.data.summary,
+          createdAt: saveResult.data.createdAt,
+          data: saveResult.data.data,
           isExpanded: false,
         };
         
@@ -682,6 +683,36 @@ export default function AdminInsights() {
                                                 <div className="text-sm text-orange-600 dark:text-orange-300 mb-2">{popup.message}</div>
                                                 <div className="text-xs text-orange-500 dark:text-orange-400">
                                                   Timing: {popup.timing} | Impact: {popup.expectedImpact}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Strategic Recommendations */}
+                                      {insight.data.strategicRecommendations && insight.data.strategicRecommendations.length > 0 && (
+                                        <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                                          <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
+                                            <Target className="w-4 h-4" />
+                                            Strategic Recommendations
+                                          </h4>
+                                          <div className="space-y-3">
+                                            {insight.data.strategicRecommendations.slice(0, 3).map((rec, index) => (
+                                              <div key={index} className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg">
+                                                <div className="flex items-center justify-between mb-2">
+                                                  <div className="font-medium text-purple-800 dark:text-purple-200">{rec.action}</div>
+                                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    rec.priority === 'HIGH' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                                                    rec.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                                                    'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                                                  }`}>
+                                                    {rec.priority}
+                                                  </span>
+                                                </div>
+                                                <div className="text-sm text-purple-600 dark:text-purple-300 mb-2">{rec.expectedImpact}</div>
+                                                <div className="text-xs text-purple-500 dark:text-purple-400">
+                                                  Timeline: {rec.timeline} | Items: {rec.targetItems?.join(', ') || 'N/A'}
                                                 </div>
                                               </div>
                                             ))}

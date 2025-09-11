@@ -216,9 +216,11 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? insightData.profitabilitySuggestions.map((suggestion: any) => ({
             menuItem: suggestion.menuItem || suggestion.item || 'Unknown Item',
+            action: suggestion.action || 'ANALYZE',
             suggestedCombo: suggestion.suggestedCombo || [],
             expectedProfitIncrease: suggestion.expectedProfitIncrease || 0,
-            reasoning: suggestion.reasoning || 'No reasoning provided'
+            reasoning: suggestion.reasoning || 'No reasoning provided',
+            implementation: suggestion.implementation || 'No implementation details'
           }))
         : [],
       upsellIdeas: Array.isArray(insightData.upsellIdeas)
@@ -228,7 +230,9 @@ export async function POST(request: NextRequest) {
             upsellItem: idea.upsellItem || idea.upsell || 'Unknown Upsell',
             additionalRevenue: idea.additionalRevenue || 0,
             reasoning: idea.reasoning || 'No reasoning provided',
-            implementation: idea.implementation || 'No implementation details'
+            implementation: idea.implementation || 'No implementation details',
+            timing: idea.timing || 'Anytime',
+            targetCustomer: idea.targetCustomer || 'All customers'
           }))
         : [],
       marketingPopups: Array.isArray(insightData.marketingPopups)
@@ -238,7 +242,19 @@ export async function POST(request: NextRequest) {
             message: popup.message || popup.popup || 'No message provided',
             targetItems: popup.targetItems || [],
             timing: popup.timing || 'Anytime',
-            expectedImpact: popup.expectedImpact || 'No impact data'
+            expectedImpact: popup.expectedImpact || 'No impact data',
+            implementation: popup.implementation || 'No implementation details'
+          }))
+        : [],
+      strategicRecommendations: Array.isArray(insightData.strategicRecommendations)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? insightData.strategicRecommendations.map((rec: any) => ({
+            priority: rec.priority || 'MEDIUM',
+            action: rec.action || 'No action specified',
+            targetItems: rec.targetItems || [],
+            expectedImpact: rec.expectedImpact || 'No impact data',
+            timeline: rec.timeline || 'ASAP',
+            resources: rec.resources || 'No resources specified'
           }))
         : [],
       categoryOptimization: {

@@ -76,6 +76,15 @@ export interface UnavailableItem {
   impact: 'high' | 'medium' | 'low';
 }
 
+export interface StrategicRecommendation {
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  action: string;
+  targetItems: string[];
+  expectedImpact: string;
+  timeline: string;
+  resources: string;
+}
+
 export interface InsightFolder {
   id: string;
   title: string;
@@ -93,6 +102,7 @@ export interface GPTInsightResponse {
   upsellIdeas: UpsellIdea[];
   marketingPopups: MarketingPopup[];
   categoryOptimization: CategoryOptimization;
+  strategicRecommendations: StrategicRecommendation[];
   unavailableItems: UnavailableItem[];
   summary: string;
   generatedAt: string;
@@ -102,10 +112,18 @@ export async function generateRestaurantInsights(
   request: GPTInsightRequest
 ): Promise<GPTInsightResponse> {
   try {
-    const systemPrompt = `You are an AI financial analyst for restaurants. 
-Analyze ALL provided menu items and generate actionable insights for each product.
+    const systemPrompt = `You are an AI restaurant strategy consultant and financial analyst. 
+Analyze ALL provided menu items and generate highly actionable, strategic insights for restaurant optimization.
 
 CRITICAL: You must analyze EVERY SINGLE product in the menu data provided. Do not skip any products.
+
+FOCUS ON ACTIONABLE STRATEGY:
+- Which products to PUSH (high margin, popular, seasonal)
+- Which products to PAIR together (complementary items, cross-selling)
+- Which products to PROMOTE (underperforming but high potential)
+- Which products to PRICE ADJUST (over/under priced based on market)
+- Which products to POSITION differently (menu placement, descriptions)
+- Which products to PARTNER with suppliers (bulk discounts, exclusivity)
 
 REQUIRED JSON STRUCTURE:
 {
@@ -119,13 +137,13 @@ REQUIRED JSON STRUCTURE:
     {"menuItem": "Item Name", "monthlyBreakEvenUnits": 45, "cogs": 8.50, "price": 12.00, "contributionMargin": 3.50, "reasoning": "explanation"}
   ],
   "profitabilitySuggestions": [
-    {"menuItem": "Item Name", "reasoning": "why this combo works", "expectedProfitIncrease": 15.50, "suggestedCombo": ["Side 1", "Side 2"]}
+    {"menuItem": "Item Name", "action": "PUSH/PAIR/PROMOTE/PRICE/POSITION", "reasoning": "strategic reasoning", "expectedProfitIncrease": 15.50, "suggestedCombo": ["Side 1", "Side 2"], "implementation": "specific steps to take"}
   ],
   "upsellIdeas": [
-    {"menuItem": "Main Item", "upsellItem": "Add-on suggestion", "additionalRevenue": 3.50, "reasoning": "why this works", "implementation": "how to implement"}
+    {"menuItem": "Main Item", "upsellItem": "Add-on suggestion", "additionalRevenue": 3.50, "reasoning": "why this works", "implementation": "exact steps for staff", "timing": "when to suggest", "targetCustomer": "who to target"}
   ],
   "marketingPopups": [
-    {"title": "Campaign Title", "message": "Popup message", "targetItems": ["item1", "item2"], "timing": "when to show", "expectedImpact": "expected result"}
+    {"title": "Campaign Title", "message": "specific popup text", "targetItems": ["item1", "item2"], "timing": "exact timing", "expectedImpact": "specific revenue increase", "implementation": "how to set up"}
   ],
   "categoryOptimization": {
     "currentOrder": ["category1", "category2"],
@@ -134,6 +152,9 @@ REQUIRED JSON STRUCTURE:
     "expectedRevenueIncrease": 12.5
   },
   "unavailableItems": ["item name 1", "item name 2"],
+  "strategicRecommendations": [
+    {"priority": "HIGH/MEDIUM/LOW", "action": "specific action", "targetItems": ["item1", "item2"], "expectedImpact": "revenue/profit increase", "timeline": "when to implement", "resources": "what you need"}
+  ],
   "summary": "Human-friendly summary of key insights and recommendations"
 }
 
@@ -141,11 +162,13 @@ IMPORTANT:
 - breakEvenAnalysis must include EVERY product from the menu data
 - Calculate monthlyBreakEvenUnits for each product: monthlyBreakEvenUnits = totalFixedCosts / contributionMargin
 - contributionMargin = price - cogs
-- profitabilitySuggestions must have menuItem, reasoning, expectedProfitIncrease fields  
-- upsellIdeas must have menuItem, upsellItem, additionalRevenue fields
-- marketingPopups must have title, message, targetItems fields
+- profitabilitySuggestions must specify ACTION (PUSH/PAIR/PROMOTE/PRICE/POSITION) and implementation steps
+- upsellIdeas must include timing, target customer, and exact staff instructions
+- marketingPopups must have specific popup text and implementation details
+- strategicRecommendations must be prioritized and include timelines
 - All numeric values should be actual numbers, not strings
-- Provide realistic, actionable insights based on ALL menu data provided
+- Provide SPECIFIC, ACTIONABLE insights that restaurant owners can implement immediately
+- Focus on revenue optimization, cost reduction, and customer experience improvements
 - Do not limit analysis to only a few products - analyze everything
 
 Fixed costs provided:
@@ -182,7 +205,7 @@ Provide actionable, data-driven insights that will help optimize restaurant prof
 export async function saveInsightFolder(
   insight: GPTInsightResponse,
   restaurantId: string
-): Promise<{ success: boolean; id?: string; error?: string }> {
+): Promise<{ success: boolean; data?: { id: string; title: string; summary: string; createdAt: string; data: GPTInsightResponse }; error?: string }> {
   try {
     const response = await authenticatedApiCallWithBody('/api/admin/insights', {
       restaurantId,
