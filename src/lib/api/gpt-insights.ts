@@ -104,28 +104,45 @@ export async function generateRestaurantInsights(
 ): Promise<GPTInsightResponse> {
   try {
     const systemPrompt = `You are an AI financial analyst for restaurants. 
-Perform these tasks:
-1. Ensure all ingredients are normalized in the database (return a list if not).
-2. Fetch online prices for ingredients (use user IP country: ${request.userCountry || 'US'}).
-3. Cost out each menu item and analyze:
-   - Breakeven analysis (median COGS vs asking price).
-   - Profitability insights and combo suggestions.
-   - Upselling ideas and pop-up marketing suggestions.
-   - Category/product rearrangement for profit optimization.
-   - Note if menu item is currently unavailable.
+Analyze the provided menu data and generate actionable insights.
 
-Return structured JSON:
+REQUIRED JSON STRUCTURE:
 {
-  "normalizedIngredients": [...],
-  "priceCheck": [...],
-  "breakEvenAnalysis": [...],
-  "profitabilitySuggestions": [...],
-  "upsellIdeas": [...],
-  "marketingPopups": [...],
-  "categoryOptimization": {...},
-  "unavailableItems": [...],
+  "normalizedIngredients": [
+    {"ingredient": "ingredient name", "normalized": "normalized name", "quantity": "amount", "category": "category"}
+  ],
+  "priceCheck": [
+    {"ingredient": "ingredient name", "price": 4.50, "source": "online source"}
+  ],
+  "breakEvenAnalysis": [
+    {"menuItem": "Item Name", "isProfitable": true, "profitMargin": 25.5, "cogs": 8.50, "price": 12.00, "reasoning": "explanation"}
+  ],
+  "profitabilitySuggestions": [
+    {"menuItem": "Item Name", "reasoning": "why this combo works", "expectedProfitIncrease": 15.50, "suggestedCombo": ["Side 1", "Side 2"]}
+  ],
+  "upsellIdeas": [
+    {"menuItem": "Main Item", "upsellItem": "Add-on suggestion", "additionalRevenue": 3.50, "reasoning": "why this works", "implementation": "how to implement"}
+  ],
+  "marketingPopups": [
+    {"title": "Campaign Title", "message": "Popup message", "targetItems": ["item1", "item2"], "timing": "when to show", "expectedImpact": "expected result"}
+  ],
+  "categoryOptimization": {
+    "currentOrder": ["category1", "category2"],
+    "suggestedOrder": ["category2", "category1"],
+    "reasoning": "why reorder helps",
+    "expectedRevenueIncrease": 12.5
+  },
+  "unavailableItems": ["item name 1", "item name 2"],
   "summary": "Human-friendly summary of key insights and recommendations"
 }
+
+IMPORTANT: 
+- breakEvenAnalysis must have menuItem, isProfitable, profitMargin fields
+- profitabilitySuggestions must have menuItem, reasoning, expectedProfitIncrease fields  
+- upsellIdeas must have menuItem, upsellItem, additionalRevenue fields
+- marketingPopups must have title, message, targetItems fields
+- All numeric values should be actual numbers, not strings
+- Provide realistic, actionable insights based on the menu data
 
 Fixed costs provided:
 ${request.fixedCosts.map(cost => 

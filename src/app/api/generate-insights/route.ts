@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
       profitabilitySuggestions: Array.isArray(insightData.profitabilitySuggestions)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? insightData.profitabilitySuggestions.map((suggestion: any) => ({
-            item: suggestion.item || 'Unknown Item',
+            menuItem: suggestion.menuItem || suggestion.item || 'Unknown Item',
             suggestedCombo: suggestion.suggestedCombo || [],
             expectedProfitIncrease: suggestion.expectedProfitIncrease || 0,
             reasoning: suggestion.reasoning || 'No reasoning provided'
@@ -214,8 +214,8 @@ export async function POST(request: NextRequest) {
       upsellIdeas: Array.isArray(insightData.upsellIdeas)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? insightData.upsellIdeas.map((idea: any) => ({
-            menuItem: idea.item || idea.menuItem || 'Unknown Item',
-            upsellItem: idea.upsell || idea.upsellItem || 'Unknown Upsell',
+            menuItem: idea.menuItem || idea.item || 'Unknown Item',
+            upsellItem: idea.upsellItem || idea.upsell || 'Unknown Upsell',
             additionalRevenue: idea.additionalRevenue || 0,
             reasoning: idea.reasoning || 'No reasoning provided',
             implementation: idea.implementation || 'No implementation details'
