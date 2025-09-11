@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { trackTokenConsumption, extractTokenUsageFromResponse } from '@/lib/api/token-tracker';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -99,6 +100,26 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'No content received from AI' },
         { status: 500 }
       );
+    }
+
+    // Track token consumption
+    try {
+      const tokenUsage = extractTokenUsageFromResponse(gptData);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await trackTokenConsumption({
+          userId: user.id,
+          userEmail: user.email || 'unknown@example.com',
+          apiEndpoint: '/api/generate-insights',
+          requestId: gptData.id,
+          usage: tokenUsage,
+          model: 'gpt-4o-mini'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to track token consumption:', error);
+      // Don't fail the main request if tracking fails
     }
 
     // Parse JSON response
