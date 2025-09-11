@@ -439,7 +439,7 @@ export default function AdminInsights() {
                     <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl">
                       <span className="text-slate-600 dark:text-slate-300">Fixed Costs</span>
                       <span className={`${typography.h4} text-green-600 dark:text-green-400 font-bold`}>
-                        ${totalFixedCosts.toLocaleString()}
+                        ${(totalFixedCosts || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl">
@@ -692,7 +692,7 @@ export default function AdminInsights() {
                                     
                                     <div className="flex items-center gap-2 pt-4 mt-4 border-t border-slate-200 dark:border-slate-600 text-sm text-slate-500 dark:text-slate-400">
                                       <Target className="w-4 h-4" />
-                                      <span>Generated on {new Date(insight.createdAt).toLocaleString()}</span>
+                                      <span>Generated on {insight.createdAt ? new Date(insight.createdAt).toLocaleString() : 'Unknown'}</span>
                                     </div>
                                   </motion.div>
                                 )}

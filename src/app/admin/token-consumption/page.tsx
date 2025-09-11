@@ -474,7 +474,7 @@ export default function TokenConsumptionPage() {
                           >
                             <td className="py-3 px-4 text-slate-900 dark:text-slate-100">{item.userEmail}</td>
                             <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                              {new Date(item.createdAt).toLocaleString()}
+                              {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Unknown'}
                             </td>
                             <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                               <Badge variant="outline" className="text-xs">
