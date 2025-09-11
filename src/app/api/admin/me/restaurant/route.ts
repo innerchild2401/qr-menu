@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ restaurant });
+    return NextResponse.json({ success: true, data: restaurant });
   } catch (error) {
     console.error('Error fetching restaurant:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
