@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create Supabase client only when needed (server-side)
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface TokenUsage {
   prompt_tokens: number;
@@ -50,6 +53,7 @@ export async function trackTokenConsumption(data: TokenConsumptionData): Promise
       model: data.model
     };
 
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from('token_consumption_logs')
       .insert(consumptionRecord);
