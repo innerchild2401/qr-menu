@@ -275,17 +275,63 @@ input, textarea, select {
 }
 
 /* Prevent body scroll when modal is open */
-body.modal-open {
+body.modal-open,
+body.scroll-locked {
   overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Improved scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent scroll chaining */
+.overscroll-contain {
+  overscroll-behavior: contain;
 }
 
 /* Enhanced focus styles for accessibility */
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-select:focus-visible {
+select:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* High contrast focus ring */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+}
+
+/* Improved button focus states */
+button:focus-visible {
+  @apply ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Better contrast for disabled states */
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Improved text contrast */
+.text-high-contrast {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.text-medium-contrast {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.text-low-contrast {
+  @apply text-gray-500 dark:text-gray-400;
 }
 
 /* Smooth transitions for all interactive elements */
