@@ -1,10 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { trackTokenConsumption, extractTokenUsageFromResponse } from '@/lib/api/token-tracker';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Create Supabase client only when needed (server-side)
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 interface RecipeIngredient {
   ingredient: string;
@@ -33,6 +36,7 @@ export async function normalizeIngredientsSemantic(
     console.log('🔍 Fetching existing ingredients from database...');
     
     // Fetch all existing ingredients from the restaurant's products
+    const supabase = getSupabaseClient();
     const { data: products, error } = await supabase
       .from('products')
       .select('recipe')
