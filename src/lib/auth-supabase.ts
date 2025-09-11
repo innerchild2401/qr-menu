@@ -1,12 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from './env';
 
 // Debug environment variables in development
-if (typeof window !== 'undefined' && env.IS_DEVELOPMENT) {
-  console.log('Supabase URL:', env.SUPABASE_URL ? 'Set' : 'Not set');
-  console.log('Supabase Anon Key:', env.SUPABASE_ANON_KEY ? 'Set' : 'Not set');
-  console.log('Raw NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set');
-  console.log('Raw NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Not set');
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set');
+  console.log('Supabase Anon Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Not set');
 }
 
 // Client-side Supabase client
