@@ -195,19 +195,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Ensure all required fields exist
+    // Transform and ensure all required fields exist
     const structuredResponse = {
-      normalizedIngredients: insightData.normalizedIngredients || [],
+      normalizedIngredients: Array.isArray(insightData.normalizedIngredients) 
+        ? insightData.normalizedIngredients.map((ing: string | object) => typeof ing === 'string' ? { ingredient: ing, normalized: ing, quantity: '1', category: 'unknown' } : ing)
+        : [],
       priceCheck: insightData.priceCheck || [],
       breakEvenAnalysis: insightData.breakEvenAnalysis || [],
-      profitabilitySuggestions: insightData.profitabilitySuggestions || [],
-      upsellIdeas: insightData.upsellIdeas || [],
-      marketingPopups: insightData.marketingPopups || [],
-      categoryOptimization: insightData.categoryOptimization || {
-        currentOrder: [],
-        suggestedOrder: [],
-        reasoning: 'No optimization suggestions available',
-        expectedRevenueIncrease: 0,
+      profitabilitySuggestions: Array.isArray(insightData.profitabilitySuggestions)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? insightData.profitabilitySuggestions.map((suggestion: any) => ({
+            item: suggestion.item || 'Unknown Item',
+            suggestedCombo: suggestion.suggestedCombo || [],
+            expectedProfitIncrease: suggestion.expectedProfitIncrease || 0,
+            reasoning: suggestion.reasoning || 'No reasoning provided'
+          }))
+        : [],
+      upsellIdeas: Array.isArray(insightData.upsellIdeas)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? insightData.upsellIdeas.map((idea: any) => ({
+            menuItem: idea.item || idea.menuItem || 'Unknown Item',
+            upsellItem: idea.upsell || idea.upsellItem || 'Unknown Upsell',
+            additionalRevenue: idea.additionalRevenue || 0,
+            reasoning: idea.reasoning || 'No reasoning provided',
+            implementation: idea.implementation || 'No implementation details'
+          }))
+        : [],
+      marketingPopups: Array.isArray(insightData.marketingPopups)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? insightData.marketingPopups.map((popup: any) => ({
+            title: popup.title || 'Marketing Campaign',
+            message: popup.message || popup.popup || 'No message provided',
+            targetItems: popup.targetItems || [],
+            timing: popup.timing || 'Anytime',
+            expectedImpact: popup.expectedImpact || 'No impact data'
+          }))
+        : [],
+      categoryOptimization: {
+        currentOrder: insightData.categoryOptimization?.currentOrder || [],
+        suggestedOrder: insightData.categoryOptimization?.suggestedOrder || [],
+        reasoning: insightData.categoryOptimization?.reasoning || 'No optimization suggestions available',
+        expectedRevenueIncrease: insightData.categoryOptimization?.expectedRevenueIncrease || 0,
       },
       unavailableItems: insightData.unavailableItems || [],
       summary: insightData.summary || content,
