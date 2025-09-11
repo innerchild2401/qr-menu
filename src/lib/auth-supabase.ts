@@ -5,17 +5,23 @@ import { env } from './env';
 if (typeof window !== 'undefined' && env.IS_DEVELOPMENT) {
   console.log('Supabase URL:', env.SUPABASE_URL ? 'Set' : 'Not set');
   console.log('Supabase Anon Key:', env.SUPABASE_ANON_KEY ? 'Set' : 'Not set');
+  console.log('Raw NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set');
+  console.log('Raw NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Not set');
 }
 
 // Client-side Supabase client
-export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    // Disable email confirmation for immediate sign-in
-    detectSessionInUrl: false,
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      // Disable email confirmation for immediate sign-in
+      detectSessionInUrl: false,
+    }
   }
-});
+);
 
 // Validate Supabase client initialization
 if (typeof window !== 'undefined') {
