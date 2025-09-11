@@ -159,8 +159,8 @@ Return as JSON in this format:
     try {
       const tokenUsage = extractTokenUsageFromResponse(data);
       await trackTokenConsumption({
-        userId: 'unknown', // Ingredient normalization doesn't have user context
-        userEmail: 'unknown@example.com',
+        userId: '00000000-0000-0000-0000-000000000000', // Use a valid UUID for system operations
+        userEmail: 'system@smartmenu.app',
         apiEndpoint: '/api/normalize-ingredients',
         requestId: data.id,
         usage: tokenUsage,
