@@ -445,7 +445,7 @@ export default function AdminInsights() {
                     <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl">
                       <span className="text-slate-600 dark:text-slate-300">Percentage Costs</span>
                       <span className={`${typography.h4} text-orange-600 dark:text-orange-400 font-bold`}>
-                        {totalPercentageCosts.toFixed(1)}%
+                        {(totalPercentageCosts || 0).toFixed(1)}%
                       </span>
                     </div>
                     <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white">
@@ -611,7 +611,7 @@ export default function AdminInsights() {
                                                 </div>
                                                 <div className="text-right">
                                                   <div className="font-bold text-blue-900 dark:text-blue-100">
-                                                    {item.profitMargin.toFixed(1)}%
+                                                    {(item.profitMargin || 0).toFixed(1)}%
                                                   </div>
                                                   <div className="text-xs text-blue-600 dark:text-blue-400">Margin</div>
                                                 </div>
@@ -637,7 +637,7 @@ export default function AdminInsights() {
                                                 </div>
                                                 <div className="text-right">
                                                   <div className="font-bold text-green-900 dark:text-green-100">
-                                                    +${suggestion.expectedProfitIncrease.toFixed(2)}
+                                                    +${(suggestion.expectedProfitIncrease || 0).toFixed(2)}
                                                   </div>
                                                   <div className="text-xs text-green-600 dark:text-green-400">Potential</div>
                                                 </div>
@@ -659,7 +659,7 @@ export default function AdminInsights() {
                                               <div key={index} className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg">
                                                 <div className="font-medium text-purple-800 dark:text-purple-200 mb-1">{idea.menuItem}</div>
                                                 <div className="text-sm text-purple-600 dark:text-purple-300 mb-2">
-                                                  +{idea.upsellItem} (+${idea.additionalRevenue.toFixed(2)})
+                                                  +{idea.upsellItem} (+${(idea.additionalRevenue || 0).toFixed(2)})
                                                 </div>
                                                 <div className="text-xs text-purple-500 dark:text-purple-400">{idea.reasoning}</div>
                                               </div>
