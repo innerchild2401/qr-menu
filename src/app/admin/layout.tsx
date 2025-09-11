@@ -15,7 +15,8 @@ import {
   Menu, 
   LogOut,
   User,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -91,6 +92,7 @@ export default function AdminLayout({
     { href: '/admin/menu', icon: Menu, label: 'Menu Preview' },
     { href: '/admin/popups', icon: MessageSquare, label: 'Popups' },
     { href: '/admin/qr', icon: QrCode, label: 'QR Codes' },
+    { href: '/admin/insights', icon: BarChart3, label: 'Insight Ledger' },
     { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 
