@@ -70,7 +70,7 @@ export async function trackTokenConsumption(data: TokenConsumptionData): Promise
     const supabase = getSupabaseClient();
     console.log('🔍 Supabase client created, inserting record:', consumptionRecord);
     const { error } = await supabase
-      .from('token_consumption_logs')
+      .from('token_consumption')
       .insert(consumptionRecord);
 
     if (error) {
