@@ -20,7 +20,7 @@ ALTER TABLE insight_folders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can access their own restaurant insight folders" ON insight_folders
   FOR ALL USING (
     restaurant_id IN (
-      SELECT id FROM restaurants WHERE user_id = auth.uid()
+      SELECT id FROM restaurants WHERE owner_id = auth.uid()
     )
   );
 
