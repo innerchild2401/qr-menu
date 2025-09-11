@@ -149,14 +149,14 @@ export default function TokenConsumptionPage() {
     ];
     
     const csvData = consumptionData.map(item => [
-      item.userEmail,
-      new Date(item.createdAt).toLocaleString(),
-      item.apiEndpoint,
-      item.promptTokens,
-      item.completionTokens,
-      item.totalTokens,
-      item.totalCostUsd.toFixed(6),
-      item.model
+      item.userEmail || 'Unknown',
+      item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Unknown',
+      item.apiEndpoint || 'Unknown',
+      item.promptTokens || 0,
+      item.completionTokens || 0,
+      item.totalTokens || 0,
+      (item.totalCostUsd || 0).toFixed(6),
+      item.model || 'Unknown'
     ]);
     
     const csvContent = [headers, ...csvData]
@@ -313,7 +313,7 @@ export default function TokenConsumptionPage() {
                   <div>
                     <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Tokens</h3>
                     <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {dashboardStats.totalTokens.toLocaleString()}
+                      {(dashboardStats.totalTokens || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -482,16 +482,16 @@ export default function TokenConsumptionPage() {
                               </Badge>
                             </td>
                             <td className="py-3 px-4 text-right text-slate-900 dark:text-slate-100">
-                              {item.promptTokens.toLocaleString()}
+                              {(item.promptTokens || 0).toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right text-slate-900 dark:text-slate-100">
-                              {item.completionTokens.toLocaleString()}
+                              {(item.completionTokens || 0).toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right font-semibold text-slate-900 dark:text-slate-100">
-                              {item.totalTokens.toLocaleString()}
+                              {(item.totalTokens || 0).toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right font-semibold text-green-600 dark:text-green-400">
-                              ${item.totalCostUsd.toFixed(6)}
+                              ${(item.totalCostUsd || 0).toFixed(6)}
                             </td>
                           </motion.tr>
                         ))}
