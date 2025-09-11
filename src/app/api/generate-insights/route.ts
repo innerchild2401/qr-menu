@@ -131,18 +131,19 @@ export async function POST(request: NextRequest) {
     // Track token consumption
     try {
       const tokenUsage = extractTokenUsageFromResponse(gptData);
-      const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        await trackTokenConsumption({
-          userId: user.id,
-          userEmail: user.email || 'unknown@example.com',
-          apiEndpoint: '/api/generate-insights',
-          requestId: gptData.id,
-          usage: tokenUsage,
-          model: 'gpt-4o-mini'
-        });
-      }
+      // Get user email from the authorization header
+      const authHeader = request.headers.get('authorization');
+      const userEmail = authHeader ? JSON.parse(authHeader).email : 'unknown@example.com';
+      
+      await trackTokenConsumption({
+        userId: userId,
+        userEmail: userEmail,
+        apiEndpoint: '/api/generate-insights',
+        requestId: gptData.id,
+        usage: tokenUsage,
+        model: 'gpt-4o-mini'
+      });
     } catch (error) {
       console.error('Failed to track token consumption:', error);
       // Don't fail the main request if tracking fails
