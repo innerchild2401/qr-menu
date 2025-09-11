@@ -9,12 +9,38 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const userId = request.headers.get('x-user-id');
+    const authHeader = request.headers.get('authorization');
+    
+    if (!userId || !authHeader) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { systemPrompt, restaurantId, fixedCosts, userCountry } = await request.json();
 
     if (!restaurantId) {
       return NextResponse.json(
         { success: false, error: 'Restaurant ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Verify the user has access to the restaurant
+    const { data: userRestaurant, error: userRestaurantError } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', userId)
+      .eq('restaurant_id', restaurantId)
+      .single();
+
+    if (userRestaurantError || !userRestaurant) {
+      return NextResponse.json(
+        { success: false, error: 'Access denied to restaurant' },
+        { status: 403 }
       );
     }
 

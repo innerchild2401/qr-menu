@@ -51,7 +51,7 @@ export async function trackTokenConsumption(data: TokenConsumptionData): Promise
     };
 
     const { error } = await supabase
-      .from('token_consumption')
+      .from('token_consumption_logs')
       .insert(consumptionRecord);
 
     if (error) {
