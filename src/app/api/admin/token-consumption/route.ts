@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUser } from '@/lib/api-helpers';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,25 +9,16 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authorization
-    const cookieStore = await cookies();
-    const token = cookieStore.get('sb-access-token')?.value;
-    
-    if (!token) {
+    // Check authorization using header-based auth
+    const authResult = await getAuthenticatedUser(request);
+    if ('error' in authResult) {
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
+        { success: false, error: authResult.error },
+        { status: authResult.status }
       );
     }
 
-    // Get user session
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid authentication' },
-        { status: 401 }
-      );
-    }
+    const { user } = authResult;
 
     // Check if user is authorized (afilip.mme@gmail.com)
     if (user.email !== 'afilip.mme@gmail.com') {
