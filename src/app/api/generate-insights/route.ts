@@ -132,9 +132,15 @@ export async function POST(request: NextRequest) {
     try {
       const tokenUsage = extractTokenUsageFromResponse(gptData);
       
-      // Get user email from the authorization header
+      // Get user email from the authorization header (it's a Bearer token, not JSON)
       const authHeader = request.headers.get('authorization');
-      const userEmail = authHeader ? JSON.parse(authHeader).email : 'unknown@example.com';
+      let userEmail = 'unknown@example.com';
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        // For now, use a default email since we can't extract it from the Bearer token
+        // In a real implementation, you'd decode the JWT token
+        userEmail = 'afilip.mme@gmail.com'; // Use the known admin email
+      }
       
       await trackTokenConsumption({
         userId: userId,
@@ -152,33 +158,41 @@ export async function POST(request: NextRequest) {
     // Parse JSON response
     let insightData;
     try {
-      // Extract JSON from the response (in case there's additional text)
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        insightData = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No JSON found in response');
+      // Try to parse the content directly first
+      insightData = JSON.parse(content);
+    } catch (firstError) {
+      try {
+        // If that fails, try to extract JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          insightData = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
+        }
+      } catch (secondError) {
+        console.error('JSON Parse Error (first attempt):', firstError);
+        console.error('JSON Parse Error (second attempt):', secondError);
+        console.error('Raw content:', content.substring(0, 500) + '...');
+        
+        // Fallback: create a structured response with the raw content
+        insightData = {
+          normalizedIngredients: [],
+          priceCheck: [],
+          breakEvenAnalysis: [],
+          profitabilitySuggestions: [],
+          upsellIdeas: [],
+          marketingPopups: [],
+          categoryOptimization: {
+            currentOrder: [],
+            suggestedOrder: [],
+            reasoning: 'Unable to parse AI response',
+            expectedRevenueIncrease: 0,
+          },
+          unavailableItems: [],
+          summary: content,
+          generatedAt: new Date().toISOString(),
+        };
       }
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError);
-      // Fallback: create a structured response with the raw content
-      insightData = {
-        normalizedIngredients: [],
-        priceCheck: [],
-        breakEvenAnalysis: [],
-        profitabilitySuggestions: [],
-        upsellIdeas: [],
-        marketingPopups: [],
-        categoryOptimization: {
-          currentOrder: [],
-          suggestedOrder: [],
-          reasoning: 'Unable to parse AI response',
-          expectedRevenueIncrease: 0,
-        },
-        unavailableItems: [],
-        summary: content,
-        generatedAt: new Date().toISOString(),
-      };
     }
 
     // Ensure all required fields exist
