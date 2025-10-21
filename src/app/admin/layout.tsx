@@ -17,7 +17,8 @@ import {
   ChevronRight,
   BarChart3,
   Activity,
-  DollarSign
+  DollarSign,
+  Users
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -96,6 +97,7 @@ export default function AdminLayout({
     { href: '/admin/insights', icon: BarChart3, label: 'Insight Ledger' },
     { href: '/admin/token-consumption', icon: Activity, label: 'Token Consumption' },
     { href: '/admin/ingredient-costs', icon: DollarSign, label: 'Ingredient Costs' },
+    { href: '/admin/staff', icon: Users, label: 'Staff Management' },
     { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 
