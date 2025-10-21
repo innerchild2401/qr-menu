@@ -71,6 +71,7 @@ export default function StaffManagementPage() {
       const response = await authenticatedApiCall('/api/admin/categories');
       if (response.ok) {
         const data = await response.json();
+        console.log('Categories data:', data); // Debug log
         // Ensure data is an array
         setCategories(Array.isArray(data) ? data : []);
       } else {
@@ -89,7 +90,10 @@ export default function StaffManagementPage() {
       const response = await authenticatedApiCall('/api/admin/me/restaurant');
       if (response.ok) {
         const data = await response.json();
+        console.log('Restaurant data:', data); // Debug log
         setRestaurantSlug(data.slug || '');
+      } else {
+        console.error('Failed to fetch restaurant info:', response.status);
       }
     } catch (error) {
       console.error('Error fetching restaurant info:', error);
@@ -98,11 +102,12 @@ export default function StaffManagementPage() {
 
   const copyStaffLoginLink = async () => {
     if (!restaurantSlug) {
-      showError('Restaurant information not available');
+      showError('Restaurant information not available. Please refresh the page.');
       return;
     }
 
     const loginUrl = `${window.location.origin}/staff/login?restaurant=${restaurantSlug}`;
+    console.log('Generated login URL:', loginUrl); // Debug log
     
     try {
       await navigator.clipboard.writeText(loginUrl);
@@ -198,6 +203,12 @@ export default function StaffManagementPage() {
         <div>
           <h1 className="text-3xl font-bold">Staff Management</h1>
           <p className="text-muted-foreground">Manage staff users and their category permissions</p>
+          {restaurantSlug && (
+            <p className="text-xs text-green-600 mt-1">Restaurant: {restaurantSlug}</p>
+          )}
+          {categories.length > 0 && (
+            <p className="text-xs text-blue-600 mt-1">Categories loaded: {categories.length}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button 
