@@ -50,11 +50,16 @@ export default function StaffManagementPage() {
       const response = await authenticatedApiCall('/api/admin/staff');
       if (response.ok) {
         const data = await response.json();
-        setStaff(data);
+        // Ensure data is an array
+        setStaff(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Failed to fetch staff:', response.status);
+        setStaff([]);
       }
     } catch (error) {
       console.error('Error fetching staff:', error);
       showError('Failed to fetch staff users');
+      setStaff([]);
     } finally {
       setLoading(false);
     }
@@ -65,11 +70,16 @@ export default function StaffManagementPage() {
       const response = await authenticatedApiCall('/api/admin/categories');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        // Ensure data is an array
+        setCategories(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Failed to fetch categories:', response.status);
+        setCategories([]);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
       showError('Failed to fetch categories');
+      setCategories([]);
     }
   }, [showError]);
 
@@ -128,14 +138,14 @@ export default function StaffManagementPage() {
       name: staffUser.name,
       pin: '', // Don't show existing PIN
       role: staffUser.role,
-      category_permissions: staffUser.categories.map(c => c.category_id)
+      category_permissions: Array.isArray(staffUser.categories) ? staffUser.categories.map(c => c.category_id) : []
     });
     setShowAddForm(true);
   };
 
-  const filteredStaff = staff.filter(user =>
+  const filteredStaff = Array.isArray(staff) ? staff.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) : [];
 
   if (loading) {
     return (
@@ -287,7 +297,7 @@ export default function StaffManagementPage() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    <p>Categories: {staffUser.categories.map(c => c.category_name).join(', ')}</p>
+                    <p>Categories: {Array.isArray(staffUser.categories) ? staffUser.categories.map(c => c.category_name).join(', ') : 'None'}</p>
                     <p>Added: {new Date(staffUser.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
