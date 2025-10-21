@@ -36,8 +36,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Check if staff user has access to this category
     const { data: hasAccess, error: accessError } = await supabaseAdmin
       .rpc('can_user_edit_category', { 
-        user_id: staffUserId, 
-        category_id: product.category_id 
+        p_category_id: product.category_id,
+        p_user_id: staffUserId
       });
 
     console.log('Access check:', { 
