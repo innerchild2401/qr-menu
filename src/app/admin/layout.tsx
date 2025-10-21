@@ -18,7 +18,9 @@ import {
   BarChart3,
   Activity,
   DollarSign,
-  Users
+  Users,
+  History,
+  ClipboardCheck
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -98,6 +100,8 @@ export default function AdminLayout({
     { href: '/admin/token-consumption', icon: Activity, label: 'Token Consumption' },
     { href: '/admin/ingredient-costs', icon: DollarSign, label: 'Ingredient Costs' },
     { href: '/admin/staff', icon: Users, label: 'Staff Management' },
+    { href: '/admin/staff-activity', icon: History, label: 'Staff Activity' },
+    { href: '/admin/recipe-approvals', icon: ClipboardCheck, label: 'Recipe Approvals' },
     { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 

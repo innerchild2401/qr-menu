@@ -178,6 +178,19 @@ export default function StaffDashboardPage() {
           </Card>
         </div>
 
+        {/* Pending Approvals Notice */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">Recipe Changes Submitted</p>
+                <p className="text-xs text-blue-600">Your recipe changes are pending admin approval</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Category Filter */}
         <Card>
           <CardHeader className="pb-3">

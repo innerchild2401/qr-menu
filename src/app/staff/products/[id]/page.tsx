@@ -109,12 +109,14 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
         body: JSON.stringify({ recipe })
       });
 
-      if (response.ok) {
-        showSuccess('Recipe saved successfully');
-        router.back();
-      } else {
-        throw new Error('Failed to save recipe');
-      }
+          if (response.ok) {
+            const data = await response.json();
+            showSuccess('Recipe submitted for admin approval');
+            router.back();
+          } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to submit recipe');
+          }
     } catch (error) {
       showError('Failed to save recipe');
     } finally {

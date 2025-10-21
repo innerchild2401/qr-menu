@@ -92,22 +92,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const resolvedParams = await params;
     
-    // Update product recipe
-    const { data: product, error } = await supabaseAdmin
+    // Get current product recipe for comparison
+    const { data: currentProduct } = await supabaseAdmin
       .from('products')
-      .update({
-        recipe,
-        has_recipe: recipe && recipe.length > 0,
-        last_modified_by: staffUserId,
-        last_modified_at: new Date().toISOString()
-      })
+      .select('recipe')
       .eq('id', resolvedParams.id)
+      .single();
+
+    // Create recipe approval request instead of directly updating
+    const { data: approval, error: approvalError } = await supabaseAdmin
+      .from('recipe_approvals')
+      .insert({
+        product_id: parseInt(resolvedParams.id),
+        staff_user_id: staffUserId,
+        proposed_recipe: recipe,
+        current_recipe: currentProduct?.recipe || null,
+        status: 'pending',
+        created_by: staffUserId
+      })
       .select()
       .single();
 
-    if (error) {
-      console.error('Error updating product:', error);
-      return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    if (approvalError) {
+      console.error('Error creating recipe approval:', approvalError);
+      return NextResponse.json({ error: 'Failed to submit recipe for approval' }, { status: 500 });
     }
 
     // Log the activity
@@ -115,15 +123,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .from('staff_activity_log')
       .insert({
         staff_user_id: staffUserId,
-        action: 'edit_recipe',
+        action: 'submit_recipe_approval',
         product_id: parseInt(resolvedParams.id),
         details: { 
-          changes: 'Recipe updated',
-          staff_name: staffUser.name
+          changes: 'Recipe submitted for approval',
+          staff_name: staffUser.name,
+          approval_id: approval.id
         }
       });
 
-    return NextResponse.json(product);
+    return NextResponse.json({
+      success: true,
+      message: 'Recipe submitted for admin approval',
+      approval_id: approval.id
+    });
 
   } catch (error) {
     console.error('Error in staff product PUT:', error);
