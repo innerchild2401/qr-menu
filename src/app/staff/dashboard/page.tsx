@@ -55,10 +55,27 @@ export default function StaffDashboardPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch('/api/staff/products');
+      // Get staff user from localStorage
+      const staffData = localStorage.getItem('staff_user');
+      if (!staffData) {
+        router.push('/staff/login');
+        return;
+      }
+      
+      const staff = JSON.parse(staffData);
+      
+      const response = await fetch('/api/staff/products', {
+        headers: {
+          'x-staff-user-id': staff.id
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
+      } else {
+        console.error('Failed to fetch products:', response.status);
+        showError('Failed to fetch products');
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -66,7 +83,7 @@ export default function StaffDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, router]);
 
   useEffect(() => {
     // Check if staff is logged in

@@ -48,11 +48,28 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
 
   const fetchProduct = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/staff/products/${id}`);
+      // Get staff user from localStorage
+      const staffData = localStorage.getItem('staff_user');
+      if (!staffData) {
+        router.push('/staff/login');
+        return;
+      }
+      
+      const staff = JSON.parse(staffData);
+      
+      const response = await fetch(`/api/staff/products/${id}`, {
+        headers: {
+          'x-staff-user-id': staff.id
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
         setRecipe(data.recipe || []);
+      } else {
+        console.error('Failed to fetch product:', response.status);
+        showError('Failed to fetch product');
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -60,7 +77,7 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, router]);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -73,10 +90,22 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Get staff user from localStorage
+      const staffData = localStorage.getItem('staff_user');
+      if (!staffData) {
+        router.push('/staff/login');
+        return;
+      }
+      
+      const staff = JSON.parse(staffData);
       const resolvedParams = await params;
+      
       const response = await fetch(`/api/staff/products/${resolvedParams.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-user-id': staff.id
+        },
         body: JSON.stringify({ recipe })
       });
 
