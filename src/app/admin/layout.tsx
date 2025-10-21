@@ -14,10 +14,10 @@ import {
   CheckSquare, 
   Menu, 
   LogOut,
-  User,
   ChevronRight,
   BarChart3,
-  Activity
+  Activity,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -95,6 +95,7 @@ export default function AdminLayout({
     { href: '/admin/qr', icon: QrCode, label: 'QR Codes' },
     { href: '/admin/insights', icon: BarChart3, label: 'Insight Ledger' },
     { href: '/admin/token-consumption', icon: Activity, label: 'Token Consumption' },
+    { href: '/admin/ingredient-costs', icon: DollarSign, label: 'Ingredient Costs' },
     { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 
