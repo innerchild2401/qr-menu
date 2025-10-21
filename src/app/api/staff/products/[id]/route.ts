@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { supabaseAdmin } from '../../../../../../lib/supabase-server';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
+    // Use service role client to bypass RLS
 
     const staffUserId = request.headers.get('x-staff-user-id');
     if (!staffUserId) {
@@ -23,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const resolvedParams = await params;
     
     // Get product
-    const { data: product, error } = await supabase
+    const { data: product, error } = await supabaseAdmin
       .from('products')
       .select(`
         id,
@@ -44,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Check if staff user has access to this category
-    const { data: hasAccess } = await supabase
+    const { data: hasAccess } = await supabaseAdmin
       .rpc('can_user_edit_category', { 
         user_id: staffUserId, 
         category_id: product.category_id 
@@ -69,17 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { recipe } = await request.json();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
+    // Use service role client to bypass RLS
 
     const staffUserId = request.headers.get('x-staff-user-id');
     if (!staffUserId) {
@@ -87,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Get staff user info
-    const { data: staffUser } = await supabase
+    const { data: staffUser } = await supabaseAdmin
       .from('staff_users')
       .select('id, name, restaurant_id')
       .eq('id', staffUserId)
@@ -100,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const resolvedParams = await params;
     
     // Update product recipe
-    const { data: product, error } = await supabase
+    const { data: product, error } = await supabaseAdmin
       .from('products')
       .update({
         recipe,
@@ -118,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Log the activity
-    await supabase
+    await supabaseAdmin
       .from('staff_activity_log')
       .insert({
         staff_user_id: staffUserId,

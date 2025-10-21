@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { supabaseAdmin } from '../../../../../lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
-
     // Get staff user from request headers (set by middleware)
     const staffUserId = request.headers.get('x-staff-user-id');
     if (!staffUserId) {
@@ -22,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get staff user's accessible categories
-    const { data: categories } = await supabase
+    const { data: categories } = await supabaseAdmin
       .rpc('get_user_categories', { user_id: staffUserId });
 
     if (!categories || categories.length === 0) {
@@ -32,7 +20,7 @@ export async function GET(request: NextRequest) {
     const categoryIds = categories.map((c: { category_id: number }) => c.category_id);
 
     // Get products from accessible categories
-    const { data: products, error } = await supabase
+    const { data: products, error } = await supabaseAdmin
       .from('products')
       .select(`
         id,
