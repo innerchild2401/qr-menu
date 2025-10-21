@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Search, User, Shield, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 
 interface StaffUser {
   id: string;
@@ -46,7 +47,7 @@ export default function StaffManagementPage() {
 
   const fetchStaff = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/staff');
+      const response = await authenticatedApiCall('/api/admin/staff');
       if (response.ok) {
         const data = await response.json();
         setStaff(data);
@@ -61,7 +62,7 @@ export default function StaffManagementPage() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/categories');
+      const response = await authenticatedApiCall('/api/admin/categories');
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -81,13 +82,11 @@ export default function StaffManagementPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/admin/staff', {
-        method: editingId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingId,
-          ...formData
-        })
+      const response = await authenticatedApiCallWithBody('/api/admin/staff', {
+        id: editingId,
+        ...formData
+      }, {
+        method: editingId ? 'PUT' : 'POST'
       });
 
       if (response.ok) {
@@ -108,7 +107,7 @@ export default function StaffManagementPage() {
     if (!confirm('Are you sure you want to delete this staff user?')) return;
 
     try {
-      const response = await fetch(`/api/admin/staff?id=${id}`, {
+      const response = await authenticatedApiCall(`/api/admin/staff?id=${id}`, {
         method: 'DELETE'
       });
 
