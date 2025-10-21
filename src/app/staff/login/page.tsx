@@ -37,20 +37,27 @@ export default function StaffLoginPage() {
       const restaurantData = await restaurantResponse.json();
       const restaurantId = restaurantData.restaurant.id;
 
+      console.log('Sending login request:', { pin, restaurant_id: restaurantId });
+      
       const response = await fetch('/api/staff/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin, restaurant_id: restaurantId })
       });
 
+      console.log('Login response status:', response.status);
+      console.log('Login response headers:', response.headers);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Login success data:', data);
         localStorage.setItem('staff_user', JSON.stringify(data.staff));
         localStorage.setItem('staff_categories', JSON.stringify(data.categories));
         showSuccess(`Welcome, ${data.staff.name}!`);
         router.push('/staff/dashboard');
       } else {
         const error = await response.json();
+        console.log('Login error:', error);
         showError(error.error || 'Invalid PIN');
       }
     } catch (error) {
