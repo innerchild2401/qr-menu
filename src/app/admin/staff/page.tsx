@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Search, User, Shield, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, User, Shield, Eye, EyeOff, Copy, Link } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { authenticatedApiCall, authenticatedApiCallWithBody } from '@/lib/api-helpers';
 
@@ -35,6 +35,7 @@ export default function StaffManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [restaurantSlug, setRestaurantSlug] = useState<string>('');
   const { showSuccess, showError } = useToast();
 
   // Form state
@@ -83,10 +84,46 @@ export default function StaffManagementPage() {
     }
   }, [showError]);
 
+  const fetchRestaurantInfo = useCallback(async () => {
+    try {
+      const response = await authenticatedApiCall('/api/admin/me/restaurant');
+      if (response.ok) {
+        const data = await response.json();
+        setRestaurantSlug(data.slug || '');
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant info:', error);
+    }
+  }, []);
+
+  const copyStaffLoginLink = async () => {
+    if (!restaurantSlug) {
+      showError('Restaurant information not available');
+      return;
+    }
+
+    const loginUrl = `${window.location.origin}/staff/login?restaurant=${restaurantSlug}`;
+    
+    try {
+      await navigator.clipboard.writeText(loginUrl);
+      showSuccess('Staff login link copied to clipboard!');
+    } catch (error) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = loginUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      showSuccess('Staff login link copied to clipboard!');
+    }
+  };
+
   useEffect(() => {
     fetchStaff();
     fetchCategories();
-  }, [fetchStaff, fetchCategories]);
+    fetchRestaurantInfo();
+  }, [fetchStaff, fetchCategories, fetchRestaurantInfo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,10 +199,21 @@ export default function StaffManagementPage() {
           <h1 className="text-3xl font-bold">Staff Management</h1>
           <p className="text-muted-foreground">Manage staff users and their category permissions</p>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Staff User
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={copyStaffLoginLink} 
+            variant="outline" 
+            className="flex items-center gap-2"
+            disabled={!restaurantSlug}
+          >
+            <Link className="h-4 w-4" />
+            Copy Staff Login Link
+          </Button>
+          <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Staff User
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
