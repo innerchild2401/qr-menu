@@ -10,10 +10,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Get staff user's accessible categories
-    const { data: categories } = await supabaseAdmin
+    const { data: categories, error: categoriesError } = await supabaseAdmin
       .rpc('get_user_categories', { user_id: staffUserId });
 
+    console.log('Staff user categories:', { staffUserId, categories, categoriesError });
+
+    if (categoriesError) {
+      console.error('Error fetching user categories:', categoriesError);
+      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+    }
+
     if (!categories || categories.length === 0) {
+      console.log('No categories found for staff user:', staffUserId);
       return NextResponse.json([]);
     }
 

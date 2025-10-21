@@ -34,13 +34,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Check if staff user has access to this category
-    const { data: hasAccess } = await supabaseAdmin
+    const { data: hasAccess, error: accessError } = await supabaseAdmin
       .rpc('can_user_edit_category', { 
         user_id: staffUserId, 
         category_id: product.category_id 
       });
 
+    console.log('Access check:', { 
+      staffUserId, 
+      categoryId: product.category_id, 
+      hasAccess, 
+      accessError 
+    });
+
+    if (accessError) {
+      console.error('Error checking access:', accessError);
+      return NextResponse.json({ error: 'Failed to check access' }, { status: 500 });
+    }
+
     if (!hasAccess) {
+      console.log('Access denied for staff user:', staffUserId, 'to category:', product.category_id);
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
