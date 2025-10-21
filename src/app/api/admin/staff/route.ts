@@ -1,38 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { supabaseAdmin } from '../../../../../lib/supabase-server';
+import { validateUserAndGetRestaurant } from '../../../../../lib/api-route-helpers';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
       }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch restaurant data' },
+        { status: 500 }
+      );
     }
 
-    // Get user's restaurant
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Get staff users with their category permissions
-    const { data: staff, error } = await supabase
+    const { data: staff, error: staffError } = await supabaseAdmin
       .from('staff_users')
       .select(`
         *,
@@ -42,11 +43,11 @@ export async function GET(request: NextRequest) {
           categories(name)
         )
       `)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .order('name');
 
-    if (error) {
-      console.error('Error fetching staff:', error);
+    if (staffError) {
+      console.error('Error fetching staff:', staffError);
       return NextResponse.json({ error: 'Failed to fetch staff users' }, { status: 500 });
     }
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { name, pin, role, category_permissions } = await request.json();
 
@@ -76,43 +77,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
       }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch restaurant data' },
+        { status: 500 }
+      );
     }
 
-    // Get user's restaurant
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Hash the PIN
-    const { data: hashedPin } = await supabase
+    const { data: hashedPin } = await supabaseAdmin
       .rpc('hash_pin', { pin });
 
     // Create staff user
-    const { data: staffUser, error: staffError } = await supabase
+    const { data: staffUser, error: staffError } = await supabaseAdmin
       .from('staff_users')
       .insert({
-        restaurant_id: userRestaurant.restaurant_id,
+        restaurant_id: restaurant.id,
         name,
         pin: hashedPin,
         role,
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         created_by: user.id
       }));
 
-      const { error: permissionsError } = await supabase
+      const { error: permissionsError } = await supabaseAdmin
         .from('user_category_permissions')
         .insert(permissions);
 
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
     const { id, name, pin, role, category_permissions } = await request.json();
 
@@ -162,32 +163,32 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
       }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch restaurant data' },
+        { status: 500 }
+      );
     }
 
-    // Get user's restaurant
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Prepare update data
@@ -204,17 +205,17 @@ export async function PUT(request: NextRequest) {
 
     // Hash PIN if provided
     if (pin) {
-      const { data: hashedPin } = await supabase
+      const { data: hashedPin } = await supabaseAdmin
         .rpc('hash_pin', { pin });
       updateData.pin = hashedPin;
     }
 
     // Update staff user
-    const { data: staffUser, error: staffError } = await supabase
+    const { data: staffUser, error: staffError } = await supabaseAdmin
       .from('staff_users')
       .update(updateData)
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .select()
       .single();
 
@@ -226,7 +227,7 @@ export async function PUT(request: NextRequest) {
     // Update category permissions
     if (category_permissions) {
       // Delete existing permissions
-      await supabase
+      await supabaseAdmin
         .from('user_category_permissions')
         .delete()
         .eq('staff_user_id', id);
@@ -241,7 +242,7 @@ export async function PUT(request: NextRequest) {
           created_by: user.id
         }));
 
-        const { error: permissionsError } = await supabase
+        const { error: permissionsError } = await supabaseAdmin
           .from('user_category_permissions')
           .insert(permissions);
 
@@ -260,7 +261,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -269,43 +270,43 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing staff user ID' }, { status: 400 });
     }
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Missing user ID' },
+          { status: 401 }
+        );
       }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json(
+          { error: 'No restaurant found for current user' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch restaurant data' },
+        { status: 500 }
+      );
     }
 
-    // Get user's restaurant
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    if (!user || !restaurant) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Soft delete by setting is_active to false
-    const { error } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('staff_users')
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id);
+      .eq('restaurant_id', restaurant.id);
 
-    if (error) {
-      console.error('Error deleting staff user:', error);
+    if (deleteError) {
+      console.error('Error deleting staff user:', deleteError);
       return NextResponse.json({ error: 'Failed to delete staff user' }, { status: 500 });
     }
 

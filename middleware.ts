@@ -63,6 +63,18 @@ export async function middleware(req: NextRequest) {
       // Redirect to home page if not authenticated
       return NextResponse.redirect(new URL('/', req.url));
     }
+
+    // Add user ID to headers for API routes
+    if (session.user?.id) {
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set('x-user-id', session.user.id);
+      
+      response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
   }
 
   return response;
