@@ -72,8 +72,9 @@ export default function StaffManagementPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Categories data:', data); // Debug log
-        // Ensure data is an array
-        setCategories(Array.isArray(data) ? data : []);
+        // Extract categories from the nested data structure
+        const categoriesArray = data.categories || [];
+        setCategories(Array.isArray(categoriesArray) ? categoriesArray : []);
       } else {
         console.error('Failed to fetch categories:', response.status);
         setCategories([]);
@@ -91,7 +92,8 @@ export default function StaffManagementPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Restaurant data:', data); // Debug log
-        setRestaurantSlug(data.slug || '');
+        // Extract slug from the nested data structure
+        setRestaurantSlug(data.data?.slug || '');
       } else {
         console.error('Failed to fetch restaurant info:', response.status);
       }
