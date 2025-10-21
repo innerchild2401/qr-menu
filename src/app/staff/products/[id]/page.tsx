@@ -111,8 +111,11 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
 
           if (response.ok) {
             const data = await response.json();
-            showSuccess('Recipe submitted for admin approval');
-            router.back();
+            showSuccess('✅ Recipe saved as draft - submitted for admin approval');
+            // Small delay to show the success message
+            setTimeout(() => {
+              router.back();
+            }, 1500);
           } else {
             const error = await response.json();
             throw new Error(error.error || 'Failed to submit recipe');
@@ -176,14 +179,22 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="font-semibold text-gray-900">{product.name}</h1>
+            <div className="text-center">
+              <h1 className="font-semibold text-gray-900">{product.name}</h1>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  📝 Draft Mode
+                </Badge>
+                <span className="text-xs text-gray-600">Changes require admin approval</span>
+              </div>
+            </div>
             <Button
               onClick={handleSave}
               disabled={saving}
               size="sm"
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving Draft...' : 'Save as Draft'}
             </Button>
           </div>
         </div>
