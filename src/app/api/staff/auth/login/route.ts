@@ -4,6 +4,8 @@ import { createServerClient } from '@supabase/ssr';
 export async function POST(request: NextRequest) {
   try {
     const { pin, restaurant_id } = await request.json();
+    
+    console.log('Staff login attempt:', { pin, restaurant_id });
 
     if (!pin || !restaurant_id) {
       return NextResponse.json({ error: 'PIN and restaurant ID required' }, { status: 400 });
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Find staff user by PIN and restaurant
+    // Find staff user by restaurant (not by PIN initially)
     const { data: staffUser, error } = await supabase
       .from('staff_users')
       .select('*')
@@ -29,15 +31,21 @@ export async function POST(request: NextRequest) {
       .eq('is_active', true)
       .single();
 
+    console.log('Staff user query result:', { staffUser, error });
+
     if (error || !staffUser) {
+      console.log('No staff user found for restaurant:', restaurant_id);
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
     }
 
     // Verify PIN
-    const { data: pinValid } = await supabase
+    const { data: pinValid, error: pinError } = await supabase
       .rpc('verify_pin', { pin, hashed_pin: staffUser.pin });
 
-    if (!pinValid) {
+    console.log('PIN verification result:', { pinValid, pinError, pin, hashedPin: staffUser.pin });
+
+    if (pinError || !pinValid) {
+      console.log('PIN verification failed');
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
     }
 
