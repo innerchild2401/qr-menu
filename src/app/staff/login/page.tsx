@@ -19,14 +19,23 @@ export default function StaffLoginPage() {
     setLoading(true);
 
     try {
-      // Get restaurant ID from URL params or localStorage
+      // Get restaurant slug from URL params
       const urlParams = new URLSearchParams(window.location.search);
-      const restaurantId = urlParams.get('restaurant') || localStorage.getItem('restaurant_id');
+      const restaurantSlug = urlParams.get('restaurant');
 
-      if (!restaurantId) {
-        showError('Restaurant ID not found');
+      if (!restaurantSlug) {
+        showError('Restaurant not found in URL');
         return;
       }
+
+      // Get restaurant ID from slug
+      const restaurantResponse = await fetch(`/api/menu/${restaurantSlug}`);
+      if (!restaurantResponse.ok) {
+        showError('Restaurant not found');
+        return;
+      }
+      const restaurantData = await restaurantResponse.json();
+      const restaurantId = restaurantData.restaurant.id;
 
       const response = await fetch('/api/staff/auth/login', {
         method: 'POST',
