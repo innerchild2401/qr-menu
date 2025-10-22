@@ -71,6 +71,8 @@ export default function RecipeApprovalsPage() {
         approval_id: approvalId,
         action,
         admin_notes: adminNotes[approvalId] || ''
+      }, {
+        method: 'PUT'
       });
 
       if (response.ok) {
