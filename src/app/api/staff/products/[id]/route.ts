@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         proposed_recipe: recipe,
         current_recipe: currentProduct?.recipe || null,
         status: 'pending',
-        created_by: staffUserId
+        created_by: null // Staff users don't have auth.users entries
       })
       .select()
       .single();
