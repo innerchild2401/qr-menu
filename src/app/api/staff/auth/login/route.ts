@@ -50,15 +50,17 @@ export async function POST(request: NextRequest) {
     console.log('Staff user found:', { id: staffUser.id, name: staffUser.name });
 
     // Get user's accessible categories from permissions table
-    const { data: userPermissions } = await supabaseAdmin
+    const { data: userPermissions, error: permissionsError } = await supabaseAdmin
       .from('user_category_permissions')
       .select(`
         category_id,
         can_edit,
         can_view,
-        categories!inner(id, name)
+        categories(id, name)
       `)
       .eq('staff_user_id', staffUser.id);
+
+    console.log('User permissions query result:', { userPermissions, permissionsError });
 
     let categories = userPermissions?.map((permission: { category_id: number; can_edit: boolean; categories: { name: string }[] }) => ({
       category_id: permission.category_id,
