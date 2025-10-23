@@ -105,9 +105,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Hash the PIN
-    const { data: hashedPin } = await supabaseAdmin
-      .rpc('hash_pin', { pin });
+    // Hash the PIN using simple SHA256
+    const { createHash } = await import('crypto');
+    const hashedPin = createHash('sha256').update(pin).digest('hex');
 
     // Create staff user
     const { data: staffUser, error: staffError } = await supabaseAdmin
