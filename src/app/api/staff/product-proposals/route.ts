@@ -49,6 +49,11 @@ export async function GET(request: NextRequest) {
 
     if (proposalsError) {
       console.error('Error fetching product proposals:', proposalsError);
+      // If table doesn't exist, return empty array instead of error
+      if (proposalsError.code === '42P01') { // Table doesn't exist
+        console.log('Product proposals table does not exist, returning empty array');
+        return NextResponse.json([]);
+      }
       return NextResponse.json({ error: 'Failed to fetch product proposals' }, { status: 500 });
     }
 
@@ -144,6 +149,10 @@ export async function POST(request: NextRequest) {
 
     if (proposalError) {
       console.error('Error creating product proposal:', proposalError);
+      // If table doesn't exist, return a helpful error
+      if (proposalError.code === '42P01') { // Table doesn't exist
+        return NextResponse.json({ error: 'Product proposals feature not available yet. Please contact your administrator.' }, { status: 503 });
+      }
       return NextResponse.json({ error: 'Failed to create product proposal' }, { status: 500 });
     }
 
