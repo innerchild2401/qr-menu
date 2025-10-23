@@ -74,9 +74,11 @@ class EnvironmentValidator {
       throw new Error('SUPABASE_SERVICE_ROLE_KEY must be a valid JWT token');
     }
 
-    // Validate OpenAI API key format if provided
-    if (optionalVars.OPENAI_API_KEY && !this.isValidOpenAIKey(optionalVars.OPENAI_API_KEY)) {
-      throw new Error('OPENAI_API_KEY must be a valid OpenAI API key');
+    // Validate OpenAI API key format if provided (very lenient)
+    if (optionalVars.OPENAI_API_KEY && optionalVars.OPENAI_API_KEY.trim() !== '') {
+      if (!this.isValidOpenAIKey(optionalVars.OPENAI_API_KEY)) {
+        throw new Error('OPENAI_API_KEY must be a valid OpenAI API key');
+      }
     }
 
     this.config = {
@@ -129,14 +131,15 @@ class EnvironmentValidator {
   }
 
   /**
-   * Validate OpenAI API key format (very lenient validation)
+   * Validate OpenAI API key format (extremely lenient validation)
    */
   private isValidOpenAIKey(key: string): boolean {
     if (!key || typeof key !== 'string') return false;
     
-    // Very lenient validation - just check it's a reasonable length and not empty
-    // OpenAI keys can have different formats (sk-, org-, etc.)
-    return key.length >= 20 && key.length <= 100;
+    // Extremely lenient validation - just check it's not empty and reasonable length
+    // Accept any format as long as it's not obviously invalid
+    const trimmedKey = key.trim();
+    return trimmedKey.length >= 10 && trimmedKey.length <= 200;
   }
 
   /**
