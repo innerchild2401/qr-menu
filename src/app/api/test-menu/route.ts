@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { validateEnvironment } from '../../../lib/env-validation';
 
 export async function GET() {
   try {
-    // Create Supabase client directly
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhyuqhypzytnkkdifuk.supabase.co';
-    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uaHl1cWh5cHp5dG5ra2RpZnVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk3NjA5MiwiZXhwIjoyMDcxNTUyMDkyfQ.5gqpZ6FAMlLPFwKv-p14lssKiRt2AOMqmOY926xos8I';
+    // Validate environment variables
+    let envConfig;
+    try {
+      envConfig = validateEnvironment();
+    } catch (error) {
+      console.error('Environment validation failed:', error);
+      return NextResponse.json({ 
+        error: 'Server configuration error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
+    }
     
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    const supabase = createClient(envConfig.NEXT_PUBLIC_SUPABASE_URL, envConfig.SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

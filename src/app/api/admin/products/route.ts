@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-server';
 import { validateUserAndGetRestaurant } from '../../../../../lib/api-route-helpers';
+// Security imports available for future use
+// import { secureApiHandler, createSecureResponse, createSecureErrorResponse } from '../../../../../lib/secure-api-helpers';
+// import { productSchema, productUpdateSchema } from '../../../../../lib/validation-schemas';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {

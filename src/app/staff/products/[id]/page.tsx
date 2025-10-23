@@ -17,6 +17,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { staffStorage } from '@/lib/secure-storage';
 
 interface Ingredient {
   ingredient: string;
@@ -48,14 +49,12 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
 
   const fetchProduct = useCallback(async (id: string) => {
     try {
-      // Get staff user from localStorage
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      // Get staff user from secure storage
+      const staff = staffStorage.getUser() as { id: string; name: string; role: string } | null;
+      if (!staff) {
         router.push('/staff/login');
         return;
       }
-      
-      const staff = JSON.parse(staffData);
       
       const response = await fetch(`/api/staff/products/${id}`, {
         headers: {
@@ -90,14 +89,12 @@ export default function ProductEditorPage({ params }: { params: Promise<{ id: st
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Get staff user from localStorage
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      // Get staff user from secure storage
+      const staff = staffStorage.getUser() as { id: string; name: string; role: string } | null;
+      if (!staff) {
         router.push('/staff/login');
         return;
       }
-      
-      const staff = JSON.parse(staffData);
       const resolvedParams = await params;
       
       const response = await fetch(`/api/staff/products/${resolvedParams.id}`, {

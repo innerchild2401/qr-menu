@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { staffStorage } from '@/lib/secure-storage';
 
 interface StaffUser {
   id: string;
@@ -105,14 +106,12 @@ export default function StaffDashboardPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      // Get staff user from localStorage
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      // Get staff user from secure storage
+      const staff = staffStorage.getUser() as StaffUser | null;
+      if (!staff) {
         router.push('/staff/login');
         return;
       }
-      
-      const staff = JSON.parse(staffData);
       
       const response = await fetch('/api/staff/products', {
         headers: {
@@ -137,13 +136,11 @@ export default function StaffDashboardPage() {
 
   const fetchDraftRecipes = useCallback(async () => {
     try {
-      // Get staff user from localStorage
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      // Get staff user from secure storage
+      const staff = staffStorage.getUser() as StaffUser | null;
+      if (!staff) {
         return;
       }
-      
-      const staff = JSON.parse(staffData);
       
       const response = await fetch('/api/staff/draft-recipes', {
         headers: {
@@ -164,13 +161,11 @@ export default function StaffDashboardPage() {
 
   const fetchProductProposals = useCallback(async () => {
     try {
-      // Get staff user from localStorage
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      // Get staff user from secure storage
+      const staff = staffStorage.getUser() as StaffUser | null;
+      if (!staff) {
         return;
       }
-      
-      const staff = JSON.parse(staffData);
       
       const response = await fetch('/api/staff/product-proposals', {
         headers: {
@@ -191,24 +186,23 @@ export default function StaffDashboardPage() {
 
   useEffect(() => {
     // Check if staff is logged in
-    const staffData = localStorage.getItem('staff_user');
-    const categoriesData = localStorage.getItem('staff_categories');
+    const staff = staffStorage.getUser() as StaffUser | null;
+    const categories = staffStorage.getCategories() as Category[] | null;
 
-    if (!staffData || !categoriesData) {
+    if (!staff || !categories) {
       router.push('/staff/login');
       return;
     }
 
-    setStaff(JSON.parse(staffData));
-    setCategories(JSON.parse(categoriesData));
+    setStaff(staff);
+    setCategories(categories);
     fetchProducts();
     fetchDraftRecipes();
     fetchProductProposals();
   }, [router, fetchProducts, fetchDraftRecipes, fetchProductProposals]);
 
   const handleLogout = () => {
-    localStorage.removeItem('staff_user');
-    localStorage.removeItem('staff_categories');
+    staffStorage.clear();
     router.push('/staff/login');
   };
 
@@ -655,12 +649,10 @@ function NewProductProposalForm({
     setSubmitting(true);
 
     try {
-      const staffData = localStorage.getItem('staff_user');
-      if (!staffData) {
+      const staff = staffStorage.getUser() as StaffUser | null;
+      if (!staff) {
         throw new Error('Staff user not found');
       }
-
-      const staff = JSON.parse(staffData);
       
       const response = await fetch('/api/staff/product-proposals', {
         method: 'POST',

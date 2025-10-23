@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { staffStorage } from '@/lib/secure-storage';
 
 export default function StaffLoginPage() {
   const [pin, setPin] = useState('');
@@ -51,8 +52,8 @@ export default function StaffLoginPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Login success data:', data);
-        localStorage.setItem('staff_user', JSON.stringify(data.staff));
-        localStorage.setItem('staff_categories', JSON.stringify(data.categories));
+        staffStorage.setUser(data.staff);
+        staffStorage.setCategories(data.categories);
         showSuccess(`Welcome, ${data.staff.name}!`);
         router.push('/staff/dashboard');
       } else {

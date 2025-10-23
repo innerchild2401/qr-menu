@@ -1,8 +1,32 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { applySecurityHeaders, validateApiRequest } from './src/lib/security-middleware';
+import { validateCSRFRequest } from './src/lib/csrf-protection';
 
 export async function middleware(req: NextRequest) {
+  // Validate API requests
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    const validation = validateApiRequest(req);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+    
+    // Additional CSRF validation for state-changing operations
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      const csrfValidation = validateCSRFRequest(req);
+      if (!csrfValidation.valid) {
+        return NextResponse.json(
+          { error: csrfValidation.error },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: req.headers,
@@ -77,9 +101,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return response;
+  // Apply security headers to all responses
+  return applySecurityHeaders(response);
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ['/admin/:path*', '/api/:path*']
 };

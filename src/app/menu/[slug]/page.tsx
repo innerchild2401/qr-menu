@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect, useRef } from 'react';
+import { menuStorage } from '@/lib/secure-storage';
 import { 
   Star, 
   MapPin, 
@@ -135,21 +136,17 @@ function MenuPageContent({ params }: MenuPageProps) {
     loadMenuData();
   }, [params]);
 
-  // Load order from localStorage on mount
+  // Load order from secure storage on mount
   useEffect(() => {
-    const savedOrder = localStorage.getItem('menuOrder');
-    if (savedOrder) {
-      try {
-        setOrder(JSON.parse(savedOrder));
-      } catch (err) {
-        console.error('Failed to parse saved order:', err);
-      }
+    const savedOrder = menuStorage.getOrder();
+    if (savedOrder && Array.isArray(savedOrder)) {
+      setOrder(savedOrder);
     }
   }, []);
 
-  // Save order to localStorage whenever it changes
+  // Save order to secure storage whenever it changes
   useEffect(() => {
-    localStorage.setItem('menuOrder', JSON.stringify(order));
+    menuStorage.setOrder(order);
   }, [order]);
 
   const addToOrder = (product: Product) => {
@@ -191,7 +188,7 @@ function MenuPageContent({ params }: MenuPageProps) {
 
   const clearOrder = () => {
     setOrder([]);
-    localStorage.removeItem('menuOrder');
+    menuStorage.removeOrder();
   };
 
   const getTotalPrice = () => {
