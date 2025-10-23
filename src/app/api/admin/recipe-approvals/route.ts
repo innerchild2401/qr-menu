@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-server';
 import { validateUserAndGetRestaurant } from '../../../../../lib/api-route-helpers';
+import { normalizeAndStoreIngredients } from '../../../../lib/ingredient-normalization';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -139,7 +140,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     if (action === 'approve') {
       try {
         // First, normalize ingredients and add missing ones to ingredients table
-        await normalizeAndStoreIngredients(approval.proposed_recipe, restaurant.id);
+        const normalizationResult = await normalizeAndStoreIngredients(approval.proposed_recipe, restaurant.id);
+        console.log(`Ingredient normalization: ${normalizationResult.processed} processed, ${normalizationResult.duplicates} duplicates found, ${normalizationResult.new} new ingredients added`);
         
         // Calculate nutritional values
         const nutritionData = await calculateNutritionalValues(approval.proposed_recipe);
@@ -214,61 +216,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Helper function to normalize ingredients and store missing ones
-async function normalizeAndStoreIngredients(recipe: Array<{ingredient: string; quantity: number; unit: string}>, restaurantId: string) {
-  if (!recipe || recipe.length === 0) return;
-
-  try {
-    // Get existing ingredients from the restaurant
-    const { data: existingProducts } = await supabaseAdmin
-      .from('products')
-      .select('recipe')
-      .eq('restaurant_id', restaurantId)
-      .not('recipe', 'is', null);
-
-    const existingIngredients = new Set<string>();
-    existingProducts?.forEach(product => {
-      if (product.recipe && Array.isArray(product.recipe)) {
-        product.recipe.forEach((item: { ingredient?: string }) => {
-          if (item.ingredient) {
-            existingIngredients.add(item.ingredient.toLowerCase());
-          }
-        });
-      }
-    });
-
-    // Check which ingredients are new
-    const newIngredients = recipe
-      .map(item => item.ingredient?.toLowerCase())
-      .filter(ingredient => ingredient && !existingIngredients.has(ingredient));
-
-    if (newIngredients.length > 0) {
-      console.log(`Found ${newIngredients.length} new ingredients to normalize`);
-      
-      // Use GPT to normalize ingredients
-      const normalizedIngredients = await normalizeIngredientsWithGPT(newIngredients);
-      
-      // Store normalized ingredients in ingredients_cache table
-      for (const ingredient of normalizedIngredients) {
-        await supabaseAdmin
-          .from('ingredients_cache')
-          .upsert({
-            name: ingredient.normalized_name,
-            language: 'ro',
-            calories_per_100g: ingredient.calories_per_100g,
-            protein_per_100g: ingredient.protein_per_100g,
-            carbs_per_100g: ingredient.carbs_per_100g,
-            fat_per_100g: ingredient.fat_per_100g
-          }, {
-            onConflict: 'name,language'
-          });
-      }
-    }
-  } catch (error) {
-    console.error('Error normalizing ingredients:', error);
-    // Don't throw - this is not critical for the approval process
-  }
-}
 
 // Helper function to calculate nutritional values
 async function calculateNutritionalValues(recipe: Array<{ingredient: string; quantity: number; unit: string}>) {
