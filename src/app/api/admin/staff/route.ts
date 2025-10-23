@@ -105,9 +105,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Hash the PIN using simple SHA256
-    const { createHash } = await import('crypto');
-    const hashedPin = createHash('sha256').update(pin).digest('hex');
+    // Hash the PIN using bcrypt for security
+    const bcrypt = await import('bcryptjs');
+    const hashedPin = bcrypt.hashSync(pin, 10);
 
     // Create staff user
     const { data: staffUser, error: staffError } = await supabaseAdmin

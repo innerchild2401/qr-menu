@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-server';
 import { createHash } from 'crypto';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
     }
 
-    // Find the staff user with matching PIN (simple hash comparison)
+    // Find the staff user with matching PIN (handle both bcrypt and SHA256)
     const staffUser = staffUsers.find(user => {
-      // Simple hash comparison for now
+      // Check if PIN is bcrypt hashed (starts with $2a$ or $2b$)
+      if (user.pin.startsWith('$2a$') || user.pin.startsWith('$2b$')) {
+        return bcrypt.compareSync(pin, user.pin);
+      }
+      // Otherwise, assume it's SHA256 hashed
       const hashedPin = createHash('sha256').update(pin).digest('hex');
       return user.pin === hashedPin;
     });
