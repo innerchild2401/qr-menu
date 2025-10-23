@@ -129,13 +129,14 @@ class EnvironmentValidator {
   }
 
   /**
-   * Validate OpenAI API key format
+   * Validate OpenAI API key format (lenient validation)
    */
   private isValidOpenAIKey(key: string): boolean {
     if (!key || typeof key !== 'string') return false;
     
-    // OpenAI API keys start with 'sk-' and are 51 characters long
-    return key.startsWith('sk-') && key.length === 51;
+    // OpenAI API keys start with 'sk-' and are typically 48-51 characters long
+    // Be more lenient to accommodate different key formats
+    return key.startsWith('sk-') && key.length >= 48 && key.length <= 60;
   }
 
   /**
