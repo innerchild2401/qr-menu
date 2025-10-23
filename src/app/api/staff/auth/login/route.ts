@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       .eq('staff_user_id', staffUser.id);
 
     console.log('User permissions query result:', { userPermissions, permissionsError });
+    console.log('Raw userPermissions data:', JSON.stringify(userPermissions, null, 2));
 
     let categories = userPermissions?.map((permission: { category_id: number; can_edit: boolean; categories: { name: string }[] }) => ({
       category_id: permission.category_id,
