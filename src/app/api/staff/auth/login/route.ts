@@ -49,18 +49,61 @@ export async function POST(request: NextRequest) {
 
     console.log('Staff user found:', { id: staffUser.id, name: staffUser.name });
 
-    // Get user's accessible categories (simplified - get all categories for now)
-    const { data: allCategories } = await supabaseAdmin
-      .from('categories')
-      .select('id, name')
-      .eq('restaurant_id', restaurant_id);
+    // Get user's accessible categories from permissions table
+    const { data: userPermissions } = await supabaseAdmin
+      .from('user_category_permissions')
+      .select(`
+        category_id,
+        can_edit,
+        can_view,
+        categories!inner(id, name)
+      `)
+      .eq('staff_user_id', staffUser.id);
 
-    // For now, give access to all categories
-    const categories = allCategories?.map(cat => ({
-      category_id: cat.id,
-      category_name: cat.name,
-      can_edit: true
+    let categories = userPermissions?.map((permission: { category_id: number; can_edit: boolean; categories: { name: string }[] }) => ({
+      category_id: permission.category_id,
+      category_name: permission.categories?.[0]?.name || 'Unknown Category',
+      can_edit: permission.can_edit
     })) || [];
+
+    // If no permissions exist, create default permissions based on role
+    if (categories.length === 0) {
+      console.log('No permissions found, creating default permissions for role:', staffUser.role);
+      
+      // Get all categories for the restaurant
+      const { data: allCategories } = await supabaseAdmin
+        .from('categories')
+        .select('id, name')
+        .eq('restaurant_id', restaurant_id);
+
+      if (allCategories && allCategories.length > 0) {
+        // Create default permissions based on role
+        const defaultPermissions = allCategories.map(cat => ({
+          staff_user_id: staffUser.id,
+          category_id: cat.id,
+          can_edit: staffUser.role === 'manager' || staffUser.role === 'cook',
+          can_view: true,
+          created_by: staffUser.created_by
+        }));
+
+        // Insert default permissions
+        const { error: permissionsError } = await supabaseAdmin
+          .from('user_category_permissions')
+          .insert(defaultPermissions);
+
+        if (permissionsError) {
+          console.error('Error creating default permissions:', permissionsError);
+        } else {
+          console.log('Default permissions created successfully');
+          // Update categories with the new permissions
+          categories = allCategories.map(cat => ({
+            category_id: cat.id,
+            category_name: cat.name,
+            can_edit: staffUser.role === 'manager' || staffUser.role === 'cook'
+          }));
+        }
+      }
+    }
 
     // Log the login activity (optional - skip if table doesn't exist)
     try {
