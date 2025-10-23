@@ -31,11 +31,15 @@ export async function POST(request: NextRequest) {
     const staffUser = staffUsers.find(user => {
       // Check if PIN is bcrypt hashed (starts with $2a$ or $2b$)
       if (user.pin.startsWith('$2a$') || user.pin.startsWith('$2b$')) {
-        return bcrypt.compareSync(pin, user.pin);
+        const isMatch = bcrypt.compareSync(pin, user.pin);
+        console.log('Bcrypt comparison:', { pin, hashedPin: user.pin, isMatch });
+        return isMatch;
       }
       // Otherwise, assume it's SHA256 hashed
       const hashedPin = createHash('sha256').update(pin).digest('hex');
-      return user.pin === hashedPin;
+      const isMatch = user.pin === hashedPin;
+      console.log('SHA256 comparison:', { pin, hashedPin, storedPin: user.pin, isMatch });
+      return isMatch;
     });
 
     if (!staffUser) {
@@ -54,6 +58,7 @@ export async function POST(request: NextRequest) {
     // For now, give access to all categories
     const categories = allCategories?.map(cat => ({
       category_id: cat.id,
+      category_name: cat.name,
       can_edit: true
     })) || [];
 
