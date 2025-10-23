@@ -354,17 +354,20 @@ export default function StaffDashboardPage() {
               >
                 All
               </Button>
-              {categories.map((category) => (
-                <Button
-                  key={category.category_id}
-                  variant={selectedCategory === category.category_id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category.category_id)}
-                  className="text-xs"
-                >
-                  {category.category_name}
-                </Button>
-              ))}
+              {categories.map((category) => {
+                console.log('Rendering category:', category);
+                return (
+                  <Button
+                    key={category.category_id}
+                    variant={selectedCategory === category.category_id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.category_id)}
+                    className="text-xs"
+                  >
+                    {category.category_name}
+                  </Button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
