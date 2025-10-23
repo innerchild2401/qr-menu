@@ -111,7 +111,7 @@ class EnvironmentValidator {
   }
 
   /**
-   * Validate JWT token format
+   * Validate JWT token format (lenient validation for Supabase tokens)
    */
   private isValidJWT(token: string): boolean {
     if (!token || typeof token !== 'string') return false;
@@ -120,18 +120,12 @@ class EnvironmentValidator {
     const parts = token.split('.');
     if (parts.length !== 3) return false;
     
-    // Each part should be base64 encoded
-    try {
-      parts.forEach(part => {
-        if (part.length === 0) throw new Error('Empty part');
-        // Add padding if needed for base64 decoding
-        const paddedPart = part + '='.repeat((4 - part.length % 4) % 4);
-        atob(paddedPart);
-      });
-      return true;
-    } catch {
-      return false;
-    }
+    // Basic validation - check if parts exist and are not empty
+    if (parts.some(part => part.length === 0)) return false;
+    
+    // For Supabase tokens, we'll be more lenient with the validation
+    // Just check that it looks like a JWT structure
+    return parts.every(part => part.length > 0);
   }
 
   /**
