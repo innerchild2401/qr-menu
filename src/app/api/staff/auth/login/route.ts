@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         category_id,
         can_edit,
         can_view,
-        categories(id, name)
+        categories!inner(id, name)
       `)
       .eq('staff_user_id', staffUser.id);
 
