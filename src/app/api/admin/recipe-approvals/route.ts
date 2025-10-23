@@ -160,7 +160,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
             has_recipe: approval.proposed_recipe && approval.proposed_recipe.length > 0,
             description: newDescription,
             nutrition: nutritionData,
-            last_modified_by: user.id,
+            last_modified_by: approval.staff_user_id, // Use staff user ID instead of admin user ID
             last_modified_at: new Date().toISOString()
           })
           .eq('id', approval.product_id);
@@ -177,7 +177,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
           .update({
             recipe: approval.proposed_recipe,
             has_recipe: approval.proposed_recipe && approval.proposed_recipe.length > 0,
-            last_modified_by: user.id,
+            last_modified_by: approval.staff_user_id, // Use staff user ID instead of admin user ID
             last_modified_at: new Date().toISOString()
           })
           .eq('id', approval.product_id);
