@@ -189,6 +189,8 @@ export default function StaffDashboardPage() {
     const staff = staffStorage.getUser() as StaffUser | null;
     const categories = staffStorage.getCategories() as Category[] | null;
 
+    console.log('Staff dashboard - Retrieved data:', { staff, categories });
+
     if (!staff || !categories) {
       router.push('/staff/login');
       return;
