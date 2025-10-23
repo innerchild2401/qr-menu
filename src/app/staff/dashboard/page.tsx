@@ -190,6 +190,7 @@ export default function StaffDashboardPage() {
     const categories = staffStorage.getCategories() as Category[] | null;
 
     console.log('Staff dashboard - Retrieved data:', { staff, categories });
+    console.log('Raw categories from storage:', JSON.stringify(categories, null, 2));
 
     if (!staff || !categories) {
       router.push('/staff/login');

@@ -53,9 +53,11 @@ export default function StaffLoginPage() {
         const data = await response.json();
         console.log('Login success data:', data);
         console.log('Categories being stored:', data.categories);
+        console.log('Raw categories being stored:', JSON.stringify(data.categories, null, 2));
         staffStorage.setUser(data.staff);
         staffStorage.setCategories(data.categories);
         console.log('Categories after storage:', staffStorage.getCategories());
+        console.log('Raw categories after storage:', JSON.stringify(staffStorage.getCategories(), null, 2));
         showSuccess(`Welcome, ${data.staff.name}!`);
         router.push('/staff/dashboard');
       } else {
