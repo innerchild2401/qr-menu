@@ -20,7 +20,8 @@ import {
   DollarSign,
   Users,
   History,
-  ClipboardCheck
+  ClipboardCheck,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -102,6 +103,7 @@ export default function AdminLayout({
     { href: '/admin/staff', icon: Users, label: 'Staff Management' },
     { href: '/admin/staff-activity', icon: History, label: 'Staff Activity' },
     { href: '/admin/recipe-approvals', icon: ClipboardCheck, label: 'Recipe Approvals' },
+    { href: '/admin/product-proposals', icon: Plus, label: 'Product Proposals' },
     { href: '/admin/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 
