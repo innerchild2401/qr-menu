@@ -17,7 +17,8 @@ import {
   Check,
   Snowflake,
   Leaf,
-  Flame
+  Flame,
+  ShoppingCart
 } from 'lucide-react';
 import { layout, typography, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
@@ -468,6 +469,28 @@ function MenuPageContent({ params }: MenuPageProps) {
           </div>
         )}
       </div>
+
+      {/* Floating My Order Button - Sticky at bottom */}
+      {order.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
+          <Button
+            size="lg"
+            className="rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 h-auto min-w-[140px] relative"
+            onClick={() => setShowOrderSummary(true)}
+          >
+            <ShoppingCart className="w-5 h-5 mr-2" />
+            <span className="font-semibold">My Order</span>
+            {totalItems > 0 && (
+              <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center border-2 border-white">
+                {totalItems}
+              </div>
+            )}
+            <div className="ml-2 font-bold">
+              {formatCurrency(getTotalPrice(), restaurant.currency)}
+            </div>
+          </Button>
+        </div>
+      )}
 
       {/* Order Summary Modal */}
       {showOrderSummary && (
