@@ -71,15 +71,21 @@ async function getUserFromCookies(request: NextRequest): Promise<string | null> 
 
     // Try getSession first (more reliable for cookies)
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('🔍 getSession result:', { hasSession: !!session, hasUser: !!session?.user, error: sessionError });
     if (!sessionError && session?.user?.id) {
+      console.log('✅ Got user ID from getSession:', session.user.id);
       return session.user.id;
     }
 
     // Fallback to getUser if getSession doesn't work
+    console.log('🔍 Trying getUser as fallback...');
     const { data: { user }, error } = await supabase.auth.getUser();
+    console.log('🔍 getUser result:', { hasUser: !!user, error });
     if (error || !user) {
+      console.log('❌ getUser also failed');
       return null;
     }
+    console.log('✅ Got user ID from getUser:', user.id);
     return user.id;
   } catch (error) {
     console.error('Error getting user from cookies:', error);
@@ -144,7 +150,15 @@ export async function validateUserAndGetRestaurant(request: NextRequest) {
   
   // Fallback: try to get user ID from cookies if header is missing
   if (!userId) {
+    console.log('🔍 No x-user-id header found, trying cookie fallback...');
     userId = await getUserFromCookies(request);
+    if (userId) {
+      console.log('✅ Got user ID from cookies:', userId);
+    } else {
+      console.log('❌ Could not get user ID from cookies either');
+    }
+  } else {
+    console.log('✅ Got user ID from headers:', userId);
   }
   
   if (!userId) {

@@ -71,8 +71,8 @@ export default function AreasTablesPage() {
     setLoading(true);
     try {
       const [areasRes, tablesRes] = await Promise.all([
-        fetch('/api/admin/areas'),
-        fetch('/api/admin/tables'),
+        fetch('/api/admin/areas', { credentials: 'include' }),
+        fetch('/api/admin/tables', { credentials: 'include' }),
       ]);
       const areasJson = await areasRes.json();
       const tablesJson = await tablesRes.json();
@@ -91,6 +91,7 @@ export default function AreasTablesPage() {
       const res = await fetch('/api/admin/areas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           name: areaForm.name,
           description: areaForm.description || undefined,
@@ -117,6 +118,7 @@ export default function AreasTablesPage() {
       const res = await fetch('/api/admin/tables', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           areaId: tableForm.areaId,
           tableNumber: tableForm.tableNumber,
