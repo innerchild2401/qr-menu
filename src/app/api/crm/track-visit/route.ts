@@ -20,7 +20,17 @@ export async function POST(request: NextRequest) {
       referrer,
     } = body;
 
+    console.log('📊 Track visit called:', {
+      restaurantId,
+      hasClientToken: !!clientToken,
+      hasFingerprint: !!clientFingerprint,
+      tableId,
+      areaId,
+      qrCodeType,
+    });
+
     if (!restaurantId || !clientToken) {
+      console.error('❌ Missing required fields:', { restaurantId, clientToken });
       return NextResponse.json(
         { error: 'Missing required fields: restaurantId, clientToken' },
         { status: 400 }
@@ -34,41 +44,56 @@ export async function POST(request: NextRequest) {
       clientFingerprint
     );
 
+    console.log('✅ Customer found/created:', customer.id);
+
     // Create visit record
+    const visitData = {
+      customer_id: customer.id,
+      restaurant_id: restaurantId,
+      table_id: tableId || null,
+      area_id: areaId || null,
+      visit_timestamp: new Date().toISOString(),
+      device_info: deviceInfo || null,
+      referrer: referrer || null,
+      qr_code_type: qrCodeType,
+      qr_code_campaign: campaign || null,
+      menu_views: 0,
+      order_placed: false,
+    };
+
+    console.log('📝 Creating visit record:', visitData);
+
     const { data: visit, error: visitError } = await supabaseAdmin
       .from('customer_visits')
-      .insert({
-        customer_id: customer.id,
-        restaurant_id: restaurantId,
-        table_id: tableId || null,
-        area_id: areaId || null,
-        visit_timestamp: new Date().toISOString(),
-        device_info: deviceInfo || null,
-        referrer: referrer || null,
-        qr_code_type: qrCodeType,
-        qr_code_campaign: campaign || null,
-        menu_views: 0,
-        order_placed: false,
-      })
+      .insert(visitData)
       .select()
       .single();
 
     if (visitError) {
-      console.error('Error creating visit:', visitError);
+      console.error('❌ Error creating visit:', visitError);
       return NextResponse.json(
         { error: 'Failed to track visit' },
         { status: 500 }
       );
     }
 
-    // Update customer last_seen_at
-    await supabaseAdmin
+    console.log('✅ Visit created:', visit.id);
+
+    // Update customer last_seen_at and increment total_visits
+    const { error: updateError } = await supabaseAdmin
       .from('customers')
       .update({
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        total_visits: (customer.total_visits || 0) + 1,
       })
       .eq('id', customer.id);
+
+    if (updateError) {
+      console.error('⚠️ Error updating customer:', updateError);
+    } else {
+      console.log('✅ Customer updated successfully');
+    }
 
     return NextResponse.json({
       success: true,

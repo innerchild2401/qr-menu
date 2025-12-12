@@ -1,85 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
+import { supabaseAdmin } from '../../../../../../lib/supabase-server';
 
 // GET /api/admin/crm/customers - list customers for the user's restaurant
 export async function GET(request: NextRequest) {
   try {
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          set(name: string, value: string, options: any) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          remove(name: string, options: any) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch restaurant data' }, { status: 500 });
     }
 
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    if (!user || !restaurant) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim();
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('customers')
       .select('id, name, phone_number, total_visits, total_spent, last_seen_at, status, phone_shared_with_restaurant, tags')
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .order('last_seen_at', { ascending: false })
       .limit(200);
 
@@ -89,19 +37,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: customers, error } = await query;
+    const { data: customers, error: queryError } = await query;
 
-    if (error) {
-      console.error('Error fetching customers:', error);
+    if (queryError) {
+      console.error('Error fetching customers:', queryError);
       return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 });
     }
 
-    const jsonResponse = NextResponse.json({ customers: customers || [] });
-    // Copy cookies from the supabase client response
-    response.cookies.getAll().forEach((cookie) => {
-      jsonResponse.cookies.set(cookie.name, cookie.value, cookie);
-    });
-    return jsonResponse;
+    return NextResponse.json({ customers: customers || [] });
   } catch (error) {
     console.error('Error in customers GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
