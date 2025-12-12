@@ -83,30 +83,29 @@ export async function middleware(req: NextRequest) {
   const isAdminRoute = req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/api/admin');
   
   if (isAdminRoute) {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      // For API routes, return 401 instead of redirecting
-      if (req.nextUrl.pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-      // Redirect to home page if not authenticated (for page routes)
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-
-    // Add user ID to headers for API routes
-    if (session.user?.id) {
-      const requestHeaders = new Headers(req.headers);
-      requestHeaders.set('x-user-id', session.user.id);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      response = NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
+      // If we have a session, set the user ID header
+      if (session?.user?.id) {
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set('x-user-id', session.user.id);
+        
+        response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+      } else if (!req.nextUrl.pathname.startsWith('/api/')) {
+        // Only redirect page routes if no session (let API routes handle auth themselves)
+        return NextResponse.redirect(new URL('/', req.url));
+      }
+      // For API routes without session, let the route handler decide (it has cookie fallback)
+    } catch (error) {
+      // If session check fails, let the route handler decide for API routes
+      if (!req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.redirect(new URL('/', req.url));
+      }
     }
   }
 
