@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { validateUserAndGetRestaurant } from '../../../../../../../lib/api-route-helpers';
+import { supabaseAdmin } from '../../../../../../../lib/supabase-server';
 import { generateTableQRCode } from '../../../../../../../lib/qrCodeUtils';
 import { env } from '@/lib/env';
 
@@ -15,49 +16,34 @@ export async function POST(
   try {
     const { id: tableId } = await params;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-    );
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch restaurant data' }, { status: 500 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    if (!user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get table details
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
-    const { data: table, error: tableError } = await supabase
+    // Get table details (we already have restaurant, but need area info)
+    const { data: table, error: tableError } = await supabaseAdmin
       .from('tables')
       .select(`
         *,
         area:areas (
           id,
           name
-        ),
-        restaurant:restaurants (
-          id,
-          slug
         )
       `)
       .eq('id', tableId)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .single();
 
     if (tableError || !table) {
@@ -67,10 +53,9 @@ export async function POST(
       );
     }
 
-    const restaurant = table.restaurant as { id: string; slug: string };
     const area = table.area as { id: string; name: string } | null;
 
-    // Generate QR code
+    // Generate QR code (use restaurant slug from the validated restaurant)
     const baseUrl = env.APP_URL || 'http://localhost:3000';
     const { publicUrl, storagePath, menuUrl } = await generateTableQRCode(
       restaurant.slug,
@@ -81,7 +66,7 @@ export async function POST(
     );
 
     // Update table with QR code info
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('tables')
       .update({
         qr_code_url: publicUrl,

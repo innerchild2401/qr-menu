@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { layout, typography, gaps } from '@/lib/design-system';
 import { Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface Customer {
   id: string;
@@ -31,7 +32,7 @@ export default function CustomersPage() {
     setLoading(true);
     try {
       const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-      const res = await fetch(`/api/admin/crm/customers${qs}`);
+      const res = await authenticatedApiCall(`/api/admin/crm/customers${qs}`);
       const json = await res.json();
       if (res.ok) {
         setCustomers(json.customers || []);

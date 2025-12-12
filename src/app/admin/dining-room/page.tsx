@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { layout, typography, gaps } from '@/lib/design-system';
 import { Loader2, RefreshCcw, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface TableRow {
   id: string;
@@ -35,7 +36,7 @@ export default function DiningRoomView() {
   const loadTables = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/tables');
+      const res = await authenticatedApiCall('/api/admin/tables');
       const json = await res.json();
       if (res.ok) {
         setTables(json.tables || []);
