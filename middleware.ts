@@ -79,12 +79,21 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // Check if user is authenticated for admin routes
-  if (req.nextUrl.pathname.startsWith('/admin')) {
+  // Check if user is authenticated for admin routes (both /admin and /api/admin)
+  const isAdminRoute = req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/api/admin');
+  
+  if (isAdminRoute) {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      // Redirect to home page if not authenticated
+      // For API routes, return 401 instead of redirecting
+      if (req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      // Redirect to home page if not authenticated (for page routes)
       return NextResponse.redirect(new URL('/', req.url));
     }
 
