@@ -8,6 +8,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -15,6 +21,42 @@ export async function GET(
         cookies: {
           get(name: string) {
             return request.cookies.get(name)?.value;
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          set(name: string, value: string, options: any) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          remove(name: string, options: any) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
           },
         },
       }
@@ -46,7 +88,12 @@ export async function GET(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ customer });
+    const jsonResponse = NextResponse.json({ customer });
+    // Copy cookies from the supabase client response
+    response.cookies.getAll().forEach((cookie) => {
+      jsonResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return jsonResponse;
   } catch (error) {
     console.error('Error in customer GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -60,6 +107,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -67,6 +120,42 @@ export async function PATCH(
         cookies: {
           get(name: string) {
             return request.cookies.get(name)?.value;
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          set(name: string, value: string, options: any) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          remove(name: string, options: any) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
           },
         },
       }
@@ -120,7 +209,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 });
     }
 
-    return NextResponse.json({ customer });
+    const jsonResponse = NextResponse.json({ customer });
+    // Copy cookies from the supabase client response
+    response.cookies.getAll().forEach((cookie) => {
+      jsonResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return jsonResponse;
   } catch (error) {
     console.error('Error in customer PATCH:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
