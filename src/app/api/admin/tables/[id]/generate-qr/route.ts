@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
 import { generateTableQRCode } from '@/../../../../lib/qrCodeUtils';
 import { env } from '@/lib/env';
 
@@ -15,8 +15,35 @@ export async function POST(
   try {
     const { id: tableId } = await params;
 
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get table details
-    const { data: table, error: tableError } = await supabaseAdmin
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    const { data: table, error: tableError } = await supabase
       .from('tables')
       .select(`
         *,
@@ -30,6 +57,7 @@ export async function POST(
         )
       `)
       .eq('id', tableId)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .single();
 
     if (tableError || !table) {

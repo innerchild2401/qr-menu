@@ -10,6 +10,7 @@ interface EnvironmentConfig {
   OPENAI_API_KEY?: string;
   NEXT_PUBLIC_APP_URL?: string;
   NODE_ENV?: string;
+  WHATSAPP_BUSINESS_NUMBER?: string;
 }
 
 class EnvironmentValidator {
@@ -44,6 +45,7 @@ class EnvironmentValidator {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       NODE_ENV: process.env.NODE_ENV || 'development',
+      WHATSAPP_BUSINESS_NUMBER: process.env.WHATSAPP_BUSINESS_NUMBER,
     };
 
     // Check for missing required variables

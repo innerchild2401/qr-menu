@@ -176,6 +176,18 @@ function MenuPageContent({ params }: MenuPageProps) {
     // Show toast notification
     setShowAddedToast(product.id);
     setTimeout(() => setShowAddedToast(null), 2000);
+
+    // Track add-to-cart for CRM
+    if (menuData?.restaurant?.id) {
+      import('@/lib/crm/client-tracking')
+        .then(({ trackEvent }) =>
+          trackEvent(menuData.restaurant.id, 'add_to_cart', {
+            product_id: product.id,
+            price: product.price,
+          })
+        )
+        .catch(err => console.error('Failed to track add_to_cart', err));
+    }
   };
 
   const removeFromOrder = (productId: string) => {
@@ -205,7 +217,7 @@ function MenuPageContent({ params }: MenuPageProps) {
     return order.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
-  const toggleDescription = (productId: string) => {
+  const toggleDescription = (productId: string, product?: Product) => {
     setExpandedDescriptions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
@@ -215,6 +227,17 @@ function MenuPageContent({ params }: MenuPageProps) {
       }
       return newSet;
     });
+
+    if (product && menuData?.restaurant?.id) {
+      import('@/lib/crm/client-tracking')
+        .then(({ trackEvent }) =>
+          trackEvent(menuData.restaurant.id, 'product_view', {
+            product_id: product.id,
+            price: product.price,
+          })
+        )
+        .catch(err => console.error('Failed to track product_view', err));
+    }
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -432,7 +455,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       product={product} 
                       onAddToOrder={addToOrder}
                       isExpanded={expandedDescriptions.has(product.id)}
-                      onToggleDescription={() => toggleDescription(product.id)}
+                      onToggleDescription={() => toggleDescription(product.id, product)}
                       showAddedToast={showAddedToast === product.id}
                       restaurant={restaurant}
                     />
@@ -453,7 +476,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       product={product} 
                       onAddToOrder={addToOrder}
                       isExpanded={expandedDescriptions.has(product.id)}
-                      onToggleDescription={() => toggleDescription(product.id)}
+                      onToggleDescription={() => toggleDescription(product.id, product)}
                       showAddedToast={showAddedToast === product.id}
                       restaurant={restaurant}
                     />
@@ -579,7 +602,7 @@ function ProductCard({
   product: Product; 
   onAddToOrder: (product: Product) => void;
   isExpanded: boolean;
-  onToggleDescription: () => void;
+  onToggleDescription: (product: Product) => void;
   showAddedToast: boolean;
   restaurant: Restaurant;
 }) {
@@ -662,7 +685,7 @@ function ProductCard({
                   {descriptionNeedsExpanding && (
                     <button
                       className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
-                      onClick={onToggleDescription}
+                      onClick={() => onToggleDescription(product)}
                     >
                       {isExpanded ? 'Less' : 'More'}
                     </button>
@@ -684,7 +707,7 @@ function ProductCard({
                 {descriptionNeedsExpanding && (
                   <button
                     className="text-blue-600 hover:text-blue-700 ml-1 underline text-sm"
-                    onClick={onToggleDescription}
+                    onClick={() => onToggleDescription(product)}
                   >
                     {isExpanded ? 'Less' : 'More'}
                   </button>
@@ -704,7 +727,7 @@ function ProductCard({
         <div className="px-4 pb-2">
           <button
             className="text-blue-600 hover:text-blue-700 underline text-sm"
-            onClick={onToggleDescription}
+            onClick={() => onToggleDescription(product)}
           >
             {isExpanded ? 'Show Less' : 'Show More'}
           </button>

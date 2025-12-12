@@ -21,7 +21,10 @@ import {
   Users,
   History,
   ClipboardCheck,
-  Plus
+  Plus,
+  LayoutDashboard,
+  Map,
+  Contact
 } from 'lucide-react';
 import { supabase } from '@/lib/auth-supabase';
 
@@ -92,6 +95,9 @@ export default function AdminLayout({
 
   const navigationItems = [
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
+    { href: '/admin/dining-room', icon: LayoutDashboard, label: 'Dining Room' },
+    { href: '/admin/areas-tables', icon: Map, label: 'Areas & Tables' },
+    { href: '/admin/crm/customers', icon: Contact, label: 'Customers' },
     { href: '/admin/categories', icon: FolderOpen, label: 'Categories' },
     { href: '/admin/products', icon: Package, label: 'Products' },
     { href: '/admin/menu', icon: Menu, label: 'Menu Preview' },

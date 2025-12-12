@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Area Management API
@@ -9,20 +9,38 @@ import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
 
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Missing restaurantId parameter' },
-        { status: 400 }
-      );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: areas, error } = await supabaseAdmin
+    // Derive restaurant from membership
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    const { data: areas, error } = await supabase
       .from('areas')
       .select('*')
-      .eq('restaurant_id', restaurantId)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .order('name', { ascending: true });
 
     if (error) {
@@ -45,9 +63,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
-      restaurantId,
       name,
       description,
       capacity,
@@ -56,17 +90,27 @@ export async function POST(request: NextRequest) {
       floorPlanCoordinates,
     } = body;
 
-    if (!restaurantId || !name) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Missing required fields: restaurantId, name' },
+        { error: 'Missing required fields: name' },
         { status: 400 }
       );
     }
 
-    const { data: area, error } = await supabaseAdmin
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    const { data: area, error } = await supabase
       .from('areas')
       .insert({
-        restaurant_id: restaurantId,
+        restaurant_id: userRestaurant.restaurant_id,
         name,
         description: description || null,
         capacity: capacity || null,

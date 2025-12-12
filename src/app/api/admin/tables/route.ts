@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Table Management API
@@ -9,18 +9,35 @@ import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
 
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Missing restaurantId parameter' },
-        { status: 400 }
-      );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
     }
 
     // Get tables with area information
-    const { data: tables, error } = await supabaseAdmin
+    const { data: tables, error } = await supabase
       .from('tables')
       .select(`
         *,
@@ -30,7 +47,7 @@ export async function GET(request: NextRequest) {
           service_type
         )
       `)
-      .eq('restaurant_id', restaurantId)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .order('area_id', { ascending: true })
       .order('table_number', { ascending: true });
 
@@ -54,9 +71,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
-      restaurantId,
       areaId,
       tableNumber,
       tableName,
@@ -68,18 +101,40 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
-    if (!restaurantId || !areaId || !tableNumber || !capacity) {
+    if (!areaId || !tableNumber || !capacity) {
       return NextResponse.json(
-        { error: 'Missing required fields: restaurantId, areaId, tableNumber, capacity' },
+        { error: 'Missing required fields: areaId, tableNumber, capacity' },
         { status: 400 }
       );
     }
 
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    // Validate area belongs to restaurant
+    const { data: area } = await supabase
+      .from('areas')
+      .select('id')
+      .eq('id', areaId)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .single();
+
+    if (!area) {
+      return NextResponse.json({ error: 'Invalid area' }, { status: 400 });
+    }
+
     // Create table
-    const { data: table, error } = await supabaseAdmin
+    const { data: table, error } = await supabase
       .from('tables')
       .insert({
-        restaurant_id: restaurantId,
+        restaurant_id: userRestaurant.restaurant_id,
         area_id: areaId,
         table_number: tableNumber,
         table_name: tableName || null,

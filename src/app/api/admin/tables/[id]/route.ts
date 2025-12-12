@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Individual Table Management API
@@ -15,7 +15,34 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const { data: table, error } = await supabaseAdmin
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    const { data: table, error } = await supabase
       .from('tables')
       .select(`
         *,
@@ -26,6 +53,7 @@ export async function GET(
         )
       `)
       .eq('id', id)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .single();
 
     if (error) {
@@ -54,13 +82,41 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const { data: table, error } = await supabaseAdmin
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
+    const { data: table, error } = await supabase
       .from('tables')
       .update({
         ...body,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .select()
       .single();
 
@@ -89,18 +145,47 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userRestaurant } = await supabase
+      .from('user_restaurants')
+      .select('restaurant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userRestaurant) {
+      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+    }
+
     // Get table to get area_id for count update
-    const { data: table } = await supabaseAdmin
+    const { data: table } = await supabase
       .from('tables')
       .select('area_id')
       .eq('id', id)
+      .eq('restaurant_id', userRestaurant.restaurant_id)
       .single();
 
     // Delete table
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from('tables')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('restaurant_id', userRestaurant.restaurant_id);
 
     if (error) {
       console.error('Error deleting table:', error);
