@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { layout, typography, gaps } from '@/lib/design-system';
 import { QrCode, Plus, Loader2, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface Area {
   id: string;
@@ -71,8 +72,8 @@ export default function AreasTablesPage() {
     setLoading(true);
     try {
       const [areasRes, tablesRes] = await Promise.all([
-        fetch('/api/admin/areas', { credentials: 'include' }),
-        fetch('/api/admin/tables', { credentials: 'include' }),
+        authenticatedApiCall('/api/admin/areas'),
+        authenticatedApiCall('/api/admin/tables'),
       ]);
       const areasJson = await areasRes.json();
       const tablesJson = await tablesRes.json();
@@ -88,10 +89,8 @@ export default function AreasTablesPage() {
   const handleCreateArea = async () => {
     setCreatingArea(true);
     try {
-      const res = await fetch('/api/admin/areas', {
+      const res = await authenticatedApiCall('/api/admin/areas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: areaForm.name,
           description: areaForm.description || undefined,
@@ -115,10 +114,8 @@ export default function AreasTablesPage() {
   const handleCreateTable = async () => {
     setCreatingTable(true);
     try {
-      const res = await fetch('/api/admin/tables', {
+      const res = await authenticatedApiCall('/api/admin/tables', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           areaId: tableForm.areaId,
           tableNumber: tableForm.tableNumber,
@@ -151,7 +148,7 @@ export default function AreasTablesPage() {
   const handleGenerateQR = async (tableId: string) => {
     setGenerating(tableId);
     try {
-      const res = await fetch(`/api/admin/tables/${tableId}/generate-qr`, {
+      const res = await authenticatedApiCall(`/api/admin/tables/${tableId}/generate-qr`, {
         method: 'POST',
       });
       if (!res.ok) {
