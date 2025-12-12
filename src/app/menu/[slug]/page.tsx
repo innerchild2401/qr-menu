@@ -33,6 +33,7 @@ interface MenuPageProps {
 
 // Define types for our data structures
 interface Restaurant {
+  id: string;
   name: string;
   slug: string;
   address: string;

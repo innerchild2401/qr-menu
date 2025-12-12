@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update area table count
-    await supabaseAdmin.rpc('increment_area_table_count', { area_id: areaId });
+    await supabase.rpc('increment_area_table_count', { area_id: areaId });
 
     return NextResponse.json({ table }, { status: 201 });
   } catch (error) {

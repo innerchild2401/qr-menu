@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create customer
-    let customer = await findOrCreateCustomer(
+    const customer = await findOrCreateCustomer(
       restaurantId,
       clientToken,
       clientFingerprint

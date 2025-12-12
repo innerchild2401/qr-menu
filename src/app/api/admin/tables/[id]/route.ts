@@ -197,7 +197,7 @@ export async function DELETE(
 
     // Update area table count if table existed
     if (table?.area_id) {
-      await supabaseAdmin.rpc('decrement_area_table_count', { area_id: table.area_id });
+      await supabase.rpc('decrement_area_table_count', { area_id: table.area_id });
     }
 
     return NextResponse.json({ success: true });

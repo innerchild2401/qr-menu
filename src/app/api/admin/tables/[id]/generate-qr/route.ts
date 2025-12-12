@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { generateTableQRCode } from '@/../../../../lib/qrCodeUtils';
+import { generateTableQRCode } from '../../../../../../../lib/qrCodeUtils';
 import { env } from '@/lib/env';
 
 /**
@@ -81,7 +81,7 @@ export async function POST(
     );
 
     // Update table with QR code info
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from('tables')
       .update({
         qr_code_url: publicUrl,
