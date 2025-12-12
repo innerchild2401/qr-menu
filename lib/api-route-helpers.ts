@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from './supabase-server';
 
 /**
@@ -7,6 +8,40 @@ import { supabaseAdmin } from './supabase-server';
 export function getUserFromHeaders(request: NextRequest): string | null {
   const userId = request.headers.get('x-user-id');
   return userId;
+}
+
+/**
+ * Get user ID from session cookies (fallback when header is missing)
+ */
+async function getUserFromCookies(request: NextRequest): Promise<string | null> {
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+          set() {
+            // Not needed for read operations
+          },
+          remove() {
+            // Not needed for read operations
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      return null;
+    }
+    return user.id;
+  } catch (error) {
+    console.error('Error getting user from cookies:', error);
+    return null;
+  }
 }
 
 /**
@@ -61,7 +96,13 @@ export async function getUserRestaurant(userId: string) {
  * Validate user authentication and get their restaurant
  */
 export async function validateUserAndGetRestaurant(request: NextRequest) {
-  const userId = getUserFromHeaders(request);
+  // Try to get user ID from headers first (set by middleware)
+  let userId = getUserFromHeaders(request);
+  
+  // Fallback: try to get user ID from cookies if header is missing
+  if (!userId) {
+    userId = await getUserFromCookies(request);
+  }
   
   if (!userId) {
     return { user: null, restaurant: null, error: 'Missing user ID in headers' };
