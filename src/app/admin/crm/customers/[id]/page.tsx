@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { layout, typography, gaps } from '@/lib/design-system';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authenticatedApiCall } from '@/lib/api-helpers';
 
 interface Customer {
   id: string;
@@ -55,7 +56,7 @@ export default function CustomerDetail({
   const loadCustomer = async (id: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/crm/customers/${id}`);
+      const res = await authenticatedApiCall(`/api/admin/crm/customers/${id}`);
       const json = await res.json();
       if (res.ok && json.customer) {
         setCustomer(json.customer);
@@ -80,9 +81,8 @@ export default function CustomerDetail({
     if (!customer) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/crm/customers/${customer.id}`, {
+      const res = await authenticatedApiCall(`/api/admin/crm/customers/${customer.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           tags: form.tags
