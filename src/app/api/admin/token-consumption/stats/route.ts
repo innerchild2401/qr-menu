@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
 
     const { user } = authResult;
 
-    // Check if user is authorized (afilip.mme@gmail.com)
-    if (user.email !== 'afilip.mme@gmail.com') {
+    // Check if user is authorized
+    const { isAdminEmail } = await import('@/lib/config');
+    if (!isAdminEmail(user.email)) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin access required' },
         { status: 403 }

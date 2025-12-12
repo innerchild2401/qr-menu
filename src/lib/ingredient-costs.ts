@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-server';
+import { DEFAULT_CONFIG } from '@/lib/config';
 
 export interface IngredientCost {
   id: string;
@@ -36,9 +37,11 @@ export interface CalculatedRecipeCost {
 /**
  * Get ingredient costs from the database
  */
+import { getDefaultLanguage } from '@/lib/config';
+
 export async function getIngredientCosts(
   ingredients: string[],
-  language: 'ro' | 'en' = 'ro'
+  language: 'ro' | 'en' = getDefaultLanguage()
 ): Promise<IngredientCost[]> {
   const supabase = supabaseAdmin;
   
@@ -112,7 +115,7 @@ export function calculateRecipeCost(
     total_cost: totalCost,
     cost_breakdown: costBreakdown,
     confidence_score: averageConfidence,
-    currency: ingredientCosts[0]?.currency || 'RON'
+    currency: ingredientCosts[0]?.currency || DEFAULT_CONFIG.CURRENCY
   };
 }
 

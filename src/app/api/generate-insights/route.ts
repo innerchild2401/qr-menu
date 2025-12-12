@@ -155,9 +155,10 @@ export async function POST(request: NextRequest) {
       let userEmail = 'unknown@example.com';
       
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        // For now, use a default email since we can't extract it from the Bearer token
+        // For now, use admin email from config since we can't extract it from the Bearer token
         // In a real implementation, you'd decode the JWT token
-        userEmail = 'afilip.mme@gmail.com'; // Use the known admin email
+        const { ADMIN_CONFIG } = await import('@/lib/config');
+        userEmail = ADMIN_CONFIG.ADMIN_EMAIL;
       }
       
       await trackTokenConsumption({

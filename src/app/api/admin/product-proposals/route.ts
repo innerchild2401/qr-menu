@@ -285,7 +285,7 @@ async function calculateNutritionalValues(recipe: Array<{ingredient: string; qua
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: (await import('@/lib/config')).AI_CONFIG.MODEL,
         messages: [
           {
             role: 'system',
@@ -349,7 +349,7 @@ async function generateProductDescription(productName: string, recipe: Array<{in
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: (await import('@/lib/config')).AI_CONFIG.MODEL,
         messages: [
           {
             role: 'system',
@@ -397,7 +397,7 @@ async function normalizeIngredientsWithGPT(ingredients: string[]) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: (await import('@/lib/config')).AI_CONFIG.MODEL,
         messages: [
           {
             role: 'system',

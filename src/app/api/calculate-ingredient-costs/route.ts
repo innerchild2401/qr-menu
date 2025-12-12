@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { trackTokenConsumption } from '@/lib/api/token-tracker';
+import { AI_CONFIG } from '@/lib/config';
 
 interface IngredientCostRequest {
   ingredients: string[];
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: AI_CONFIG.MODEL,
           messages: [
             {
               role: 'system',
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
           currency: cost.currency || 'RON',
           confidence_score: cost.confidence_score,
           reasoning: cost.reasoning,
-          source: 'gpt-4o-mini'
+          source: AI_CONFIG.MODEL
         }));
 
         const { error: insertError } = await supabase

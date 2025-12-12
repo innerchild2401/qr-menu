@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 
+// Extract Supabase domain from URL if available
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseDomain = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
+
 const nextConfig: NextConfig = {
   // Ensure proper image optimization
   images: {
-    domains: ['nnhyuqhypzytnkkdifuk.supabase.co'],
+    ...(supabaseDomain && { domains: [supabaseDomain] }),
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'nnhyuqhypzytnkkdifuk.supabase.co',
+        hostname: '**.supabase.co',
         port: '',
         pathname: '/storage/v1/object/public/**',
       },

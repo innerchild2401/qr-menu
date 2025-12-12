@@ -87,10 +87,12 @@ export interface BatchGenerationResult {
 
 const MAX_PRODUCTS_PER_BATCH = 10;
 const MAX_CONCURRENT_REQUESTS = 3; // Max simultaneous GPT calls
+import { AI_CONFIG } from '@/lib/config';
+
 const BATCH_RETRY_COUNT = 2; // Number of retries for failed requests
 const RETRY_DELAY_MS = 1000; // Base delay between retries (exponential backoff)
 const INGREDIENT_NUTRITION_CACHE_ENABLED = true;
-const COST_THRESHOLD_PER_RESTAURANT_DAILY = 10.0; // $10 daily limit per restaurant
+const COST_THRESHOLD_PER_RESTAURANT_DAILY = AI_CONFIG.DAILY_COST_LIMIT_PER_RESTAURANT;
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -279,7 +281,8 @@ export async function getProductsForGeneration(
         const productsWithUndefinedRecipe = productsWithoutRecipe?.map(p => ({ ...p, has_recipe: undefined })) || [];
         
         // Use restaurant menu language for fallback case
-        const fallbackPrimaryLanguage: SupportedLanguage = restaurantMenuLanguage || 'ro';
+        const { getDefaultLanguage } = await import('@/lib/config');
+        const fallbackPrimaryLanguage: SupportedLanguage = restaurantMenuLanguage || getDefaultLanguage();
         
         return processProductsForGeneration(productsWithUndefinedRecipe, scenario, fallbackPrimaryLanguage);
       }
@@ -287,7 +290,8 @@ export async function getProductsForGeneration(
     }
 
     // Use restaurant menu language setting instead of detection
-    const primaryLanguage: SupportedLanguage = restaurantMenuLanguage || 'ro'; // Default to Romanian
+    const { getDefaultLanguage } = await import('@/lib/config');
+    const primaryLanguage: SupportedLanguage = restaurantMenuLanguage || getDefaultLanguage();
     console.log('Using restaurant menu language:', primaryLanguage);
 
     const result = processProductsForGeneration(products, scenario, primaryLanguage);

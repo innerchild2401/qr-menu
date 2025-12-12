@@ -158,7 +158,8 @@ export async function GET(): Promise<NextResponse<UsageStatsResponse>> {
     ]);
 
     // 3. Calculate cost limit information
-    const dailyLimit = 10.0; // $10 daily limit
+    const { AI_CONFIG } = await import('@/lib/config');
+    const dailyLimit = AI_CONFIG.DAILY_COST_LIMIT_PER_RESTAURANT;
     const currentDailyUsage = dailyStats.totalCost;
     const remainingBudget = Math.max(0, dailyLimit - currentDailyUsage);
     const limitReached = currentDailyUsage >= dailyLimit;

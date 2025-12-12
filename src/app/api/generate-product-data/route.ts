@@ -24,7 +24,9 @@ import { getGPTUsageStats } from '@/lib/ai/supabase-cache';
 // CONSTANTS
 // =============================================================================
 
-const COST_THRESHOLD_PER_RESTAURANT_DAILY = 10.0; // $10 daily limit per restaurant
+import { AI_CONFIG } from '@/lib/config';
+
+const COST_THRESHOLD_PER_RESTAURANT_DAILY = AI_CONFIG.DAILY_COST_LIMIT_PER_RESTAURANT;
 
 // =============================================================================
 // TYPES

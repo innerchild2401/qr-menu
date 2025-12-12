@@ -1,7 +1,6 @@
 # SmartMenu Environment Configuration Template
 # 
-# IMPORTANT: Replace the existing env-template.txt with this secure version
-# Copy this file to .env.local and fill in your actual values
+# IMPORTANT: Copy this file to .env.local and fill in your actual values
 # NEVER commit .env.local to version control
 
 # =============================================================================
@@ -25,13 +24,77 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Feature Flags
 NEXT_PUBLIC_ENABLE_MENU_ADMIN=false
 
-# Google Business Profile Integration (optional)
-GOOGLE_CLIENT_ID=your_google_oauth_client_id
-GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+# =============================================================================
+# ADMIN CONFIGURATION
+# =============================================================================
 
-# OpenAI Integration (optional but recommended for AI features)
+# Admin email address for token consumption and insights access
+# Default: afilip.mme@gmail.com
+ADMIN_EMAIL=afilip.mme@gmail.com
+
+# =============================================================================
+# AI CONFIGURATION
+# =============================================================================
+
+# OpenAI API Key (optional but recommended for AI features)
 OPENAI_API_KEY=your_openai_api_key_here
+
+# OpenAI Model to use (default: gpt-4o-mini)
+OPENAI_MODEL=gpt-4o-mini
+
+# OpenAI API URL (default: https://api.openai.com/v1/chat/completions)
+# Only change if using a proxy or different endpoint
+OPENAI_API_URL=https://api.openai.com/v1/chat/completions
+
+# Maximum tokens for product generation (default: 1000)
+OPENAI_MAX_TOKENS=1000
+
+# Daily cost limit per restaurant in USD (default: 10.0)
+OPENAI_DAILY_COST_LIMIT=10.0
+
+# OpenAI pricing per token (in USD)
+# These are the default prices for gpt-4o-mini as of 2024
+# Only change if using a different model or if prices change
+OPENAI_PROMPT_COST=0.00000015
+OPENAI_COMPLETION_COST=0.00000060
+
+# =============================================================================
+# DEFAULT VALUES
+# =============================================================================
+
+# Default language for new restaurants (default: ro)
+# Options: ro (Romanian) or en (English)
+DEFAULT_LANGUAGE=ro
+
+# Default currency for new restaurants (default: RON)
+# Options: RON, EUR, USD, GBP
+DEFAULT_CURRENCY=RON
+
+# =============================================================================
+# TEST/DEVELOPMENT CONFIGURATION
+# =============================================================================
+# These are only used in development scripts and tests
+
+# Test user credentials (for development scripts only)
+TEST_EMAIL=eu@eu.com
+TEST_PASSWORD=parolamea
+
+# Demo user credentials (for development scripts only)
+DEMO_EMAIL=admin@bellavista.com
+DEMO_PASSWORD=admin123
+
+# =============================================================================
+# GOOGLE BUSINESS PROFILE INTEGRATION (OPTIONAL)
+# =============================================================================
+
+# Google OAuth Client ID
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+
+# Google OAuth Client Secret
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+
+# Google OAuth Redirect URI
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 
 # =============================================================================
 # DEVELOPMENT SETTINGS
@@ -49,6 +112,28 @@ NODE_ENV=development
 # 3. Rotate keys regularly in production
 # 4. The SUPABASE_SERVICE_ROLE_KEY should only be used server-side
 # 5. Store production secrets in your deployment platform's secret manager
-# 6. The hardcoded fallback values have been removed for security
+# 6. All hardcoded values have been removed - use environment variables
+# 7. Test credentials should NOT be used in production
+#
+# =============================================================================
+# VERCEL DEPLOYMENT
+# =============================================================================
+#
+# When deploying to Vercel, add these environment variables in:
+# Vercel Dashboard > Your Project > Settings > Environment Variables
+#
+# Required for production:
+# - NEXT_PUBLIC_SUPABASE_URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - SUPABASE_SERVICE_ROLE_KEY
+# - OPENAI_API_KEY (if using AI features)
+# - ADMIN_EMAIL (if different from default)
+#
+# Optional but recommended:
+# - NEXT_PUBLIC_APP_URL (your production domain)
+# - DEFAULT_LANGUAGE
+# - DEFAULT_CURRENCY
+# - OPENAI_MODEL (if using different model)
+# - OPENAI_DAILY_COST_LIMIT (if different from $10)
 #
 # =============================================================================

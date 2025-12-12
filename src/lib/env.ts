@@ -1,6 +1,8 @@
 /**
  * Environment variable validation and configuration
  * Ensures all required environment variables are present
+ * 
+ * NOTE: For application configuration constants, use src/lib/config.ts instead
  */
 
 // Required environment variables
@@ -50,6 +52,9 @@ if (typeof window === 'undefined') {
 
 /**
  * Type-safe environment variable access
+ * 
+ * NOTE: For application configuration (AI model, defaults, etc.), 
+ * use src/lib/config.ts instead
  */
 export const env = {
   // Required variables (will throw if missing)

@@ -67,13 +67,16 @@ export interface GPTUsageStats {
 // CONSTANTS
 // =============================================================================
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4o-mini';
-const MAX_TOKENS = 1000;
+import { AI_CONFIG, getOpenAIPricing } from '@/lib/config';
 
-// Pricing for gpt-4o-mini (as of 2024)
-const COST_PER_INPUT_TOKEN = 0.000150 / 1000; // $0.000150 per 1K tokens
-const COST_PER_OUTPUT_TOKEN = 0.000600 / 1000; // $0.000600 per 1K tokens
+const OPENAI_API_URL = AI_CONFIG.API_URL;
+const MODEL = AI_CONFIG.MODEL;
+const MAX_TOKENS = AI_CONFIG.MAX_TOKENS;
+
+// Pricing for the configured model
+const pricing = getOpenAIPricing(MODEL);
+const COST_PER_INPUT_TOKEN = pricing.prompt;
+const COST_PER_OUTPUT_TOKEN = pricing.completion;
 
 // System prompts
 const PRODUCT_SYSTEM_PROMPT = `You are an expert food menu assistant for SmartMenu.

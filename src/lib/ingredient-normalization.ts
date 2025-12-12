@@ -260,7 +260,7 @@ async function normalizeIngredientsWithGPT(ingredients: string[]): Promise<Norma
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: (await import('@/lib/config')).AI_CONFIG.MODEL,
         messages: [
           {
             role: 'system',

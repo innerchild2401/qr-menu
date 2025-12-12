@@ -82,8 +82,9 @@ export default function TokenConsumptionPage() {
           return;
         }
 
-        // Check if user is authorized (afilip.mme@gmail.com)
-        const isAdmin = session.user.email === 'afilip.mme@gmail.com';
+        // Check if user is authorized
+        const { isAdminEmail } = await import('@/lib/config');
+        const isAdmin = isAdminEmail(session.user.email);
         setIsAuthorized(isAdmin);
         
         if (isAdmin) {

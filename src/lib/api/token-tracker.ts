@@ -28,13 +28,7 @@ export interface TokenConsumptionData {
   model: string;
 }
 
-// GPT-4o-mini pricing (per token)
-const PRICING = {
-  'gpt-4o-mini': {
-    prompt: 0.00000015,    // $0.00000015 per prompt token
-    completion: 0.00000060  // $0.00000060 per completion token
-  }
-};
+import { getOpenAIPricing } from '@/lib/config';
 
 export async function trackTokenConsumption(data: TokenConsumptionData): Promise<void> {
   try {
@@ -46,7 +40,7 @@ export async function trackTokenConsumption(data: TokenConsumptionData): Promise
       model: data.model
     });
     
-    const pricing = PRICING[data.model as keyof typeof PRICING] || PRICING['gpt-4o-mini'];
+    const pricing = getOpenAIPricing(data.model);
     
     const promptCost = data.usage.prompt_tokens * pricing.prompt;
     const completionCost = data.usage.completion_tokens * pricing.completion;

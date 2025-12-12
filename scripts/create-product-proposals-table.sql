@@ -43,7 +43,7 @@ ALTER TABLE product_proposals ENABLE ROW LEVEL SECURITY;
 -- RLS Policy: Staff users can only see their own proposals
 CREATE POLICY "product_proposals_staff_own" ON product_proposals
   FOR ALL
-  USING (staff_user_id = auth.jwt() ->> 'sub'::text);
+  USING (staff_user_id::text = auth.jwt() ->> 'sub'::text);
 
 -- RLS Policy: Restaurant owners can see all proposals for their restaurant
 CREATE POLICY "product_proposals_restaurant_owners" ON product_proposals

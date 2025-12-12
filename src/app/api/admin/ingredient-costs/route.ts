@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
         ingredient_name,
         cost_per_unit,
         unit,
-        currency: currency || 'RON',
-        language: 'ro',
+        currency: currency || (await import('@/lib/config')).getDefaultCurrency(),
+        language: (await import('@/lib/config')).getDefaultLanguage(),
         confidence_score: 1.0,
         source: 'manual'
       })
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
         ingredient_name,
         cost_per_unit,
         unit,
-        currency: currency || 'RON',
+        currency: currency || (await import('@/lib/config')).getDefaultCurrency(),
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

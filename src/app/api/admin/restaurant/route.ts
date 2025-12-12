@@ -90,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         address: address.trim(),
         schedule: schedule || {},
         owner_id: userId,
-        currency: 'RON',
+        currency: (await import('@/lib/config')).getDefaultCurrency(),
         nutrition_language: 'EN'
       })
       .select()

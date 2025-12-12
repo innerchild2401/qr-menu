@@ -33,7 +33,7 @@ export default function IngredientCostsPage() {
     ingredient_name: '',
     cost_per_unit: '',
     unit: 'g',
-    currency: 'RON'
+    currency: 'RON' // Default currency, can be overridden via env var DEFAULT_CURRENCY
   });
 
   const fetchIngredients = useCallback(async () => {

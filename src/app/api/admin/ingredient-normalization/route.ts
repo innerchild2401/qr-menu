@@ -121,7 +121,7 @@ async function findSimilarIngredients(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: (await import('@/lib/config')).AI_CONFIG.MODEL,
         messages: [
           {
             role: 'system',
