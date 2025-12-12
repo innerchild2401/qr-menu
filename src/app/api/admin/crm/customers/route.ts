@@ -23,10 +23,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim();
+    const segment = searchParams.get('segment')?.trim();
+    const statusFilter = searchParams.get('status')?.trim();
 
     let query = supabaseAdmin
       .from('customers')
-      .select('id, name, phone_number, total_visits, total_spent, last_seen_at, status, phone_shared_with_restaurant, tags')
+      .select('id, name, phone_number, total_visits, total_spent, last_seen_at, status, customer_segment, phone_shared_with_restaurant, tags')
       .eq('restaurant_id', restaurant.id)
       .order('last_seen_at', { ascending: false })
       .limit(200);
@@ -35,6 +37,14 @@ export async function GET(request: NextRequest) {
       query = query.or(
         `name.ilike.%${search}%,phone_number.ilike.%${search}%,anonymous_id.eq.${search}`
       );
+    }
+
+    if (segment) {
+      query = query.eq('customer_segment', segment);
+    }
+
+    if (statusFilter) {
+      query = query.eq('status', statusFilter);
     }
 
     const { data: customers, error: queryError } = await query;

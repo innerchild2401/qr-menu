@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
+import { calculateCustomerSegment, calculateCustomerStatus } from '@/lib/crm/segmentation';
 
 /**
  * Track a customer visit
@@ -79,13 +80,31 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Visit created:', visit.id);
 
-    // Update customer last_seen_at and increment total_visits
+    // Get updated customer data for segmentation
+    const newTotalVisits = (customer.total_visits || 0) + 1;
+    const averageOrderValue = newTotalVisits > 0 
+      ? (customer.total_spent || 0) / newTotalVisits 
+      : 0;
+
+    // Calculate new segment and status
+    const segment = calculateCustomerSegment({
+      total_visits: newTotalVisits,
+      total_spent: customer.total_spent || 0,
+      last_seen_at: new Date().toISOString(),
+      first_seen_at: customer.first_seen_at,
+      average_order_value: averageOrderValue,
+    });
+    const status = calculateCustomerStatus(new Date().toISOString());
+
+    // Update customer last_seen_at, increment total_visits, and update segment/status
     const { error: updateError } = await supabaseAdmin
       .from('customers')
       .update({
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        total_visits: (customer.total_visits || 0) + 1,
+        total_visits: newTotalVisits,
+        customer_segment: segment,
+        status,
       })
       .eq('id', customer.id);
 

@@ -5,9 +5,16 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Link from 'next/link';
 import { layout, typography, gaps } from '@/lib/design-system';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 
@@ -19,6 +26,7 @@ interface Customer {
   total_spent: number;
   last_seen_at?: string;
   status?: string;
+  customer_segment?: string;
   phone_shared_with_restaurant: boolean;
   tags?: string[];
 }
@@ -26,13 +34,20 @@ interface Customer {
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
+  const [segmentFilter, setSegmentFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-      const res = await authenticatedApiCall(`/api/admin/crm/customers${qs}`);
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (segmentFilter !== 'all') params.set('segment', segmentFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      
+      const qs = params.toString();
+      const res = await authenticatedApiCall(`/api/admin/crm/customers${qs ? `?${qs}` : ''}`);
       const json = await res.json();
       if (res.ok) {
         setCustomers(json.customers || []);
@@ -46,6 +61,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatDate = (d?: string) => (d ? new Date(d).toLocaleString() : '—');
@@ -65,20 +81,52 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search by name, phone, or anonymous id"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load()}
-          />
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search by name, phone, or anonymous id"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && load()}
+            />
+          </div>
+          <Button onClick={load} disabled={loading}>
+            Search
+          </Button>
         </div>
-        <Button onClick={load} disabled={loading}>
-          Search
-        </Button>
+        <div className="flex items-center gap-3">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={segmentFilter} onValueChange={setSegmentFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Segments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Segments</SelectItem>
+              <SelectItem value="VIP">VIP</SelectItem>
+              <SelectItem value="Regular">Regular</SelectItem>
+              <SelectItem value="Occasional">Occasional</SelectItem>
+              <SelectItem value="Rare">Rare</SelectItem>
+              <SelectItem value="Lost">Lost</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="at-risk">At-Risk</SelectItem>
+              <SelectItem value="lost">Lost</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            Apply Filters
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -100,9 +148,25 @@ export default function CustomersPage() {
                       {c.phone_number || 'No phone'}
                     </p>
                   </div>
-                  <Badge variant={c.phone_shared_with_restaurant ? 'secondary' : 'outline'}>
-                    {c.phone_shared_with_restaurant ? 'Phone shared' : 'Masked'}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    {c.customer_segment && (
+                      <Badge
+                        variant={
+                          c.customer_segment === 'VIP'
+                            ? 'default'
+                            : c.customer_segment === 'Regular'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className="text-xs"
+                      >
+                        {c.customer_segment}
+                      </Badge>
+                    )}
+                    <Badge variant={c.phone_shared_with_restaurant ? 'secondary' : 'outline'} className="text-xs">
+                      {c.phone_shared_with_restaurant ? 'Phone shared' : 'Masked'}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
                   <div>
