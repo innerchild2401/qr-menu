@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { validateUserAndGetRestaurant } from '../../../../../lib/api-route-helpers';
+import { supabaseAdmin } from '../../../../../lib/supabase-server';
 
 /**
  * Area Management API
@@ -9,96 +10,37 @@ import { createServerClient } from '@supabase/ssr';
 
 export async function GET(request: NextRequest) {
   try {
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          set(name: string, value: string, options: any) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          remove(name: string, options: any) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-    );
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch restaurant data' }, { status: 500 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    if (!user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Derive restaurant from membership
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
-    const { data: areas, error } = await supabase
+    const { data: areas, error: areasError } = await supabaseAdmin
       .from('areas')
       .select('*')
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching areas:', error);
+    if (areasError) {
+      console.error('Error fetching areas:', areasError);
       return NextResponse.json(
         { error: 'Failed to fetch areas' },
         { status: 500 }
       );
     }
 
-    const jsonResponse = NextResponse.json({ areas: areas || [] });
-    // Copy cookies from the supabase client response
-    response.cookies.getAll().forEach((cookie) => {
-      jsonResponse.cookies.set(cookie.name, cookie.value, cookie);
-    });
-    return jsonResponse;
+    return NextResponse.json({ areas: areas || [] });
   } catch (error) {
     console.error('Error in GET /api/admin/areas:', error);
     return NextResponse.json(
@@ -110,62 +52,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          set(name: string, value: string, options: any) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          remove(name: string, options: any) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-          },
-        },
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error) {
+      if (error === 'Missing user ID in headers') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-    );
+      if (error === 'No restaurant found for user') {
+        return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch restaurant data' }, { status: 500 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    if (!user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -186,20 +85,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
-    const { data: area, error } = await supabase
+    const { data: area, error: insertError } = await supabaseAdmin
       .from('areas')
       .insert({
-        restaurant_id: userRestaurant.restaurant_id,
+        restaurant_id: restaurant.id,
         name,
         description: description || null,
         capacity: capacity || null,
@@ -212,20 +101,15 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error('Error creating area:', error);
+    if (insertError) {
+      console.error('Error creating area:', insertError);
       return NextResponse.json(
-        { error: 'Failed to create area', details: error.message },
+        { error: 'Failed to create area', details: insertError.message },
         { status: 500 }
       );
     }
 
-    const jsonResponse = NextResponse.json({ area }, { status: 201 });
-    // Copy cookies from the supabase client response
-    response.cookies.getAll().forEach((cookie) => {
-      jsonResponse.cookies.set(cookie.name, cookie.value, cookie);
-    });
-    return jsonResponse;
+    return NextResponse.json({ area }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/admin/areas:', error);
     return NextResponse.json(
