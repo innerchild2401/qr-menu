@@ -55,8 +55,18 @@ export async function POST(
 
     const area = table.area as { id: string; name: string } | null;
 
+    // Get base URL from environment variable first, then from request headers
+    // This ensures production URLs work correctly
+    let baseUrl = env.APP_URL;
+    if (!baseUrl || baseUrl === 'http://localhost:3000') {
+      // Fall back to request-based URL detection for dynamic environments
+      const host = request.headers.get('host') || 'localhost:3000';
+      const protocol = request.headers.get('x-forwarded-proto') || 
+                      (request.headers.get('x-forwarded-ssl') === 'on' ? 'https' : 'http');
+      baseUrl = `${protocol}://${host}`;
+    }
+
     // Generate QR code (use restaurant slug from the validated restaurant)
-    const baseUrl = env.APP_URL || 'http://localhost:3000';
     const { publicUrl, storagePath, menuUrl } = await generateTableQRCode(
       restaurant.slug,
       tableId,
