@@ -117,6 +117,74 @@ export function getQRCodeDownloadUrl(qrCodeUrl: string): string {
 }
 
 /**
+ * Generate table-specific QR code URL
+ */
+export function generateTableQRUrl(
+  restaurantSlug: string,
+  tableId: string,
+  areaId?: string,
+  baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+): string {
+  const params = new URLSearchParams();
+  params.set('table', tableId);
+  if (areaId) {
+    params.set('area', areaId);
+  }
+  return `${baseUrl}/menu/${restaurantSlug}?${params.toString()}`;
+}
+
+/**
+ * Generate and upload table-specific QR code
+ */
+export async function generateTableQRCode(
+  restaurantSlug: string,
+  tableId: string,
+  tableNumber: string,
+  areaId?: string,
+  baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+): Promise<{ publicUrl: string; storagePath: string; menuUrl: string }> {
+  try {
+    // Construct table-specific menu URL
+    const menuUrl = generateTableQRUrl(restaurantSlug, tableId, areaId, baseUrl);
+
+    // Generate QR code
+    const qrCodeBuffer = await generateQRCode(menuUrl);
+
+    // Create filename with table identifier
+    const fileName = `tables/${restaurantSlug}/${tableId}.png`;
+    const storagePath = fileName;
+
+    // Upload to Supabase Storage
+    const { error } = await uploadFile(
+      STORAGE_BUCKETS.QR_CODES,
+      storagePath,
+      qrCodeBuffer,
+      {
+        contentType: 'image/png',
+        upsert: true
+      }
+    );
+
+    if (error) {
+      console.error('Supabase QR upload error:', error);
+      throw new Error('Failed to upload table QR code to storage');
+    }
+
+    // Get public URL
+    const publicUrl = getPublicUrl(STORAGE_BUCKETS.QR_CODES, storagePath);
+
+    return {
+      publicUrl,
+      storagePath,
+      menuUrl
+    };
+  } catch (error) {
+    console.error('Error generating table QR code:', error);
+    throw error;
+  }
+}
+
+/**
  * Regenerate QR code for a restaurant (useful for URL changes or updates)
  */
 export async function regenerateQRCode(

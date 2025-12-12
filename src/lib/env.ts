@@ -22,6 +22,7 @@ const optionalEnvVars = {
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   NEXT_PUBLIC_ENABLE_MENU_ADMIN: process.env.NEXT_PUBLIC_ENABLE_MENU_ADMIN || 'false',
   NODE_ENV: process.env.NODE_ENV || 'development',
+  WHATSAPP_BUSINESS_NUMBER: process.env.WHATSAPP_BUSINESS_NUMBER, // Single WhatsApp number for all restaurants
 } as const;
 
 /**
@@ -69,6 +70,7 @@ export const env = {
   APP_URL: optionalEnvVars.NEXT_PUBLIC_APP_URL,
   ENABLE_MENU_ADMIN: optionalEnvVars.NEXT_PUBLIC_ENABLE_MENU_ADMIN === 'true',
   NODE_ENV: optionalEnvVars.NODE_ENV,
+  WHATSAPP_BUSINESS_NUMBER: optionalEnvVars.WHATSAPP_BUSINESS_NUMBER,
   
   // Derived values
   IS_PRODUCTION: optionalEnvVars.NODE_ENV === 'production',

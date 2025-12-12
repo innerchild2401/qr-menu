@@ -93,6 +93,151 @@ export interface UserRestaurant {
   created_at: string;
 }
 
+// CRM Types
+export interface Area {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  description?: string;
+  capacity?: number;
+  table_count?: number;
+  service_type?: 'full_service' | 'bar_service' | 'counter';
+  operating_hours?: Record<string, unknown>;
+  floor_plan_coordinates?: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Table {
+  id: string;
+  restaurant_id: string;
+  area_id: string;
+  table_number: string;
+  table_name?: string;
+  capacity: number;
+  table_type?: '2_top' | '4_top' | '6_top' | 'booth' | 'bar_stool' | 'large_party';
+  status: 'available' | 'occupied' | 'reserved' | 'cleaning' | 'out_of_service';
+  qr_code_url?: string;
+  qr_code_path?: string;
+  floor_plan_x?: number;
+  floor_plan_y?: number;
+  floor_plan_rotation?: number;
+  notes?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Customer {
+  id: string;
+  restaurant_id: string;
+  anonymous_id: string;
+  client_fingerprint_id?: string;
+  client_token?: string;
+  // Optional personal information
+  phone_number?: string;
+  name?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  tags?: string[];
+  // Tracking
+  first_seen_at: string;
+  last_seen_at: string;
+  total_visits: number;
+  total_spent: number;
+  average_order_value: number;
+  lifetime_value: number;
+  // Preferences
+  preferred_category?: string;
+  preferred_area_id?: string;
+  preferred_table_id?: string;
+  // Segmentation & Loyalty
+  customer_segment?: string;
+  loyalty_tier: string;
+  loyalty_points: number;
+  status: 'active' | 'at-risk' | 'lost';
+  phone_shared_with_restaurant: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerVisit {
+  id: string;
+  customer_id: string;
+  restaurant_id: string;
+  table_id?: string;
+  area_id?: string;
+  visit_timestamp: string;
+  device_info?: Record<string, unknown>;
+  referrer?: string;
+  session_duration?: number;
+  menu_views: number;
+  products_viewed?: string[];
+  order_placed: boolean;
+  order_id?: string;
+  order_value?: number;
+  qr_code_type?: 'table' | 'area' | 'general' | 'campaign';
+  qr_code_campaign?: string;
+  created_at: string;
+}
+
+export interface CustomerOrder {
+  id: string;
+  customer_id: string;
+  restaurant_id: string;
+  table_id?: string;
+  area_id?: string;
+  visit_id?: string;
+  order_items: Array<{
+    product_id: string;
+    quantity: number;
+    price: number;
+    name: string;
+  }>;
+  subtotal: number;
+  total: number;
+  payment_method?: string;
+  order_status: 'pending' | 'completed' | 'cancelled';
+  order_type: 'dine_in' | 'delivery' | 'takeout';
+  placed_at: string;
+  completed_at?: string;
+  whatsapp_token?: string;
+  whatsapp_phone?: string;
+  created_at: string;
+}
+
+export interface CustomerEvent {
+  id: string;
+  customer_id?: string;
+  restaurant_id: string;
+  event_type: string;
+  event_data?: Record<string, unknown>;
+  table_id?: string;
+  area_id?: string;
+  timestamp: string;
+  created_at: string;
+}
+
+export interface WhatsAppOrderToken {
+  id: string;
+  restaurant_id: string;
+  token: string;
+  customer_id?: string;
+  table_id?: string;
+  area_id?: string;
+  order_type: 'dine_in' | 'delivery';
+  campaign?: string;
+  order_data: Record<string, unknown>;
+  phone_number?: string;
+  phone_shared: boolean;
+  status: 'pending' | 'received' | 'processed' | 'expired';
+  expires_at: string;
+  created_at: string;
+  processed_at?: string;
+}
+
 // Storage bucket names
 export const STORAGE_BUCKETS = {
   LOGOS: 'logos',

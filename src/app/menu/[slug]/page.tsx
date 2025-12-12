@@ -126,6 +126,15 @@ function MenuPageContent({ params }: MenuPageProps) {
         const data = await getMenuData(slug);
         console.log('Loaded menu data:', data); // Debug log
         setMenuData(data);
+        
+        // Track visit after menu data is loaded
+        if (data?.restaurant?.id) {
+          // Import tracking function dynamically to avoid SSR issues
+          const { trackVisit } = await import('@/lib/crm/client-tracking');
+          trackVisit(data.restaurant.id).catch(err => {
+            console.error('Failed to track visit:', err);
+          });
+        }
       } catch (err) {
         console.error('Error loading menu data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load menu');
