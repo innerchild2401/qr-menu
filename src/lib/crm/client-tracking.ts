@@ -7,6 +7,23 @@ const CLIENT_TOKEN_KEY = 'smartmenu_client_token';
 const CLIENT_FINGERPRINT_KEY = 'smartmenu_client_fingerprint';
 
 /**
+ * Generate a proper UUID v4
+ */
+function generateUUID(): string {
+  // Use crypto.randomUUID if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback: Generate UUID v4 manually
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
  * Generate or retrieve client token from localStorage
  */
 export function getOrCreateClientToken(): string {
@@ -17,9 +34,12 @@ export function getOrCreateClientToken(): string {
   let token = localStorage.getItem(CLIENT_TOKEN_KEY);
   
   if (!token) {
-    // Generate a new UUID-like token
-    token = `client_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    // Generate a proper UUID v4
+    token = generateUUID();
     localStorage.setItem(CLIENT_TOKEN_KEY, token);
+    console.log('🆕 Generated new client token:', token);
+  } else {
+    console.log('♻️ Using existing client token:', token);
   }
 
   return token;
@@ -36,7 +56,20 @@ export function getClientToken(): string | null {
 }
 
 /**
- * Generate browser fingerprint (simplified version)
+ * Generate a simple hash from string
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/**
+ * Generate browser fingerprint (enhanced version with more unique components)
  */
 export function generateClientFingerprint(): string {
   if (typeof window === 'undefined') {
@@ -46,23 +79,38 @@ export function generateClientFingerprint(): string {
   // Check if we already have a fingerprint
   let fingerprint = localStorage.getItem(CLIENT_FINGERPRINT_KEY);
   if (fingerprint) {
+    console.log('♻️ Using existing fingerprint:', fingerprint);
     return fingerprint;
   }
 
-  // Generate fingerprint from available browser data
+  // Generate fingerprint from available browser/device data
+  // Include more unique identifiers to reduce collisions
   const components = [
     navigator.userAgent,
     navigator.language,
     screen.width + 'x' + screen.height,
+    screen.colorDepth?.toString() || '',
     new Date().getTimezoneOffset().toString(),
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
     navigator.hardwareConcurrency?.toString() || '',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (navigator as any).deviceMemory?.toString() || '',
+    navigator.platform,
+    navigator.maxTouchPoints?.toString() || '0',
+    // Add a random component to ensure uniqueness even for identical devices
+    Math.random().toString(36).substring(2, 10),
   ];
 
-  // Simple hash function
-  const hash = components.join('|');
-  fingerprint = btoa(hash).substring(0, 32); // Base64 encode and truncate
+  // Create a hash from all components
+  const combined = components.join('|');
+  const hash1 = simpleHash(combined);
+  const hash2 = simpleHash(combined.split('').reverse().join(''));
+  
+  // Combine hashes and add timestamp component for extra uniqueness
+  fingerprint = `${hash1}-${hash2}-${Date.now().toString(36).substring(7)}`.substring(0, 64);
   
   localStorage.setItem(CLIENT_FINGERPRINT_KEY, fingerprint);
+  console.log('🆕 Generated new fingerprint:', fingerprint);
   return fingerprint;
 }
 

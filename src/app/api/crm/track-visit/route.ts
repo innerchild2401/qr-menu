@@ -117,38 +117,67 @@ async function findOrCreateCustomer(
   clientToken: string,
   clientFingerprint?: string
 ) {
-  // Try to find by client_token first
-  let { data: customer } = await supabaseAdmin
+  console.log('🔍 Finding customer:', {
+    restaurantId,
+    clientToken: clientToken.substring(0, 20) + '...',
+    hasFingerprint: !!clientFingerprint,
+    fingerprint: clientFingerprint ? clientFingerprint.substring(0, 20) + '...' : null,
+  });
+
+  // Try to find by client_token first (primary identifier)
+  const { data: customerByToken, error: tokenError } = await supabaseAdmin
     .from('customers')
     .select('*')
     .eq('restaurant_id', restaurantId)
     .eq('client_token', clientToken)
     .single();
 
-  // If not found and we have fingerprint, try that
-  if (!customer && clientFingerprint) {
-    const { data: fingerprintCustomer } = await supabaseAdmin
+  if (tokenError && tokenError.code !== 'PGRST116') { // PGRST116 = no rows returned
+    console.error('❌ Error finding customer by token:', tokenError);
+  }
+
+  let customer = customerByToken || null;
+
+  if (customer) {
+    console.log('✅ Found customer by client_token:', customer.id);
+    return customer;
+  }
+
+  // If not found and we have fingerprint, try that (fallback for when localStorage is cleared)
+  if (clientFingerprint) {
+    const { data: fingerprintCustomer, error: fingerprintError } = await supabaseAdmin
       .from('customers')
       .select('*')
       .eq('restaurant_id', restaurantId)
       .eq('client_fingerprint_id', clientFingerprint)
       .single();
 
+    if (fingerprintError && fingerprintError.code !== 'PGRST116') {
+      console.error('❌ Error finding customer by fingerprint:', fingerprintError);
+    }
+
     if (fingerprintCustomer) {
-      // Update with new client_token
-      const { data: updated } = await supabaseAdmin
+      console.log('✅ Found customer by fingerprint, updating token:', fingerprintCustomer.id);
+      // Update with new client_token (user cleared localStorage but same device)
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from('customers')
         .update({ client_token: clientToken })
         .eq('id', fingerprintCustomer.id)
         .select()
         .single();
 
-      customer = updated;
+      if (updateError) {
+        console.error('❌ Error updating customer token:', updateError);
+        return fingerprintCustomer; // Return original if update fails
+      }
+
+      return updated;
     }
   }
 
   // Create new customer if not found
   if (!customer) {
+    console.log('🆕 Creating new customer with token:', clientToken.substring(0, 20) + '...');
     const { data: newCustomer, error } = await supabaseAdmin
       .from('customers')
       .insert({
@@ -170,10 +199,11 @@ async function findOrCreateCustomer(
       .single();
 
     if (error) {
-      console.error('Error creating customer:', error);
+      console.error('❌ Error creating customer:', error);
       throw new Error('Failed to create customer');
     }
 
+    console.log('✅ Created new customer:', newCustomer.id);
     customer = newCustomer;
   }
 
