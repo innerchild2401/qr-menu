@@ -197,7 +197,7 @@ export async function POST(
 
       return NextResponse.json({ order: updatedOrder });
     } else {
-      // Create new order
+      // Create new order - but first check if there's a closed order that might conflict
       console.log('🆕 [UPDATE CART] Creating new order...', {
         restaurantId,
         tableId,
@@ -206,6 +206,50 @@ export async function POST(
         customerTokens,
       });
 
+      // Check for any existing order (including closed) to handle the unique constraint
+      const { data: anyOrder } = await supabaseAdmin
+        .from('table_orders')
+        .select('id, order_status')
+        .eq('table_id', tableId)
+        .maybeSingle();
+
+      if (anyOrder && anyOrder.order_status === 'closed') {
+        // There's a closed order - we need to create a new one, but the unique constraint prevents it
+        // Solution: Update the closed order to become a new pending order
+        console.log('🔄 [UPDATE CART] Found closed order, converting to new pending order:', anyOrder.id);
+        
+        const { data: updatedOrder, error: updateError } = await supabaseAdmin
+          .from('table_orders')
+          .update({
+            order_items: orderItems,
+            subtotal,
+            total,
+            customer_tokens: customerTokens,
+            order_status: 'pending',
+            placed_at: null, // Reset placed_at for new order
+            processed_at: null,
+            closed_at: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', anyOrder.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('❌ [UPDATE CART] Error converting closed order:', updateError);
+          return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+        }
+
+        console.log('✅ [UPDATE CART] Closed order converted to new pending order:', {
+          orderId: updatedOrder.id,
+          status: updatedOrder.order_status,
+          itemCount: updatedOrder.order_items.length,
+        });
+
+        return NextResponse.json({ order: updatedOrder });
+      }
+
+      // No existing order (or race condition) - try to create new one
       const { data: newOrder, error: createError } = await supabaseAdmin
         .from('table_orders')
         .insert({
@@ -222,6 +266,88 @@ export async function POST(
         .single();
 
       if (createError) {
+        // If we get a unique constraint violation, it means another request created the order
+        // Retry by fetching the existing order
+        if (createError.code === '23505') {
+          console.log('⚠️ [UPDATE CART] Race condition detected, fetching existing order...');
+          
+          const { data: existingOrder, error: fetchError } = await supabaseAdmin
+            .from('table_orders')
+            .select('*')
+            .eq('table_id', tableId)
+            .in('order_status', ['pending', 'processed'])
+            .maybeSingle();
+
+          if (fetchError || !existingOrder) {
+            console.error('❌ [UPDATE CART] Error fetching order after race condition:', fetchError);
+            return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+          }
+
+          // Update the existing order with new items
+          const existingItems = existingOrder.order_items || [];
+          const mergedItems: Array<{
+            product_id: string;
+            quantity: number;
+            price: number;
+            name: string;
+            customer_id?: string;
+            customer_token?: string;
+            processed?: boolean;
+          }> = [...existingItems];
+          
+          items.forEach((item: { product_id: string; quantity: number; price: number; name: string }) => {
+            const existingItemIndex = mergedItems.findIndex(
+              (oi) => oi.product_id === item.product_id && oi.customer_token === customerToken
+            );
+
+            if (existingItemIndex >= 0) {
+              mergedItems[existingItemIndex] = {
+                ...mergedItems[existingItemIndex],
+                quantity: item.quantity,
+              };
+            } else {
+              mergedItems.push({
+                ...item,
+                customer_token: customerToken,
+                processed: false,
+              });
+            }
+          });
+
+          const mergedItemsFiltered = mergedItems.filter((item) => item.quantity > 0);
+          const mergedSubtotal = mergedItemsFiltered.reduce((sum: number, item) => sum + item.price * item.quantity, 0);
+          const mergedTotal = mergedSubtotal;
+          const mergedCustomerTokens = Array.from(new Set([
+            ...(existingOrder.customer_tokens || []),
+            customerToken,
+          ]));
+
+          const { data: updatedOrder, error: updateError } = await supabaseAdmin
+            .from('table_orders')
+            .update({
+              order_items: mergedItemsFiltered,
+              subtotal: mergedSubtotal,
+              total: mergedTotal,
+              customer_tokens: mergedCustomerTokens,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingOrder.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('❌ [UPDATE CART] Error updating order after race condition:', updateError);
+            return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+          }
+
+          console.log('✅ [UPDATE CART] Order updated after race condition:', {
+            orderId: updatedOrder.id,
+            itemCount: updatedOrder.order_items.length,
+          });
+
+          return NextResponse.json({ order: updatedOrder });
+        }
+
         console.error('❌ [UPDATE CART] Error creating table order:', createError);
         return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
       }
