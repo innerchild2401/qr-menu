@@ -118,6 +118,7 @@ export interface Table {
   capacity: number;
   table_type?: '2_top' | '4_top' | '6_top' | 'booth' | 'bar_stool' | 'large_party';
   status: 'available' | 'occupied' | 'reserved' | 'cleaning' | 'out_of_service';
+  session_id?: string; // UUID - generated when table becomes occupied, invalidated when closed
   qr_code_url?: string;
   qr_code_path?: string;
   floor_plan_x?: number;

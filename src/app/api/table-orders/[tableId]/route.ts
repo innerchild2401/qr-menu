@@ -12,10 +12,10 @@ export async function GET(
   try {
     const { tableId } = await params;
 
-    // Check table status first
+    // Check table status and session
     const { data: table, error: tableError } = await supabaseAdmin
       .from('tables')
-      .select('id, status')
+      .select('id, status, session_id')
       .eq('id', tableId)
       .single();
 
@@ -32,6 +32,45 @@ export async function GET(
       });
     }
 
+    // Generate or get session_id
+    let sessionId = table.session_id;
+    
+    // If table is available (no active session), generate a new session_id
+    if (table.status === 'available' && !sessionId) {
+      sessionId = crypto.randomUUID();
+      
+      // Update table with new session_id and set status to occupied
+      const { error: updateError } = await supabaseAdmin
+        .from('tables')
+        .update({
+          session_id: sessionId,
+          status: 'occupied',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tableId);
+
+      if (updateError) {
+        console.error('Error updating table session:', updateError);
+      }
+    }
+    
+    // If table is occupied but no session_id exists, generate one
+    if (table.status === 'occupied' && !sessionId) {
+      sessionId = crypto.randomUUID();
+      
+      const { error: updateError } = await supabaseAdmin
+        .from('tables')
+        .update({
+          session_id: sessionId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tableId);
+
+      if (updateError) {
+        console.error('Error updating table session:', updateError);
+      }
+    }
+
     const { data: order, error } = await supabaseAdmin
       .from('table_orders')
       .select('*')
@@ -44,7 +83,11 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
     }
 
-    return NextResponse.json({ order: order || null, tableClosed: false });
+    return NextResponse.json({ 
+      order: order || null, 
+      tableClosed: false,
+      sessionId: sessionId || null // Return session_id to client
+    });
   } catch (error) {
     console.error('Error in table order GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -62,7 +105,18 @@ export async function POST(
   try {
     const { tableId } = await params;
     const body = await request.json();
-    const { restaurantId, areaId, items, customerToken } = body;
+    const { restaurantId, areaId, items, customerToken, sessionId } = body;
+
+    // Verify session_id
+    const { data: table, error: tableError } = await supabaseAdmin
+      .from('tables')
+      .select('id, status, session_id')
+      .eq('id', tableId)
+      .single();
+
+    if (tableError || !table) {
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+    }
 
     if (!restaurantId || !items || !Array.isArray(items)) {
       return NextResponse.json(
@@ -71,21 +125,29 @@ export async function POST(
       );
     }
 
-    // Check table status - only allow modifications if table is open
-    const { data: table, error: tableError } = await supabaseAdmin
-      .from('tables')
-      .select('id, status')
-      .eq('id', tableId)
-      .single();
-
-    if (tableError || !table) {
-      return NextResponse.json({ error: 'Table not found' }, { status: 404 });
-    }
-
     // Block modifications if table is cleaning/out of service
     if (table.status === 'out_of_service' || table.status === 'cleaning') {
       return NextResponse.json(
         { error: 'This table is currently unavailable. Please contact staff if you need assistance.' },
+        { status: 403 }
+      );
+    }
+
+    // Verify session_id matches (security check - must be after table status check)
+    if (!sessionId || table.session_id !== sessionId) {
+      // Get restaurant name for error message
+      const { data: restaurant } = await supabaseAdmin
+        .from('restaurants')
+        .select('name')
+        .eq('id', restaurantId)
+        .single();
+
+      return NextResponse.json(
+        { 
+          error: 'Invalid session. Please scan the QR code again.',
+          message: 'In order to start a new order, you need to scan the QR code on the table.',
+          restaurantName: restaurant?.name || 'The restaurant'
+        },
         { status: 403 }
       );
     }

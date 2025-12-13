@@ -36,6 +36,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
   const [tableClosedMessage, setTableClosedMessage] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [clientToken, setClientToken] = useState<string>('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -51,6 +52,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       setTableClosed(false);
       setTableClosedMessage(null);
       setRestaurantName(null);
+      setSessionId(null); // Reset session_id on new table
     }
   }, [tableId]);
 
@@ -63,6 +65,11 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       const res = await fetch(`/api/table-orders/${tableId}`);
       const json = await res.json();
       if (res.ok) {
+        // Store session_id from response
+        if (json.sessionId) {
+          setSessionId(json.sessionId);
+        }
+        
         if (json.tableClosed) {
           // Table is closed - clear order
           setTableOrder(null);
@@ -187,7 +194,12 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
 
   // Update cart on server
   const updateCart = useCallback(async (items: Array<{ product: Product; quantity: number }>) => {
-    if (!tableId || !restaurantId || !clientToken) return;
+    if (!tableId || !restaurantId || !clientToken || !sessionId) {
+      if (!sessionId) {
+        throw new Error('Invalid session. Please scan the QR code again.');
+      }
+      return;
+    }
 
     setLoading(true);
     try {
@@ -203,6 +215,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
             name: item.product.name,
           })),
           customerToken: clientToken,
+          sessionId, // Include session_id for verification
         }),
       });
 
@@ -224,7 +237,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
     } finally {
       setLoading(false);
     }
-  }, [tableId, restaurantId, clientToken, loadTableOrder]);
+  }, [tableId, restaurantId, clientToken, sessionId, loadTableOrder]);
 
   // Place order
   const placeOrder = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
@@ -233,11 +246,18 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       return { success: false, error: 'No table ID found. Please scan the QR code.' };
     }
 
+    if (!sessionId) {
+      console.error('❌ [CLIENT] placeOrder: No sessionId');
+      return { success: false, error: 'Invalid session. Please scan the QR code again.' };
+    }
+
     console.log('🔵 [CLIENT] placeOrder: Attempting to place order for tableId:', tableId);
     setLoading(true);
     try {
       const res = await fetch(`/api/table-orders/${tableId}/place`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }), // Include session_id for verification
       });
 
       const json = await res.json();
@@ -273,7 +293,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
     } finally {
       setLoading(false);
     }
-  }, [tableId, loadTableOrder]);
+  }, [tableId, sessionId, loadTableOrder]);
 
   // Calculate customer total
   const getCustomerTotal = useCallback((): number => {

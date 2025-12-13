@@ -11,18 +11,33 @@ export async function POST(
 ) {
   try {
     const { tableId } = await params;
+    const body = await request.json();
+    const { sessionId } = body;
+    
     console.log('🔵 [PLACE ORDER] Starting place order for tableId:', tableId);
 
-    // Check table status first
+    // Check table status and verify session_id
     const { data: table, error: tableError } = await supabaseAdmin
       .from('tables')
-      .select('id, status')
+      .select('id, status, session_id')
       .eq('id', tableId)
       .single();
 
     if (tableError || !table) {
       console.error('❌ [PLACE ORDER] Table not found:', tableError);
       return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+    }
+
+    // Verify session_id matches (security check)
+    if (!sessionId || table.session_id !== sessionId) {
+      console.log('❌ [PLACE ORDER] 403 - Invalid session_id');
+      return NextResponse.json(
+        { 
+          error: 'Invalid session. Please scan the QR code again.',
+          message: 'In order to start a new order, you need to scan the QR code on the table.',
+        },
+        { status: 403 }
+      );
     }
 
     console.log('✅ [PLACE ORDER] Table found:', { id: table.id, status: table.status });

@@ -138,11 +138,13 @@ export async function PATCH(
         closed_at: new Date().toISOString(),
       };
 
-      // Update table status to available (this will block all client modifications)
+      // Update table status to available and generate new session_id (invalidates old sessions)
+      const newSessionId = crypto.randomUUID();
       await supabaseAdmin
         .from('tables')
         .update({
           status: 'available',
+          session_id: newSessionId, // Generate new session_id to invalidate old sessions
           updated_at: new Date().toISOString(),
         })
         .eq('id', tableId);
