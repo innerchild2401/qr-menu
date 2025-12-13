@@ -90,38 +90,11 @@ export async function POST(
       );
     }
 
-    // Check if there's a closed order (order was closed but table might be available for next customers)
-    const { data: closedOrder } = await supabaseAdmin
-      .from('table_orders')
-      .select('id, order_status, restaurant_id, closed_at')
-      .eq('table_id', tableId)
-      .eq('order_status', 'closed')
-      .order('closed_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (closedOrder) {
-      // Get restaurant name for error message
-      const { data: restaurant } = await supabaseAdmin
-        .from('restaurants')
-        .select('name')
-        .eq('id', closedOrder.restaurant_id)
-        .single();
-
-      console.log('❌ [UPDATE CART] 403 - Found closed order when trying to add items:', {
-        closedOrderId: closedOrder.id,
-        closedAt: closedOrder.closed_at,
-        restaurantName: restaurant?.name,
-      });
-      return NextResponse.json(
-        { 
-          error: 'This table order has been closed.',
-          message: `In order to start a new order, you need to scan the QR code on the table.`,
-          restaurantName: restaurant?.name || 'The restaurant'
-        },
-        { status: 403 }
-      );
-    }
+    // Note: We don't check for closed orders here because:
+    // - Closed orders are historical records and shouldn't block new orders
+    // - After a table is closed (order_status='closed'), the table status is set to 'available'
+    // - Customers scanning a new QR code should be able to create a new order
+    // - The query below only looks for active orders (pending/processed), so closed orders are ignored
 
     // Get existing order or create new one
     console.log('🔵 [UPDATE CART] Looking for existing order for tableId:', tableId);
