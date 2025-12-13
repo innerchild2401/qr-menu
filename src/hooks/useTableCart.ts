@@ -43,6 +43,17 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
     }
   }, []);
 
+  // Reset state when tableId changes (new QR scan)
+  useEffect(() => {
+    if (tableId) {
+      // Clear any previous state when switching to a new table
+      setTableOrder(null);
+      setTableClosed(false);
+      setTableClosedMessage(null);
+      setRestaurantName(null);
+    }
+  }, [tableId]);
+
   // Load table order from server
   const loadTableOrder = useCallback(async () => {
     if (!tableId || !restaurantId) return;
@@ -90,11 +101,20 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
 
   // Load order on mount and when tableId changes
   useEffect(() => {
+    // Reset state when tableId changes (e.g., new QR scan)
+    if (tableId) {
+      setTableOrder(null);
+      setTableClosed(false);
+      setTableClosedMessage(null);
+      setRestaurantName(null);
+      setLoading(true);
+    }
+    
     loadTableOrder();
     // Poll for updates every 5 seconds
     const interval = setInterval(loadTableOrder, 5000);
     return () => clearInterval(interval);
-  }, [loadTableOrder]);
+  }, [loadTableOrder, tableId]);
 
   // Get customer's items from table order
   const getCustomerItems = useCallback((): Array<{ product: Product; quantity: number; isProcessed: boolean }> => {

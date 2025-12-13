@@ -31,33 +31,65 @@ export async function POST(
       );
     }
 
-    // Check if there's a closed order
-    const { data: closedOrder } = await supabaseAdmin
-      .from('table_orders')
-      .select('id, order_status')
-      .eq('table_id', tableId)
-      .eq('order_status', 'closed')
-      .order('closed_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (closedOrder) {
-      return NextResponse.json(
-        { error: 'This table order has been closed. Please scan the QR code again to start a new order.' },
-        { status: 403 }
-      );
-    }
-
-    // Get existing order
+    // Get existing order (pending or processed - can place order on processed orders too)
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('table_orders')
       .select('*')
       .eq('table_id', tableId)
-      .eq('order_status', 'pending')
-      .single();
+      .in('order_status', ['pending', 'processed'])
+      .maybeSingle();
 
+    // If no active order exists, check if there's a closed order
     if (fetchError || !order) {
-      return NextResponse.json({ error: 'No pending order found' }, { status: 404 });
+      const { data: closedOrder } = await supabaseAdmin
+        .from('table_orders')
+        .select('id, order_status, restaurant_id')
+        .eq('table_id', tableId)
+        .eq('order_status', 'closed')
+        .order('closed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (closedOrder) {
+        // Get restaurant name for error message
+        const { data: restaurant } = await supabaseAdmin
+          .from('restaurants')
+          .select('name')
+          .eq('id', closedOrder.restaurant_id)
+          .single();
+
+        return NextResponse.json(
+          { 
+            error: 'This table order has been closed.',
+            message: 'In order to start a new order, you need to scan the QR code on the table.',
+            restaurantName: restaurant?.name || 'The restaurant'
+          },
+          { status: 403 }
+        );
+      }
+      
+      return NextResponse.json({ 
+        error: 'No active order found. Please add items to your cart first.' 
+      }, { status: 404 });
+    }
+
+    // Check if order is closed (shouldn't happen with the query above, but double-check)
+    if (order.order_status === 'closed') {
+      // Get restaurant name for error message
+      const { data: restaurant } = await supabaseAdmin
+        .from('restaurants')
+        .select('name')
+        .eq('id', order.restaurant_id)
+        .single();
+
+      return NextResponse.json(
+        { 
+          error: 'This table order has been closed.',
+          message: 'In order to start a new order, you need to scan the QR code on the table.',
+          restaurantName: restaurant?.name || 'The restaurant'
+        },
+        { status: 403 }
+      );
     }
 
     if (!order.order_items || order.order_items.length === 0) {

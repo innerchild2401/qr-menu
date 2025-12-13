@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { menuStorage } from '@/lib/secure-storage';
 import { 
   Star, 
@@ -123,8 +124,9 @@ function MenuPageContent({ params }: MenuPageProps) {
   const [showPlaceOrderConfirm, setShowPlaceOrderConfirm] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
   const menuContentRef = useRef<HTMLDivElement>(null);
-  const [tableId, setTableId] = useState<string | null>(null);
-  const [areaId, setAreaId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const tableId = searchParams.get('table');
+  const areaId = searchParams.get('area');
 
   // Prevent body scroll when order summary modal is open
   useEffect(() => {
@@ -141,14 +143,12 @@ function MenuPageContent({ params }: MenuPageProps) {
     }
   }, [showOrderSummary, showPlaceOrderConfirm]);
   
-  // Extract table_id from URL on client side
+  // Reset order state when tableId changes (new QR scan)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      setTableId(params.get('table'));
-      setAreaId(params.get('area'));
-    }
-  }, []);
+    // Clear any cached order state when table changes
+    setShowPlaceOrderConfirm(false);
+    setPlacingOrder(false);
+  }, [tableId]);
   
   // Use table cart if table_id exists, otherwise fall back to local cart
   const tableCart = useTableCart(tableId, menuData?.restaurant?.id || null);
