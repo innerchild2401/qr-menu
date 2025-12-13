@@ -93,7 +93,7 @@ export async function POST(
     // Check if there's a closed order (order was closed but table might be available for next customers)
     const { data: closedOrder } = await supabaseAdmin
       .from('table_orders')
-      .select('id, order_status')
+      .select('id, order_status, restaurant_id')
       .eq('table_id', tableId)
       .eq('order_status', 'closed')
       .order('closed_at', { ascending: false })
@@ -101,8 +101,19 @@ export async function POST(
       .maybeSingle();
 
     if (closedOrder) {
+      // Get restaurant name for error message
+      const { data: restaurant } = await supabaseAdmin
+        .from('restaurants')
+        .select('name')
+        .eq('id', closedOrder.restaurant_id)
+        .single();
+
       return NextResponse.json(
-        { error: 'This table order has been closed. Please scan the QR code again to start a new order.' },
+        { 
+          error: 'This table order has been closed.',
+          message: `In order to start a new order, you need to scan the QR code on the table.`,
+          restaurantName: restaurant?.name || 'The restaurant'
+        },
         { status: 403 }
       );
     }
@@ -122,7 +133,11 @@ export async function POST(
       name: string;
       customer_id?: string;
       customer_token?: string;
+      processed?: boolean;
     }> = existingOrder?.order_items || [];
+
+    // If order is processed, new items should not be marked as processed
+    // (This is handled in the item processing logic below)
 
     // Add or update items from this customer
     items.forEach((item: {
@@ -136,13 +151,19 @@ export async function POST(
       );
 
       if (existingItemIndex >= 0) {
-        // Update existing item
-        orderItems[existingItemIndex].quantity = item.quantity;
+        // Update existing item - preserve processed status if it was processed
+        const wasProcessed = orderItems[existingItemIndex].processed || false;
+        orderItems[existingItemIndex] = {
+          ...orderItems[existingItemIndex],
+          quantity: item.quantity,
+          processed: wasProcessed, // Preserve processed status
+        };
       } else {
-        // Add new item
+        // Add new item - if order is processed, new items are NOT processed yet
         orderItems.push({
           ...item,
           customer_token: customerToken,
+          processed: false, // New items are never processed automatically
         });
       }
     });

@@ -104,11 +104,31 @@ export async function PATCH(
         total: subtotal,
       };
     } else if (action === 'process') {
-      // Mark order as processed
+      // Mark all unprocessed items as processed
+      const orderItems = (order.order_items || []).map((item: { processed?: boolean }) => ({
+        ...item,
+        processed: true,
+      }));
+
       updatedOrder = {
         ...order,
+        order_items: orderItems,
         order_status: 'processed',
         processed_at: new Date().toISOString(),
+      };
+    } else if (action === 'process_new_items') {
+      // Mark only new (unprocessed) items as processed
+      const orderItems = (order.order_items || []).map((item: { processed?: boolean }) => ({
+        ...item,
+        processed: true, // Mark all items as processed (including previously unprocessed ones)
+      }));
+
+      updatedOrder = {
+        ...order,
+        order_items: orderItems,
+        // Keep order_status as 'processed' if it was already processed
+        order_status: 'processed',
+        processed_at: order.processed_at || new Date().toISOString(),
       };
     } else if (action === 'close') {
       // Close the order and clear the table
@@ -126,6 +146,81 @@ export async function PATCH(
           updated_at: new Date().toISOString(),
         })
         .eq('id', tableId);
+      
+      // Create customer_orders for each customer that contributed to this order
+      const customerTokens = order.customer_tokens || [];
+      const orderItems = order.order_items || [];
+      
+      // Group items by customer_token
+      const itemsByCustomer: Record<string, Array<{
+        product_id: string;
+        quantity: number;
+        price: number;
+        name: string;
+      }>> = {};
+      
+      orderItems.forEach((item: { customer_token?: string; product_id: string; quantity: number; price: number; name: string }) => {
+        if (item.customer_token) {
+          if (!itemsByCustomer[item.customer_token]) {
+            itemsByCustomer[item.customer_token] = [];
+          }
+          itemsByCustomer[item.customer_token].push({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            name: item.name,
+          });
+        }
+      });
+
+      // Create customer orders for each customer
+      for (const customerToken of customerTokens) {
+        const customerItems = itemsByCustomer[customerToken] || [];
+        if (customerItems.length === 0) continue;
+
+        // Find customer by client_token
+        const { data: customer, error: customerError } = await supabaseAdmin
+          .from('customers')
+          .select('id')
+          .eq('restaurant_id', restaurant.id)
+          .eq('client_token', customerToken)
+          .single();
+
+        if (customerError || !customer) {
+          console.warn(`Customer not found for token: ${customerToken.substring(0, 20)}...`);
+          continue;
+        }
+
+        // Calculate customer's order total
+        const customerSubtotal = customerItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+        const customerTotal = customerSubtotal;
+
+        // Create customer_order record
+        const { error: orderError } = await supabaseAdmin
+          .from('customer_orders')
+          .insert({
+            customer_id: customer.id,
+            restaurant_id: restaurant.id,
+            table_id: order.table_id,
+            area_id: order.area_id || null,
+            order_items: customerItems,
+            subtotal: customerSubtotal,
+            total: customerTotal,
+            order_status: 'completed', // Mark as completed so trigger updates customer stats
+            order_type: 'dine_in',
+            placed_at: order.placed_at || new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+          });
+
+        if (orderError) {
+          console.error(`Error creating customer order for customer ${customer.id}:`, orderError);
+        } else {
+          console.log(`✅ Created customer order for customer ${customer.id}`);
+        }
+      }
       
       // Note: table_orders record stays in DB for history/review
       // Clients won't see it because we filter by order_status !== 'closed'

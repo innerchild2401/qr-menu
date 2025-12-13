@@ -9,6 +9,7 @@ interface TableOrderItem {
   price: number;
   name: string;
   customer_token?: string;
+  processed?: boolean;
 }
 
 interface TableOrder {
@@ -32,6 +33,8 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
   const [tableOrder, setTableOrder] = useState<TableOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [tableClosed, setTableClosed] = useState(false);
+  const [tableClosedMessage, setTableClosedMessage] = useState<string | null>(null);
+  const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [clientToken, setClientToken] = useState<string>('');
 
   useEffect(() => {
@@ -53,9 +56,13 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
           // Table is closed - clear order
           setTableOrder(null);
           setTableClosed(true);
+          setTableClosedMessage(json.message || 'This table order has been closed.');
+          setRestaurantName(json.restaurantName || null);
           return { tableClosed: true, message: json.message };
         }
         setTableClosed(false);
+        setTableClosedMessage(null);
+        setRestaurantName(null);
         if (json.order) {
           setTableOrder(json.order);
         } else {
@@ -66,9 +73,13 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
         // Check if it's a 403 (table closed) error
         if (res.status === 403) {
           setTableClosed(true);
-          return { tableClosed: true, message: json.error };
+          setTableClosedMessage(json.message || json.error || 'This table order has been closed.');
+          setRestaurantName(json.restaurantName || null);
+          return { tableClosed: true, message: json.message || json.error };
         }
         setTableClosed(false);
+        setTableClosedMessage(null);
+        setRestaurantName(null);
       }
     } catch (error) {
       console.error('Failed to load table order:', error);
@@ -98,7 +109,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
           price: item.price,
         },
         quantity: item.quantity,
-        isProcessed: tableOrder.order_status === 'processed',
+        isProcessed: item.processed === true, // Use item-level processed flag
       }));
   }, [tableOrder, clientToken]);
 
@@ -114,7 +125,7 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       },
       quantity: item.quantity,
       customer_token: item.customer_token,
-      isProcessed: tableOrder.order_status === 'processed',
+      isProcessed: item.processed === true, // Use item-level processed flag
     }));
   }, [tableOrder]);
 
@@ -179,8 +190,11 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
         await loadTableOrder();
       } else {
         const json = await res.json();
-        if (res.status === 403 && json.error?.includes('closed')) {
-          throw new Error('Table has been closed');
+        if (res.status === 403) {
+          setTableClosed(true);
+          setTableClosedMessage(json.message || json.error || 'This table order has been closed.');
+          setRestaurantName(json.restaurantName || null);
+          throw new Error(json.message || json.error || 'Table has been closed');
         }
         throw new Error(json.error || 'Failed to update cart');
       }
@@ -234,6 +248,8 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
     tableItems: getTableItems(),
     loading,
     tableClosed,
+    tableClosedMessage,
+    restaurantName,
     addItem,
     updateQuantity,
     removeItem,

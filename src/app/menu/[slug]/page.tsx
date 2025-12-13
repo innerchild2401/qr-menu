@@ -481,12 +481,31 @@ function MenuPageContent({ params }: MenuPageProps) {
       </div>
 
       {/* Table Closed Message */}
-      {isTableOrder && tableCart?.tableClosed && (
-        <div className={`${layout.containerSmall} py-4`}>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <p className="text-foreground">
-              This table order has been closed. Please scan the QR code again to start a new order.
-            </p>
+      {isTableOrder && tableCart?.tableClosed && tableCart?.tableClosedMessage && (
+        <div className={`${layout.containerSmall} py-6`}>
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <QrCode className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {tableCart?.restaurantName || restaurant?.name || 'The restaurant'} says:
+                </h3>
+                <p className="text-foreground mb-4 leading-relaxed">
+                  {tableCart?.tableClosedMessage || 'In order to start a new order, you need to scan the QR code on the table.'}
+                </p>
+                <Button 
+                  variant="default" 
+                  onClick={() => window.location.href = `/menu/${restaurant.slug}`}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Start a New Order
+                </Button>
+              </div>
+            </div>
           </Card>
         </div>
       )}

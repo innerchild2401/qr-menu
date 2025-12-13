@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS table_orders (
   table_id UUID NOT NULL REFERENCES tables(id) ON DELETE CASCADE,
   area_id UUID REFERENCES areas(id),
   order_status TEXT DEFAULT 'pending', -- pending, processed, closed
-  -- Order items: array of {product_id, quantity, price, name, customer_id, customer_token}
+  -- Order items: array of {product_id, quantity, price, name, customer_id, customer_token, processed}
+  -- processed: boolean - true if this item has been processed by waiter
   order_items JSONB NOT NULL DEFAULT '[]'::jsonb,
   subtotal DECIMAL(10, 2) DEFAULT 0,
   total DECIMAL(10, 2) DEFAULT 0,
