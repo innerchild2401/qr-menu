@@ -125,6 +125,21 @@ function MenuPageContent({ params }: MenuPageProps) {
   const menuContentRef = useRef<HTMLDivElement>(null);
   const [tableId, setTableId] = useState<string | null>(null);
   const [areaId, setAreaId] = useState<string | null>(null);
+
+  // Prevent body scroll when order summary modal is open
+  useEffect(() => {
+    if (showOrderSummary || showPlaceOrderConfirm) {
+      // Save current overflow style
+      const originalOverflow = document.body.style.overflow;
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore original overflow when modal closes
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showOrderSummary, showPlaceOrderConfirm]);
   
   // Extract table_id from URL on client side
   useEffect(() => {
@@ -601,8 +616,28 @@ function MenuPageContent({ params }: MenuPageProps) {
 
       {/* Order Summary Modal */}
       {showOrderSummary && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center sm:items-center">
-          <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center sm:items-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowOrderSummary(false);
+            }
+          }}
+          onWheel={(e) => {
+            // Prevent scroll from propagating to body
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            // Prevent touch scroll from propagating to body
+            e.stopPropagation();
+          }}
+        >
+          <div 
+            className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-semibold">My Order</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowOrderSummary(false)}>

@@ -126,6 +126,7 @@ export async function POST(
       .in('order_status', ['pending', 'processed'])
       .maybeSingle();
 
+    // Get existing order items and make a deep copy to avoid mutation issues
     let orderItems: Array<{
       product_id: string;
       quantity: number;
@@ -134,10 +135,7 @@ export async function POST(
       customer_id?: string;
       customer_token?: string;
       processed?: boolean;
-    }> = existingOrder?.order_items || [];
-
-    // If order is processed, new items should not be marked as processed
-    // (This is handled in the item processing logic below)
+    }> = existingOrder?.order_items ? JSON.parse(JSON.stringify(existingOrder.order_items)) : [];
 
     // Add or update items from this customer
     items.forEach((item: {
@@ -151,19 +149,21 @@ export async function POST(
       );
 
       if (existingItemIndex >= 0) {
-        // Update existing item - preserve processed status if it was processed
-        const wasProcessed = orderItems[existingItemIndex].processed || false;
+        // Update existing item - CRITICAL: preserve processed status exactly as it was
+        const existingItem = orderItems[existingItemIndex];
+        const wasProcessed = existingItem.processed === true; // Explicitly check for true
+        
         orderItems[existingItemIndex] = {
-          ...orderItems[existingItemIndex],
+          ...existingItem,
           quantity: item.quantity,
-          processed: wasProcessed, // Preserve processed status
+          processed: wasProcessed, // Preserve processed status - only true if it was explicitly true
         };
       } else {
-        // Add new item - if order is processed, new items are NOT processed yet
+        // Add new item - new items are NEVER processed automatically, regardless of order status
         orderItems.push({
           ...item,
           customer_token: customerToken,
-          processed: false, // New items are never processed automatically
+          processed: false, // Always false for new items
         });
       }
     });

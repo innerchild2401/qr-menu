@@ -219,6 +219,30 @@ export async function PATCH(
           console.error(`Error creating customer order for customer ${customer.id}:`, orderError);
         } else {
           console.log(`✅ Created customer order for customer ${customer.id}`);
+          
+          // Manually update customer stats since trigger only fires on UPDATE, not INSERT
+          // Calculate updated stats
+          const { data: allOrders } = await supabaseAdmin
+            .from('customer_orders')
+            .select('total')
+            .eq('customer_id', customer.id)
+            .eq('order_status', 'completed');
+          
+          const newTotalSpent = (allOrders || []).reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+          const orderCount = (allOrders || []).length;
+          const avgOrderValue = orderCount > 0 ? newTotalSpent / orderCount : 0;
+          
+          // Update customer stats
+          await supabaseAdmin
+            .from('customers')
+            .update({
+              total_spent: newTotalSpent,
+              average_order_value: avgOrderValue,
+              lifetime_value: newTotalSpent,
+              last_seen_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', customer.id);
         }
       }
       
