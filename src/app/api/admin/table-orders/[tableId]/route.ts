@@ -19,6 +19,19 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get table info to check status
+    const { data: table, error: tableError } = await supabaseAdmin
+      .from('tables')
+      .select('id, status, table_number, table_name, capacity')
+      .eq('id', tableId)
+      .eq('restaurant_id', restaurant.id)
+      .single();
+
+    if (tableError) {
+      console.error('Error fetching table:', tableError);
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+    }
+
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('table_orders')
       .select(`
@@ -44,7 +57,10 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
     }
 
-    return NextResponse.json({ order: order || null });
+    return NextResponse.json({ 
+      order: order || null,
+      tableStatus: table.status 
+    });
   } catch (error) {
     console.error('Error in admin table order GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -70,16 +86,39 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get existing order
+    // Get existing order (if any)
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('table_orders')
       .select('*')
       .eq('table_id', tableId)
       .eq('restaurant_id', restaurant.id)
       .in('order_status', ['pending', 'processed'])
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !order) {
+    // For 'close' action, allow closing even if no order exists
+    if (action === 'close' && (!order || fetchError)) {
+      // Just update the table status to available and generate new session_id
+      const newSessionId = crypto.randomUUID();
+      const { error: tableUpdateError } = await supabaseAdmin
+        .from('tables')
+        .update({
+          status: 'available',
+          session_id: newSessionId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tableId)
+        .eq('restaurant_id', restaurant.id);
+
+      if (tableUpdateError) {
+        console.error('Error updating table:', tableUpdateError);
+        return NextResponse.json({ error: 'Failed to close table' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: 'Table closed successfully' });
+    }
+
+    // For other actions, require an order
+    if (!order || fetchError) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 

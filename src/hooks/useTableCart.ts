@@ -220,6 +220,11 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       });
 
       if (res.ok) {
+        const json = await res.json();
+        // Store session_id from response if provided
+        if (json.sessionId) {
+          setSessionId(json.sessionId);
+        }
         await loadTableOrder();
       } else {
         const json = await res.json();

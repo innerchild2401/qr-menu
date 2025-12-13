@@ -35,8 +35,9 @@ export async function GET(
     // Generate or get session_id
     let sessionId = table.session_id;
     
-    // If table is available (no active session), generate a new session_id
-    if (table.status === 'available' && !sessionId) {
+    // If table is available, always generate a NEW session_id (even if one exists from previous close)
+    // This ensures each new customer session gets a fresh session_id
+    if (table.status === 'available') {
       sessionId = crypto.randomUUID();
       
       // Update table with new session_id and set status to occupied
@@ -54,7 +55,7 @@ export async function GET(
       }
     }
     
-    // If table is occupied but no session_id exists, generate one
+    // If table is occupied but no session_id exists, generate one (fallback case)
     if (table.status === 'occupied' && !sessionId) {
       sessionId = crypto.randomUUID();
       
@@ -70,6 +71,8 @@ export async function GET(
         console.error('Error updating table session:', updateError);
       }
     }
+    
+    // If table is occupied and has session_id, use existing one (multiple customers can share same session)
 
     const { data: order, error } = await supabaseAdmin
       .from('table_orders')
@@ -110,7 +113,7 @@ export async function POST(
     // Verify session_id
     const { data: table, error: tableError } = await supabaseAdmin
       .from('tables')
-      .select('id, status, session_id')
+      .select('id, status, session_id, updated_at')
       .eq('id', tableId)
       .single();
 
@@ -157,28 +160,76 @@ export async function POST(
     }
 
     // Verify session_id matches (security check - must be after table status check)
-    // Allow if table was just initialized (no session_id yet) OR if session_ids match
+    // Special case: If table is occupied but client has no sessionId, check if there's an active order
+    // If no active order exists AND table was recently updated (within 10 seconds), allow it
+    // This handles the race condition where GET hasn't completed yet
     if (table.status === 'occupied' && table.session_id && (!sessionId || table.session_id !== sessionId)) {
-      console.log('❌ [UPDATE CART] Session ID mismatch:', {
-        clientSessionId: sessionId,
-        tableSessionId: table.session_id,
-        tableStatus: table.status,
-      });
-      // Get restaurant name for error message
-      const { data: restaurant } = await supabaseAdmin
-        .from('restaurants')
-        .select('name')
-        .eq('id', restaurantId)
-        .single();
+      // Check if there's an active order - if not, this might be the first POST
+      const { data: existingOrder } = await supabaseAdmin
+        .from('table_orders')
+        .select('id')
+        .eq('table_id', tableId)
+        .in('order_status', ['pending', 'processed'])
+        .maybeSingle();
 
-      return NextResponse.json(
-        { 
-          error: 'Invalid session. Please scan the QR code again.',
-          message: 'In order to start a new order, you need to scan the QR code on the table.',
-          restaurantName: restaurant?.name || 'The restaurant'
-        },
-        { status: 403 }
-      );
+      if (!existingOrder) {
+        // No active order exists - check if table was recently updated (within 10 seconds)
+        // This ensures we only allow the first POST within a short window after table becomes occupied
+        const tableUpdatedAt = new Date(table.updated_at);
+        const now = new Date();
+        const secondsSinceUpdate = (now.getTime() - tableUpdatedAt.getTime()) / 1000;
+
+        if (secondsSinceUpdate <= 10) {
+          // Table was recently updated - this is likely the first POST after GET
+          // Allow it and return the session_id so client can store it
+          console.log('⚠️ [UPDATE CART] First POST without sessionId (within 10s window), allowing and returning session_id');
+          // Continue with the request - we'll return session_id in the response
+        } else {
+          // Table was updated more than 10 seconds ago - this is suspicious
+          console.log('❌ [UPDATE CART] Session ID mismatch - table updated too long ago:', {
+            clientSessionId: sessionId,
+            tableSessionId: table.session_id,
+            secondsSinceUpdate,
+          });
+          const { data: restaurant } = await supabaseAdmin
+            .from('restaurants')
+            .select('name')
+            .eq('id', restaurantId)
+            .single();
+
+          return NextResponse.json(
+            { 
+              error: 'Invalid session. Please scan the QR code again.',
+              message: 'In order to start a new order, you need to scan the QR code on the table.',
+              restaurantName: restaurant?.name || 'The restaurant'
+            },
+            { status: 403 }
+          );
+        }
+      } else {
+        // Active order exists but sessionId doesn't match - this is a security issue
+        console.log('❌ [UPDATE CART] Session ID mismatch with existing order:', {
+          clientSessionId: sessionId,
+          tableSessionId: table.session_id,
+          tableStatus: table.status,
+          existingOrderId: existingOrder.id,
+        });
+        // Get restaurant name for error message
+        const { data: restaurant } = await supabaseAdmin
+          .from('restaurants')
+          .select('name')
+          .eq('id', restaurantId)
+          .single();
+
+        return NextResponse.json(
+          { 
+            error: 'Invalid session. Please scan the QR code again.',
+            message: 'In order to start a new order, you need to scan the QR code on the table.',
+            restaurantName: restaurant?.name || 'The restaurant'
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Note: We don't check for closed orders here because:
@@ -313,7 +364,10 @@ export async function POST(
         status: updatedOrder.order_status,
       });
 
-      return NextResponse.json({ order: updatedOrder });
+      return NextResponse.json({ 
+        order: updatedOrder,
+        sessionId: table.session_id // Return session_id so client can store it
+      });
     } else {
       // Create new order - but first check if there's a closed order that might conflict
       console.log('🆕 [UPDATE CART] Creating new order...', {
@@ -364,7 +418,10 @@ export async function POST(
           itemCount: updatedOrder.order_items.length,
         });
 
-        return NextResponse.json({ order: updatedOrder });
+        return NextResponse.json({ 
+          order: updatedOrder,
+          sessionId: table.session_id // Return session_id so client can store it
+        });
       }
 
       // No existing order (or race condition) - try to create new one
@@ -463,7 +520,10 @@ export async function POST(
             itemCount: updatedOrder.order_items.length,
           });
 
-          return NextResponse.json({ order: updatedOrder });
+          return NextResponse.json({ 
+            order: updatedOrder,
+            sessionId: table.session_id // Return session_id so client can store it
+          });
         }
 
         console.error('❌ [UPDATE CART] Error creating table order:', createError);

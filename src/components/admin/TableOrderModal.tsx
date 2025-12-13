@@ -42,6 +42,7 @@ interface TableOrderModalProps {
 
 export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrderModalProps) {
   const [order, setOrder] = useState<TableOrder | null>(null);
+  const [tableStatus, setTableStatus] = useState<'available' | 'occupied' | 'reserved' | 'cleaning' | 'out_of_service' | null>(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const processedItemIdsRef = useRef<Set<string>>(new Set());
@@ -68,31 +69,40 @@ export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrd
     try {
       const res = await authenticatedApiCall(`/api/admin/table-orders/${tableId}`);
       const json = await res.json();
-      if (res.ok && json.order) {
-        const newOrder = json.order;
-        
-        // Detect new unprocessed items
-        if (order) {
-          const newUnprocessedItems = newOrder.order_items.filter(
-            (item: TableOrderItem) => !item.processed && !processedItemIdsRef.current.has(`${item.product_id}-${item.customer_token}`)
-          );
-          
-          if (newUnprocessedItems.length > 0) {
-            const itemNames = newUnprocessedItems.map((item: TableOrderItem) => item.name).join(', ');
-            showInfo(
-              'New items added',
-              itemNames.length > 100 ? `${itemNames.substring(0, 100)}...` : itemNames,
-              5000
-            );
-            
-            // Mark these items as seen
-            newUnprocessedItems.forEach((item: TableOrderItem) => {
-              processedItemIdsRef.current.add(`${item.product_id}-${item.customer_token}`);
-            });
-          }
+      if (res.ok) {
+        // Store table status
+        if (json.tableStatus) {
+          setTableStatus(json.tableStatus);
         }
         
-        setOrder(newOrder);
+        if (json.order) {
+          const newOrder = json.order;
+          
+          // Detect new unprocessed items
+          if (order) {
+            const newUnprocessedItems = newOrder.order_items.filter(
+              (item: TableOrderItem) => !item.processed && !processedItemIdsRef.current.has(`${item.product_id}-${item.customer_token}`)
+            );
+            
+            if (newUnprocessedItems.length > 0) {
+              const itemNames = newUnprocessedItems.map((item: TableOrderItem) => item.name).join(', ');
+              showInfo(
+                'New items added',
+                itemNames.length > 100 ? `${itemNames.substring(0, 100)}...` : itemNames,
+                5000
+              );
+              
+              // Mark these items as seen
+              newUnprocessedItems.forEach((item: TableOrderItem) => {
+                processedItemIdsRef.current.add(`${item.product_id}-${item.customer_token}`);
+              });
+            }
+          }
+          
+          setOrder(newOrder);
+        } else {
+          setOrder(null);
+        }
       }
     } catch (error) {
       console.error('Failed to load order:', error);
@@ -182,7 +192,7 @@ export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrd
         onUpdate();
       }
     } catch (error) {
-      console.error('Failed to close order:', error);
+      console.error('Failed to close table:', error);
     } finally {
       setProcessing(false);
     }
@@ -293,14 +303,16 @@ export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrd
           )}
         </div>
 
-        {order && (
+        {(order || (tableStatus === 'occupied')) && (
           <div className="p-4 border-t bg-gray-50 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-foreground">Total:</span>
-              <span className="font-bold text-lg text-foreground">{formatCurrency(order.total)}</span>
-            </div>
+            {order && (
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-foreground">Total:</span>
+                <span className="font-bold text-lg text-foreground">{formatCurrency(order.total)}</span>
+              </div>
+            )}
             <div className="flex flex-col space-y-2">
-              {hasUnprocessedItems && (
+              {order && hasUnprocessedItems && (
                 <Button
                   variant="default"
                   className="w-full"
@@ -316,7 +328,7 @@ export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrd
                 </Button>
               )}
               <div className="flex space-x-2">
-                {order.order_status === 'pending' && !hasProcessedItems && (
+                {order && order.order_status === 'pending' && !hasProcessedItems && (
                   <>
                     <Button
                       variant="outline"
@@ -346,7 +358,22 @@ export default function TableOrderModal({ tableId, onClose, onUpdate }: TableOrd
                     </Button>
                   </>
                 )}
-                {(order.order_status === 'processed' || hasProcessedItems) && (
+                {(order && (order.order_status === 'processed' || hasProcessedItems)) && (
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={handleClose}
+                    disabled={processing}
+                  >
+                    {processing ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <XCircle className="h-4 w-4 mr-2" />
+                    )}
+                    Close Table
+                  </Button>
+                )}
+                {!order && tableStatus === 'occupied' && (
                   <Button
                     variant="default"
                     className="w-full"
