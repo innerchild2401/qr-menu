@@ -194,12 +194,12 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
 
   // Update cart on server
   const updateCart = useCallback(async (items: Array<{ product: Product; quantity: number }>) => {
-    if (!tableId || !restaurantId || !clientToken || !sessionId) {
-      if (!sessionId) {
-        throw new Error('Invalid session. Please scan the QR code again.');
-      }
+    if (!tableId || !restaurantId || !clientToken) {
       return;
     }
+
+    // Note: sessionId might be null on first request - server will generate it
+    // We still send it if we have it, but don't block if we don't
 
     setLoading(true);
     try {

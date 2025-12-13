@@ -133,8 +133,37 @@ export async function POST(
       );
     }
 
+    // Handle session_id: if table is available and has no session_id, generate one
+    // If table is occupied, require matching session_id
+    if (table.status === 'available' && !table.session_id) {
+      // Table is available and has no session - generate one and set to occupied
+      const newSessionId = crypto.randomUUID();
+      const { error: updateError } = await supabaseAdmin
+        .from('tables')
+        .update({
+          session_id: newSessionId,
+          status: 'occupied',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tableId);
+
+      if (updateError) {
+        console.error('Error updating table session:', updateError);
+      } else {
+        // Update table object for use below
+        table.session_id = newSessionId;
+        table.status = 'occupied';
+      }
+    }
+
     // Verify session_id matches (security check - must be after table status check)
-    if (!sessionId || table.session_id !== sessionId) {
+    // Allow if table was just initialized (no session_id yet) OR if session_ids match
+    if (table.status === 'occupied' && table.session_id && (!sessionId || table.session_id !== sessionId)) {
+      console.log('❌ [UPDATE CART] Session ID mismatch:', {
+        clientSessionId: sessionId,
+        tableSessionId: table.session_id,
+        tableStatus: table.status,
+      });
       // Get restaurant name for error message
       const { data: restaurant } = await supabaseAdmin
         .from('restaurants')
@@ -174,6 +203,16 @@ export async function POST(
       itemCount: existingOrder?.order_items?.length || 0,
       customerTokens: existingOrder?.customer_tokens,
       error: existingOrderError?.message,
+    });
+
+    console.log('📝 [UPDATE CART] Items to add:', {
+      itemCount: items.length,
+      items: items.map((item: { product_id: string; quantity: number; name: string }) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        name: item.name,
+      })),
+      customerToken,
     });
 
     // Get existing order items and make a deep copy to avoid mutation issues
@@ -221,6 +260,17 @@ export async function POST(
     // Remove items with quantity 0
     orderItems = orderItems.filter((item) => item.quantity > 0);
 
+    console.log('📦 [UPDATE CART] After processing items:', {
+      finalItemCount: orderItems.length,
+      finalItems: orderItems.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        name: item.name,
+        customer_token: item.customer_token?.substring(0, 20) + '...',
+        processed: item.processed,
+      })),
+    });
+
     // Calculate totals
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const total = subtotal; // Add tax/service charge if needed
@@ -229,6 +279,12 @@ export async function POST(
     const customerTokens = Array.from(
       new Set(orderItems.map((item) => item.customer_token).filter(Boolean))
     ) as string[];
+
+    console.log('💰 [UPDATE CART] Calculated totals:', {
+      subtotal,
+      total,
+      customerTokens: customerTokens.map((token) => token.substring(0, 20) + '...'),
+    });
 
     if (existingOrder) {
       // Update existing order
