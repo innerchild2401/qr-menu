@@ -227,23 +227,49 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
   }, [tableId, restaurantId, clientToken, loadTableOrder]);
 
   // Place order
-  const placeOrder = useCallback(async (): Promise<boolean> => {
-    if (!tableId) return false;
+  const placeOrder = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    if (!tableId) {
+      console.error('❌ [CLIENT] placeOrder: No tableId');
+      return { success: false, error: 'No table ID found. Please scan the QR code.' };
+    }
 
+    console.log('🔵 [CLIENT] placeOrder: Attempting to place order for tableId:', tableId);
     setLoading(true);
     try {
       const res = await fetch(`/api/table-orders/${tableId}/place`, {
         method: 'POST',
       });
 
+      const json = await res.json();
+      console.log('📦 [CLIENT] placeOrder response:', {
+        status: res.status,
+        ok: res.ok,
+        error: json.error,
+        message: json.message,
+      });
+
       if (res.ok) {
+        console.log('✅ [CLIENT] placeOrder: Success');
         await loadTableOrder();
-        return true;
+        return { success: true };
       }
-      return false;
+
+      // Handle specific error cases
+      if (res.status === 403) {
+        setTableClosed(true);
+        setTableClosedMessage(json.message || json.error || 'This table order has been closed.');
+        setRestaurantName(json.restaurantName || null);
+        return { success: false, error: json.message || json.error || 'Table has been closed' };
+      }
+
+      if (res.status === 404) {
+        return { success: false, error: json.error || 'No active order found. Please add items to your cart first.' };
+      }
+
+      return { success: false, error: json.error || 'Failed to place order' };
     } catch (error) {
-      console.error('Failed to place order:', error);
-      return false;
+      console.error('❌ [CLIENT] placeOrder error:', error);
+      return { success: false, error: 'Network error. Please try again.' };
     } finally {
       setLoading(false);
     }

@@ -243,12 +243,15 @@ function MenuPageContent({ params }: MenuPageProps) {
     if (!isTableOrder || !tableCart) return;
     
     setPlacingOrder(true);
-    const success = await tableCart.placeOrder();
+    const result = await tableCart.placeOrder();
     setPlacingOrder(false);
     
-    if (success) {
+    if (result.success) {
       setShowPlaceOrderConfirm(false);
       setShowOrderSummary(false);
+    } else {
+      // Show error message to user
+      alert(result.error || 'Failed to place order. Please try again.');
     }
   };
 

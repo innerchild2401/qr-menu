@@ -119,12 +119,22 @@ export async function POST(
     }
 
     // Get existing order or create new one
-    const { data: existingOrder } = await supabaseAdmin
+    console.log('🔵 [UPDATE CART] Looking for existing order for tableId:', tableId);
+    const { data: existingOrder, error: existingOrderError } = await supabaseAdmin
       .from('table_orders')
       .select('*')
       .eq('table_id', tableId)
       .in('order_status', ['pending', 'processed'])
       .maybeSingle();
+
+    console.log('📦 [UPDATE CART] Existing order check:', {
+      found: !!existingOrder,
+      orderId: existingOrder?.id,
+      orderStatus: existingOrder?.order_status,
+      itemCount: existingOrder?.order_items?.length || 0,
+      customerTokens: existingOrder?.customer_tokens,
+      error: existingOrderError?.message,
+    });
 
     // Get existing order items and make a deep copy to avoid mutation issues
     let orderItems: Array<{
@@ -182,6 +192,7 @@ export async function POST(
 
     if (existingOrder) {
       // Update existing order
+      console.log('🔄 [UPDATE CART] Updating existing order:', existingOrder.id);
       const { data: updatedOrder, error: updateError } = await supabaseAdmin
         .from('table_orders')
         .update({
@@ -196,13 +207,27 @@ export async function POST(
         .single();
 
       if (updateError) {
-        console.error('Error updating table order:', updateError);
+        console.error('❌ [UPDATE CART] Error updating table order:', updateError);
         return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
       }
+
+      console.log('✅ [UPDATE CART] Order updated successfully:', {
+        orderId: updatedOrder.id,
+        itemCount: updatedOrder.order_items.length,
+        status: updatedOrder.order_status,
+      });
 
       return NextResponse.json({ order: updatedOrder });
     } else {
       // Create new order
+      console.log('🆕 [UPDATE CART] Creating new order...', {
+        restaurantId,
+        tableId,
+        areaId,
+        itemCount: orderItems.length,
+        customerTokens,
+      });
+
       const { data: newOrder, error: createError } = await supabaseAdmin
         .from('table_orders')
         .insert({
@@ -219,9 +244,15 @@ export async function POST(
         .single();
 
       if (createError) {
-        console.error('Error creating table order:', createError);
+        console.error('❌ [UPDATE CART] Error creating table order:', createError);
         return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
       }
+
+      console.log('✅ [UPDATE CART] Order created successfully:', {
+        orderId: newOrder.id,
+        status: newOrder.order_status,
+        itemCount: newOrder.order_items.length,
+      });
 
       return NextResponse.json({ order: newOrder });
     }
