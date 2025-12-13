@@ -29,7 +29,7 @@ export async function POST(
 
     // Block placing order if table is unavailable
     if (table.status === 'out_of_service' || table.status === 'cleaning') {
-      console.log('⚠️ [PLACE ORDER] Table unavailable:', table.status);
+      console.log('❌ [PLACE ORDER] 403 - Table unavailable:', table.status);
       return NextResponse.json(
         { error: 'This table is currently unavailable. Please contact staff if you need assistance.' },
         { status: 403 }
@@ -58,7 +58,7 @@ export async function POST(
       console.log('⚠️ [PLACE ORDER] No active order found, checking for closed orders...');
       const { data: closedOrder } = await supabaseAdmin
         .from('table_orders')
-        .select('id, order_status, restaurant_id')
+        .select('id, order_status, restaurant_id, closed_at')
         .eq('table_id', tableId)
         .eq('order_status', 'closed')
         .order('closed_at', { ascending: false })
@@ -78,7 +78,11 @@ export async function POST(
           .eq('id', closedOrder.restaurant_id)
           .single();
 
-        console.log('❌ [PLACE ORDER] Returning closed order error');
+        console.log('❌ [PLACE ORDER] 403 - Found closed order:', {
+          closedOrderId: closedOrder.id,
+          closedAt: closedOrder.closed_at,
+          restaurantName: restaurant?.name,
+        });
         return NextResponse.json(
           { 
             error: 'This table order has been closed.',
@@ -104,6 +108,11 @@ export async function POST(
         .eq('id', order.restaurant_id)
         .single();
 
+      console.log('❌ [PLACE ORDER] 403 - Order status is closed (unexpected):', {
+        orderId: order.id,
+        orderStatus: order.order_status,
+        restaurantName: restaurant?.name,
+      });
       return NextResponse.json(
         { 
           error: 'This table order has been closed.',

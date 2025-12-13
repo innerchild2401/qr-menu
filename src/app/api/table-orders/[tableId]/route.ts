@@ -93,7 +93,7 @@ export async function POST(
     // Check if there's a closed order (order was closed but table might be available for next customers)
     const { data: closedOrder } = await supabaseAdmin
       .from('table_orders')
-      .select('id, order_status, restaurant_id')
+      .select('id, order_status, restaurant_id, closed_at')
       .eq('table_id', tableId)
       .eq('order_status', 'closed')
       .order('closed_at', { ascending: false })
@@ -108,6 +108,11 @@ export async function POST(
         .eq('id', closedOrder.restaurant_id)
         .single();
 
+      console.log('❌ [UPDATE CART] 403 - Found closed order when trying to add items:', {
+        closedOrderId: closedOrder.id,
+        closedAt: closedOrder.closed_at,
+        restaurantName: restaurant?.name,
+      });
       return NextResponse.json(
         { 
           error: 'This table order has been closed.',
