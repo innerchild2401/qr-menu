@@ -8,6 +8,7 @@ import { layout, typography, gaps } from '@/lib/design-system';
 import { Loader2, RefreshCcw, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authenticatedApiCall } from '@/lib/api-helpers';
+import TableOrderModal from '@/components/admin/TableOrderModal';
 
 interface TableRow {
   id: string;
@@ -32,6 +33,7 @@ export default function DiningRoomView() {
   const [tables, setTables] = useState<TableRow[]>([]);
   const [areas, setAreas] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   const loadTables = async () => {
     setLoading(true);
@@ -56,7 +58,18 @@ export default function DiningRoomView() {
   useEffect(() => {
     loadTables();
     const interval = setInterval(loadTables, 20000);
-    return () => clearInterval(interval);
+    
+    // Listen for table detail open event
+    const handleOpenTableDetail = (event: CustomEvent<{ tableId: string }>) => {
+      setSelectedTableId(event.detail.tableId);
+    };
+    
+    window.addEventListener('openTableDetail', handleOpenTableDetail as EventListener);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('openTableDetail', handleOpenTableDetail as EventListener);
+    };
   }, []);
 
   const grouped = useMemo(() => {
@@ -104,9 +117,10 @@ export default function DiningRoomView() {
                   <Card
                     key={table.id}
                     className={cn(
-                      'p-4 border',
+                      'p-4 border cursor-pointer hover:shadow-md transition-shadow',
                       statusStyles[table.status] || 'bg-card text-card-foreground'
                     )}
+                    onClick={() => setSelectedTableId(table.id)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -129,6 +143,7 @@ export default function DiningRoomView() {
                         target="_blank"
                         rel="noreferrer"
                         className="text-xs text-primary hover:underline mt-2 inline-block"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         View QR
                       </a>
@@ -139,6 +154,16 @@ export default function DiningRoomView() {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedTableId && (
+        <TableOrderModal
+          tableId={selectedTableId}
+          onClose={() => setSelectedTableId(null)}
+          onUpdate={() => {
+            loadTables();
+          }}
+        />
       )}
     </div>
   );

@@ -1,0 +1,212 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase-server';
+
+/**
+ * Get active order for a table
+ * GET /api/table-orders/[tableId]
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ tableId: string }> }
+) {
+  try {
+    const { tableId } = await params;
+
+    // Check table status first
+    const { data: table, error: tableError } = await supabaseAdmin
+      .from('tables')
+      .select('id, status')
+      .eq('id', tableId)
+      .single();
+
+    if (tableError || !table) {
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+    }
+
+    // Block access if table is cleaning or out of service
+    if (table.status === 'out_of_service' || table.status === 'cleaning') {
+      return NextResponse.json({ 
+        order: null, 
+        tableClosed: true,
+        message: 'This table is currently unavailable.'
+      });
+    }
+
+    const { data: order, error } = await supabaseAdmin
+      .from('table_orders')
+      .select('*')
+      .eq('table_id', tableId)
+      .in('order_status', ['pending', 'processed'])
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching table order:', error);
+      return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
+    }
+
+    return NextResponse.json({ order: order || null, tableClosed: false });
+  } catch (error) {
+    console.error('Error in table order GET:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * Create or update table order
+ * POST /api/table-orders/[tableId]
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tableId: string }> }
+) {
+  try {
+    const { tableId } = await params;
+    const body = await request.json();
+    const { restaurantId, areaId, items, customerToken } = body;
+
+    if (!restaurantId || !items || !Array.isArray(items)) {
+      return NextResponse.json(
+        { error: 'Missing required fields: restaurantId, items' },
+        { status: 400 }
+      );
+    }
+
+    // Check table status - only allow modifications if table is open
+    const { data: table, error: tableError } = await supabaseAdmin
+      .from('tables')
+      .select('id, status')
+      .eq('id', tableId)
+      .single();
+
+    if (tableError || !table) {
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+    }
+
+    // Block modifications if table is cleaning/out of service
+    if (table.status === 'out_of_service' || table.status === 'cleaning') {
+      return NextResponse.json(
+        { error: 'This table is currently unavailable. Please contact staff if you need assistance.' },
+        { status: 403 }
+      );
+    }
+
+    // Check if there's a closed order (order was closed but table might be available for next customers)
+    const { data: closedOrder } = await supabaseAdmin
+      .from('table_orders')
+      .select('id, order_status')
+      .eq('table_id', tableId)
+      .eq('order_status', 'closed')
+      .order('closed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (closedOrder) {
+      return NextResponse.json(
+        { error: 'This table order has been closed. Please scan the QR code again to start a new order.' },
+        { status: 403 }
+      );
+    }
+
+    // Get existing order or create new one
+    const { data: existingOrder } = await supabaseAdmin
+      .from('table_orders')
+      .select('*')
+      .eq('table_id', tableId)
+      .in('order_status', ['pending', 'processed'])
+      .maybeSingle();
+
+    let orderItems: Array<{
+      product_id: string;
+      quantity: number;
+      price: number;
+      name: string;
+      customer_id?: string;
+      customer_token?: string;
+    }> = existingOrder?.order_items || [];
+
+    // Add or update items from this customer
+    items.forEach((item: {
+      product_id: string;
+      quantity: number;
+      price: number;
+      name: string;
+    }) => {
+      const existingItemIndex = orderItems.findIndex(
+        (oi) => oi.product_id === item.product_id && oi.customer_token === customerToken
+      );
+
+      if (existingItemIndex >= 0) {
+        // Update existing item
+        orderItems[existingItemIndex].quantity = item.quantity;
+      } else {
+        // Add new item
+        orderItems.push({
+          ...item,
+          customer_token: customerToken,
+        });
+      }
+    });
+
+    // Remove items with quantity 0
+    orderItems = orderItems.filter((item) => item.quantity > 0);
+
+    // Calculate totals
+    const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const total = subtotal; // Add tax/service charge if needed
+
+    // Get unique customer tokens
+    const customerTokens = Array.from(
+      new Set(orderItems.map((item) => item.customer_token).filter(Boolean))
+    ) as string[];
+
+    if (existingOrder) {
+      // Update existing order
+      const { data: updatedOrder, error: updateError } = await supabaseAdmin
+        .from('table_orders')
+        .update({
+          order_items: orderItems,
+          subtotal,
+          total,
+          customer_tokens: customerTokens,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingOrder.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating table order:', updateError);
+        return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+      }
+
+      return NextResponse.json({ order: updatedOrder });
+    } else {
+      // Create new order
+      const { data: newOrder, error: createError } = await supabaseAdmin
+        .from('table_orders')
+        .insert({
+          restaurant_id: restaurantId,
+          table_id: tableId,
+          area_id: areaId || null,
+          order_items: orderItems,
+          subtotal,
+          total,
+          customer_tokens: customerTokens,
+          order_status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating table order:', createError);
+        return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+      }
+
+      return NextResponse.json({ order: newOrder });
+    }
+  } catch (error) {
+    console.error('Error in table order POST:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+

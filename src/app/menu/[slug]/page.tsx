@@ -24,6 +24,8 @@ import { layout, typography, gaps } from '@/lib/design-system';
 import { OrderProvider, useOrder } from '@/contexts/OrderContext';
 import RestaurantNavbar from '@/components/RestaurantNavbar';
 import { formatCurrency, getNutritionLabel, type Currency, type NutritionLanguage } from '@/lib/currency-utils';
+import { useTableCart } from '@/hooks/useTableCart';
+import { getOrCreateClientToken } from '@/lib/crm/client-tracking';
 
 interface MenuPageProps {
   params: Promise<{
@@ -115,10 +117,27 @@ function MenuPageContent({ params }: MenuPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { order, setOrder, showOrderSummary, setShowOrderSummary } = useOrder();
+  const { showOrderSummary, setShowOrderSummary } = useOrder();
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [showAddedToast, setShowAddedToast] = useState<string | null>(null);
+  const [showPlaceOrderConfirm, setShowPlaceOrderConfirm] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
   const menuContentRef = useRef<HTMLDivElement>(null);
+  const [tableId, setTableId] = useState<string | null>(null);
+  const [areaId, setAreaId] = useState<string | null>(null);
+  
+  // Extract table_id from URL on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setTableId(params.get('table'));
+      setAreaId(params.get('area'));
+    }
+  }, []);
+  
+  // Use table cart if table_id exists, otherwise fall back to local cart
+  const tableCart = useTableCart(tableId, menuData?.restaurant?.id || null);
+  const isTableOrder = !!tableId;
 
   useEffect(() => {
     const loadMenuData = async () => {
@@ -132,7 +151,7 @@ function MenuPageContent({ params }: MenuPageProps) {
         if (data?.restaurant?.id) {
           // Import tracking function dynamically to avoid SSR issues
           const { trackVisit } = await import('@/lib/crm/client-tracking');
-          trackVisit(data.restaurant.id).catch(err => {
+          trackVisit(data.restaurant.id, tableId || undefined, areaId || undefined).catch(err => {
             console.error('Failed to track visit:', err);
           });
         }
@@ -147,36 +166,32 @@ function MenuPageContent({ params }: MenuPageProps) {
     loadMenuData();
   }, [params]);
 
-  // Load order from secure storage on mount
-  useEffect(() => {
-    const savedOrder = menuStorage.getOrder();
-    if (savedOrder && Array.isArray(savedOrder)) {
-      setOrder(savedOrder);
-    }
-  }, []);
-
-  // Save order to secure storage whenever it changes
-  useEffect(() => {
-    menuStorage.setOrder(order);
-  }, [order]);
-
-  const addToOrder = (product: Product) => {
-    setOrder(prevOrder => {
-      const existingItem = prevOrder.find(item => item.product.id === product.id);
-      if (existingItem) {
-        return prevOrder.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        return [...prevOrder, { product, quantity: 1 }];
+  const addToOrder = async (product: Product) => {
+    if (isTableOrder && tableCart) {
+      try {
+        await tableCart.addItem(product);
+        // Show toast notification
+        setShowAddedToast(product.id);
+        setTimeout(() => setShowAddedToast(null), 2000);
+      } catch (error: unknown) {
+        // Handle table closed error
+        if (error instanceof Error && error.message.includes('closed')) {
+          alert('This table has been closed. Please contact staff if you need assistance.');
+          // Redirect to menu without table param
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('table');
+            url.searchParams.delete('area');
+            window.location.href = url.toString();
+          }
+          return;
+        }
+        console.error('Failed to add item:', error);
       }
-    });
-    
-    // Show toast notification
-    setShowAddedToast(product.id);
-    setTimeout(() => setShowAddedToast(null), 2000);
+    } else {
+      // Fallback to local cart for non-table orders (shouldn't happen in new flow)
+      console.warn('Table order expected but not available');
+    }
 
     // Track add-to-cart for CRM
     if (menuData?.restaurant?.id) {
@@ -191,31 +206,57 @@ function MenuPageContent({ params }: MenuPageProps) {
     }
   };
 
-  const removeFromOrder = (productId: string) => {
-    setOrder(prevOrder => prevOrder.filter(item => item.product.id !== productId));
-  };
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromOrder(productId);
-      return;
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (isTableOrder && tableCart) {
+      await tableCart.updateQuantity(productId, quantity);
     }
-    setOrder(prevOrder =>
-      prevOrder.map(item =>
-        item.product.id === productId
-          ? { ...item, quantity }
-          : item
-      )
-    );
   };
 
-  const clearOrder = () => {
-    setOrder([]);
-    menuStorage.removeOrder();
+  const removeFromOrder = async (productId: string) => {
+    if (isTableOrder && tableCart) {
+      await tableCart.removeItem(productId);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!isTableOrder || !tableCart) return;
+    
+    setShowPlaceOrderConfirm(true);
+  };
+
+  const confirmPlaceOrder = async () => {
+    if (!isTableOrder || !tableCart) return;
+    
+    setPlacingOrder(true);
+    const success = await tableCart.placeOrder();
+    setPlacingOrder(false);
+    
+    if (success) {
+      setShowPlaceOrderConfirm(false);
+      setShowOrderSummary(false);
+    }
+  };
+
+  // Get current order items (customer's items for table orders)
+  const getCurrentOrder = () => {
+    if (isTableOrder && tableCart) {
+      return tableCart.customerItems;
+    }
+    return [];
   };
 
   const getTotalPrice = () => {
-    return order.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    if (isTableOrder && tableCart) {
+      return tableCart.getCustomerTotal();
+    }
+    return 0;
+  };
+
+  const getTableTotal = () => {
+    if (isTableOrder && tableCart) {
+      return tableCart.getTableTotal();
+    }
+    return 0;
   };
 
   const toggleDescription = (productId: string, product?: Product) => {
@@ -309,7 +350,8 @@ function MenuPageContent({ params }: MenuPageProps) {
     ? products 
     : products.filter(product => product.category_id === selectedCategory);
 
-  const totalItems = order.reduce((total, item) => total + item.quantity, 0);
+  const currentOrder = getCurrentOrder();
+  const totalItems = currentOrder.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -438,7 +480,19 @@ function MenuPageContent({ params }: MenuPageProps) {
         </div>
       </div>
 
+      {/* Table Closed Message */}
+      {isTableOrder && tableCart?.tableClosed && (
+        <div className={`${layout.containerSmall} py-4`}>
+          <Card className="p-4 bg-amber-50 border-amber-200">
+            <p className="text-foreground">
+              This table order has been closed. Please scan the QR code again to start a new order.
+            </p>
+          </Card>
+        </div>
+      )}
+
       {/* Menu Content */}
+      {!(isTableOrder && tableCart?.tableClosed) && (
       <div ref={menuContentRef} className={`${layout.containerSmall} py-6`}>
         {selectedCategory === 'all' ? (
           <div className="space-y-6">
@@ -502,9 +556,10 @@ function MenuPageContent({ params }: MenuPageProps) {
           </div>
         )}
       </div>
+      )}
 
       {/* Floating My Order Button - Sticky at bottom */}
-      {order.length > 0 && (
+      {currentOrder.length > 0 && (
         <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
           <Button
             size="lg"
@@ -536,54 +591,136 @@ function MenuPageContent({ params }: MenuPageProps) {
               </Button>
             </div>
             <div className="p-4 overflow-y-auto max-h-96">
-              {order.length === 0 ? (
+              {currentOrder.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">Your order is empty</p>
               ) : (
                 <div className="space-y-3">
-                  {order.map((item) => (
-                    <div key={item.product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  {currentOrder.map((item) => (
+                    <div
+                      key={item.product.id}
+                      className={`flex items-center justify-between p-3 border rounded-lg ${
+                        item.isProcessed ? 'opacity-50 bg-gray-50' : ''
+                      }`}
+                    >
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.product.name}</h4>
-                        <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price, restaurant.currency)} each</p>
+                        <h4 className={`font-medium ${item.isProcessed ? 'line-through' : ''}`}>
+                          {item.product.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {formatCurrency(item.product.price, restaurant.currency)} each
+                        </p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        >
-                          -
-                        </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
+                      {!item.isProcessed && (
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            disabled={tableCart?.loading}
+                          >
+                            -
+                          </Button>
+                          <span className="w-8 text-center">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            disabled={tableCart?.loading}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      )}
+                      {item.isProcessed && (
+                        <Badge variant="secondary" className="text-xs">Processed</Badge>
+                      )}
                     </div>
                   ))}
+                  {isTableOrder && tableCart && (() => {
+                    const currentToken = getOrCreateClientToken();
+                    const otherItems = tableCart.tableItems.filter(
+                      (item) => item.customer_token && item.customer_token !== currentToken
+                    );
+                    return otherItems.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">Other items at table:</p>
+                        {otherItems.map((item, idx) => (
+                          <div key={idx} className="text-sm text-muted-foreground py-1">
+                            {item.quantity}x {item.product.name}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
-            {order.length > 0 && (
+            {currentOrder.length > 0 && (
               <div className="p-4 border-t bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold">Total:</span>
-                  <span className="font-bold text-lg">{formatCurrency(getTotalPrice(), restaurant.currency)}</span>
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Your Total:</span>
+                    <span className="font-bold text-lg">{formatCurrency(getTotalPrice(), restaurant.currency)}</span>
+                  </div>
+                  {isTableOrder && getTableTotal() > getTotalPrice() && (
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                      <span>Table Total:</span>
+                      <span className="font-semibold">{formatCurrency(getTableTotal(), restaurant.currency)}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" className="flex-1" onClick={clearOrder}>
-                    Clear Order
-                  </Button>
-                  <Button className="flex-1">
-                    Place Order
-                  </Button>
-                </div>
+                <Button
+                  className="w-full"
+                  onClick={handlePlaceOrder}
+                  disabled={tableCart?.loading || placingOrder}
+                >
+                  {placingOrder ? 'Placing Order...' : 'Place Order'}
+                </Button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Place Order Confirmation Modal */}
+      {showPlaceOrderConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center sm:items-center">
+          <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Ready to place order?</h3>
+            <p className="text-muted-foreground mb-6">
+              Has everyone at the table finished ordering?
+            </p>
+            {isTableOrder && tableCart && (
+              <div className="mb-6 space-y-2">
+                <div className="flex justify-between">
+                  <span>Your order:</span>
+                  <span className="font-semibold">{formatCurrency(getTotalPrice(), restaurant.currency)}</span>
+                </div>
+                {getTableTotal() > getTotalPrice() && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Table total:</span>
+                    <span>{formatCurrency(getTableTotal(), restaurant.currency)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPlaceOrderConfirm(false)}
+                disabled={placingOrder}
+              >
+                Not Yet
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={confirmPlaceOrder}
+                disabled={placingOrder}
+              >
+                {placingOrder ? 'Placing...' : 'Yes, Place Order'}
+              </Button>
+            </div>
           </div>
         </div>
       )}
