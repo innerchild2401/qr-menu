@@ -50,6 +50,8 @@ export async function GET(
 
       if (updateError) {
         console.error('Error updating table session:', updateError);
+      } else {
+        console.log('✅ [GET ORDER] Generated new session_id for table without one:', sessionId);
       }
     }
     
@@ -71,11 +73,16 @@ export async function GET(
         .eq('id', tableId);
 
       if (updateError) {
-        console.error('Error updating table session:', updateError);
+        console.error('❌ [GET ORDER] Error updating table session:', updateError);
+      } else {
+        console.log('✅ [GET ORDER] Generated new session_id for available table:', sessionId);
       }
     }
     
     // If table is occupied and has session_id, use existing one (multiple customers can share same session)
+    if (table.status === 'occupied' && sessionId) {
+      console.log('✅ [GET ORDER] Using existing session_id for occupied table:', sessionId);
+    }
 
     const { data: order, error } = await supabaseAdmin
       .from('table_orders')
@@ -89,10 +96,16 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
     }
 
+    console.log('📤 [GET ORDER] Returning response with sessionId:', {
+      sessionId,
+      tableStatus: table.status,
+      hasOrder: !!order,
+    });
+
     return NextResponse.json({ 
       order: order || null, 
       tableClosed: false,
-      sessionId: sessionId || null // Return session_id to client
+      sessionId: sessionId || null // Return session_id to client - CRITICAL for client to store
     });
   } catch (error) {
     console.error('Error in table order GET:', error);

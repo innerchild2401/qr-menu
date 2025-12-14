@@ -65,9 +65,12 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       const res = await fetch(`/api/table-orders/${tableId}`);
       const json = await res.json();
       if (res.ok) {
-        // Store session_id from response
+        // Store session_id from response - CRITICAL for security
         if (json.sessionId) {
+          console.log('✅ [CLIENT] Received sessionId from GET:', json.sessionId);
           setSessionId(json.sessionId);
+        } else {
+          console.warn('⚠️ [CLIENT] GET response missing sessionId:', json);
         }
         
         if (json.tableClosed) {
@@ -198,8 +201,11 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
       return;
     }
 
-    // Note: sessionId might be null on first request - server will generate it
-    // We still send it if we have it, but don't block if we don't
+    // Note: sessionId should be set from GET response before POST
+    // If it's null, log a warning but still attempt the request
+    if (!sessionId) {
+      console.warn('⚠️ [CLIENT] POST request with null sessionId - this should not happen if GET completed first');
+    }
 
     setLoading(true);
     try {
@@ -223,7 +229,10 @@ export function useTableCart(tableId: string | null, restaurantId: string | null
         const json = await res.json();
         // Store session_id from response if provided
         if (json.sessionId) {
+          console.log('✅ [CLIENT] Received sessionId from POST:', json.sessionId);
           setSessionId(json.sessionId);
+        } else {
+          console.warn('⚠️ [CLIENT] POST response missing sessionId:', json);
         }
         await loadTableOrder();
       } else {
