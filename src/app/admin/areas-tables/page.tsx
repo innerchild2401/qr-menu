@@ -158,6 +158,42 @@ export default function AreasTablesPage() {
       await loadData();
     } catch (error) {
       console.error('QR generation failed', error);
+      alert(error instanceof Error ? error.message : 'Failed to generate QR code');
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const handleRegenerateAllQR = async () => {
+    if (!confirm('This will regenerate QR codes for all tables with the new redirect approach. Continue?')) {
+      return;
+    }
+    setGenerating('all');
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const table of tables) {
+        try {
+          const res = await authenticatedApiCall(`/api/admin/tables/${table.id}/generate-qr`, {
+            method: 'POST',
+          });
+          if (res.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to regenerate QR for table ${table.table_number}:`, error);
+          errorCount++;
+        }
+      }
+      
+      await loadData();
+      alert(`Regenerated QR codes: ${successCount} successful, ${errorCount} failed`);
+    } catch (error) {
+      console.error('QR regeneration failed', error);
+      alert('Failed to regenerate QR codes');
     } finally {
       setGenerating(null);
     }
@@ -208,6 +244,20 @@ export default function AreasTablesPage() {
               <RefreshCcw className="h-4 w-4 mr-2" />
             )}
             Refresh Session IDs
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleRegenerateAllQR}
+            disabled={generating === 'all'}
+            title="Regenerate all QR codes with new redirect approach"
+          >
+            {generating === 'all' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <QrCode className="h-4 w-4 mr-2" />
+            )}
+            Regenerate All QR Codes
           </Button>
           <Dialog open={areaModalOpen} onOpenChange={setAreaModalOpen}>
             <DialogTrigger asChild>

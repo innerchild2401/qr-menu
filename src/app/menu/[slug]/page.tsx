@@ -27,6 +27,8 @@ import RestaurantNavbar from '@/components/RestaurantNavbar';
 import { formatCurrency, getNutritionLabel, type Currency, type NutritionLanguage } from '@/lib/currency-utils';
 import { useTableCart } from '@/hooks/useTableCart';
 import { getOrCreateClientToken } from '@/lib/crm/client-tracking';
+import ApprovalRequestModal from '@/components/ApprovalRequestModal';
+import ApprovalNotification from '@/components/ApprovalNotification';
 
 interface MenuPageProps {
   params: Promise<{
@@ -150,8 +152,12 @@ function MenuPageContent({ params }: MenuPageProps) {
     setPlacingOrder(false);
   }, [tableId]);
   
+  // Extract session_id from URL (set by redirect endpoint)
+  const sessionIdFromUrl = searchParams.get('session');
+  
   // Use table cart if table_id exists, otherwise fall back to local cart
-  const tableCart = useTableCart(tableId, menuData?.restaurant?.id || null);
+  // Pass sessionId from URL if available (from redirect endpoint)
+  const tableCart = useTableCart(tableId, menuData?.restaurant?.id || null, sessionIdFromUrl || null);
   const isTableOrder = !!tableId;
 
   useEffect(() => {
@@ -189,17 +195,34 @@ function MenuPageContent({ params }: MenuPageProps) {
         setShowAddedToast(product.id);
         setTimeout(() => setShowAddedToast(null), 2000);
       } catch (error: unknown) {
-        // Handle table closed error
-        if (error instanceof Error && error.message.includes('closed')) {
-          alert('This table has been closed. Please contact staff if you need assistance.');
-          // Redirect to menu without table param
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('table');
-            url.searchParams.delete('area');
-            window.location.href = url.toString();
+        // Handle approval required/pending
+        if (error instanceof Error) {
+          if (error.message === 'APPROVAL_REQUIRED') {
+            // Request approval
+            const approvalResult = await tableCart.requestApproval();
+            if (!approvalResult.approved) {
+              // Approval request created, modal will show via hook state
+              return;
+            }
+            // If auto-approved (first scanner), retry adding item
+            await tableCart.addItem(product);
+            setShowAddedToast(product.id);
+            setTimeout(() => setShowAddedToast(null), 2000);
+            return;
+          } else if (error.message === 'APPROVAL_PENDING') {
+            // Already pending, modal should be showing
+            return;
+          } else if (error.message.includes('closed')) {
+            alert('This table has been closed. Please contact staff if you need assistance.');
+            // Redirect to menu without table param
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('table');
+              url.searchParams.delete('area');
+              window.location.href = url.toString();
+            }
+            return;
           }
-          return;
         }
         console.error('Failed to add item:', error);
       }
@@ -736,6 +759,50 @@ function MenuPageContent({ params }: MenuPageProps) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Approval Request Modal */}
+      {isTableOrder && tableCart?.approvalRequest && tableCart.approvalRequest.status === 'pending' && (
+        <ApprovalRequestModal
+          timeLeft={tableCart.approvalRequest.timeLeft}
+          onRetry={async () => {
+            if (tableCart.requestApproval) {
+              const result = await tableCart.requestApproval();
+              if (result.approved) {
+                // Auto-approved, can add items now
+              }
+            }
+          }}
+          onClose={() => {
+            // Keep modal open but allow dismissal
+          }}
+        />
+      )}
+
+      {/* Approval Notifications (for existing participants) */}
+      {isTableOrder && tableCart?.isParticipant && tableCart.pendingApprovalRequests && tableCart.pendingApprovalRequests.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 space-y-2">
+          {tableCart.pendingApprovalRequests.map((request) => (
+            <ApprovalNotification
+              key={request.id}
+              requestId={request.id}
+              timeLeft={request.timeLeft}
+              onApprove={async () => {
+                if (tableCart.handleApprovalRequest) {
+                  await tableCart.handleApprovalRequest(request.id, 'approve');
+                }
+              }}
+              onDeny={async () => {
+                if (tableCart.handleApprovalRequest) {
+                  await tableCart.handleApprovalRequest(request.id, 'deny');
+                }
+              }}
+              onDismiss={() => {
+                // Remove from list (will be removed by polling)
+              }}
+            />
+          ))}
         </div>
       )}
 

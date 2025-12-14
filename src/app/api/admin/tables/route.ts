@@ -109,7 +109,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid area' }, { status: 400 });
     }
 
-    // Create table
+    // Create table with session_id (generated at creation)
+    const newSessionId = crypto.randomUUID();
     const { data: table, error: insertError } = await supabaseAdmin
       .from('tables')
       .insert({
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
         capacity,
         table_type: tableType,
         status: 'available',
+        session_id: newSessionId, // Generate session_id at table creation
         floor_plan_x: floorPlanX || null,
         floor_plan_y: floorPlanY || null,
         floor_plan_rotation: floorPlanRotation || 0,

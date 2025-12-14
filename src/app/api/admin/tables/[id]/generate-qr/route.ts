@@ -75,12 +75,21 @@ export async function POST(
       baseUrl
     );
 
-    // Update table with QR code info
+    // Ensure table has session_id (generate if missing)
+    // Session_id should be set at table creation, but ensure it exists for QR generation
+    let sessionId = table.session_id;
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      console.log('⚠️ [GENERATE QR] Table missing session_id, generating one:', sessionId);
+    }
+
+    // Update table with QR code info and ensure session_id exists
     const { error: updateError } = await supabaseAdmin
       .from('tables')
       .update({
         qr_code_url: publicUrl,
         qr_code_path: storagePath,
+        session_id: sessionId, // Ensure session_id is set when QR is generated
         updated_at: new Date().toISOString(),
       })
       .eq('id', tableId);

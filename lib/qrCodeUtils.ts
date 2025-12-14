@@ -118,6 +118,7 @@ export function getQRCodeDownloadUrl(qrCodeUrl: string): string {
 
 /**
  * Generate table-specific QR code URL
+ * Uses redirect endpoint to ensure session_id is only generated on QR scan
  */
 export function generateTableQRUrl(
   restaurantSlug: string,
@@ -130,7 +131,9 @@ export function generateTableQRUrl(
   if (areaId) {
     params.set('area', areaId);
   }
-  return `${baseUrl}/menu/${restaurantSlug}?${params.toString()}`;
+  // Use redirect endpoint instead of direct menu link
+  // This ensures session_id is only generated when QR is scanned, not on refresh
+  return `${baseUrl}/table-redirect?${params.toString()}`;
 }
 
 /**
