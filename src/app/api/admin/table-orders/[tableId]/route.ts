@@ -114,6 +114,22 @@ export async function PATCH(
         return NextResponse.json({ error: 'Failed to close table' }, { status: 500 });
       }
 
+      // Clear all participants for this table (new session = fresh start)
+      await supabaseAdmin
+        .from('table_participants')
+        .delete()
+        .eq('table_id', tableId);
+      
+      // Also expire any pending approval requests for this table
+      await supabaseAdmin
+        .from('table_approval_requests')
+        .update({
+          status: 'expired',
+          resolved_at: new Date().toISOString(),
+        })
+        .eq('table_id', tableId)
+        .eq('status', 'pending');
+
       return NextResponse.json({ success: true, message: 'Table closed successfully' });
     }
 
@@ -187,6 +203,22 @@ export async function PATCH(
           updated_at: new Date().toISOString(),
         })
         .eq('id', tableId);
+      
+      // Clear all participants for this table (new session = fresh start)
+      await supabaseAdmin
+        .from('table_participants')
+        .delete()
+        .eq('table_id', tableId);
+      
+      // Also expire any pending approval requests for this table
+      await supabaseAdmin
+        .from('table_approval_requests')
+        .update({
+          status: 'expired',
+          resolved_at: new Date().toISOString(),
+        })
+        .eq('table_id', tableId)
+        .eq('status', 'pending');
       
       // Create customer_orders for each customer that contributed to this order
       const customerTokens = order.customer_tokens || [];
