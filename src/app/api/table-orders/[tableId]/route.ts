@@ -53,18 +53,20 @@ export async function GET(
       }
     }
     
-    // If table is available, always generate a NEW session_id (even if one exists from previous close)
-    // This ensures each new customer session gets a fresh session_id
+    // If table is available, generate a NEW session_id but DON'T mark as occupied yet
+    // Table will only be marked as occupied when someone successfully adds items (POST with valid session)
+    // This prevents marking table as occupied just from opening the browser directly
     if (table.status === 'available') {
       sessionId = crypto.randomUUID();
       
-      // Update table with new session_id and set status to occupied
+      // Update table with new session_id but keep status as 'available'
+      // Status will change to 'occupied' only when POST succeeds with this session_id
       const { error: updateError } = await supabaseAdmin
         .from('tables')
         .update({
           session_id: sessionId,
-          status: 'occupied',
           updated_at: new Date().toISOString(),
+          // Keep status as 'available' - will be set to 'occupied' on first successful POST
         })
         .eq('id', tableId);
 
@@ -155,27 +157,6 @@ export async function POST(
       } else {
         // Update table object for use below
         table.session_id = newSessionId;
-      }
-    }
-    
-    // If table is available, generate a NEW session_id and set to occupied
-    if (table.status === 'available') {
-      const newSessionId = crypto.randomUUID();
-      const { error: updateError } = await supabaseAdmin
-        .from('tables')
-        .update({
-          session_id: newSessionId,
-          status: 'occupied',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tableId);
-
-      if (updateError) {
-        console.error('Error updating table session:', updateError);
-      } else {
-        // Update table object for use below
-        table.session_id = newSessionId;
-        table.status = 'occupied';
       }
     }
 
@@ -364,6 +345,18 @@ export async function POST(
         status: updatedOrder.order_status,
       });
 
+      // Mark table as occupied if it's currently available (first successful POST)
+      if (table.status === 'available') {
+        await supabaseAdmin
+          .from('tables')
+          .update({
+            status: 'occupied',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', tableId);
+        console.log('✅ [UPDATE CART] Table marked as occupied');
+      }
+
       return NextResponse.json({ 
         order: updatedOrder,
         sessionId: table.session_id // Return session_id so client can store it
@@ -417,6 +410,18 @@ export async function POST(
           status: updatedOrder.order_status,
           itemCount: updatedOrder.order_items.length,
         });
+
+        // Mark table as occupied if it's currently available (first successful POST)
+        if (table.status === 'available') {
+          await supabaseAdmin
+            .from('tables')
+            .update({
+              status: 'occupied',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', tableId);
+          console.log('✅ [UPDATE CART] Table marked as occupied after converting closed order');
+        }
 
         return NextResponse.json({ 
           order: updatedOrder,
@@ -520,6 +525,18 @@ export async function POST(
             itemCount: updatedOrder.order_items.length,
           });
 
+          // Mark table as occupied if it's currently available (first successful POST)
+          if (table.status === 'available') {
+            await supabaseAdmin
+              .from('tables')
+              .update({
+                status: 'occupied',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', tableId);
+            console.log('✅ [UPDATE CART] Table marked as occupied after race condition');
+          }
+
           return NextResponse.json({ 
             order: updatedOrder,
             sessionId: table.session_id // Return session_id so client can store it
@@ -536,7 +553,22 @@ export async function POST(
         itemCount: newOrder.order_items.length,
       });
 
-      return NextResponse.json({ order: newOrder });
+      // Mark table as occupied if it's currently available (first successful POST)
+      if (table.status === 'available') {
+        await supabaseAdmin
+          .from('tables')
+          .update({
+            status: 'occupied',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', tableId);
+        console.log('✅ [UPDATE CART] Table marked as occupied after order creation');
+      }
+
+      return NextResponse.json({ 
+        order: newOrder,
+        sessionId: table.session_id // Return session_id so client can store it
+      });
     }
   } catch (error) {
     console.error('Error in table order POST:', error);
