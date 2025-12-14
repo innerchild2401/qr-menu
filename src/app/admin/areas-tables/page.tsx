@@ -40,6 +40,7 @@ export default function AreasTablesPage() {
   const [creatingArea, setCreatingArea] = useState(false);
   const [creatingTable, setCreatingTable] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [refreshingSessionIds, setRefreshingSessionIds] = useState(false);
   const [areaModalOpen, setAreaModalOpen] = useState(false);
   const [tableModalOpen, setTableModalOpen] = useState(false);
 
@@ -162,6 +163,28 @@ export default function AreasTablesPage() {
     }
   };
 
+  const handleRefreshSessionIds = async () => {
+    if (!confirm('This will refresh session IDs for all tables. This will invalidate all current active sessions. Continue?')) {
+      return;
+    }
+    setRefreshingSessionIds(true);
+    try {
+      const res = await authenticatedApiCall('/api/admin/tables/refresh-session-ids', {
+        method: 'POST',
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to refresh session IDs');
+      }
+      alert(`Successfully refreshed session IDs for ${json.updated} table(s)`);
+    } catch (error) {
+      console.error('Refresh session IDs failed', error);
+      alert(error instanceof Error ? error.message : 'Failed to refresh session IDs');
+    } finally {
+      setRefreshingSessionIds(false);
+    }
+  };
+
   return (
     <div className={cn('min-h-screen bg-background', layout.container, 'py-10')}>
       <div className="flex items-center justify-between mb-6">
@@ -172,6 +195,20 @@ export default function AreasTablesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleRefreshSessionIds}
+            disabled={refreshingSessionIds}
+            title="Refresh session IDs for all tables (invalidates current sessions)"
+          >
+            {refreshingSessionIds ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4 mr-2" />
+            )}
+            Refresh Session IDs
+          </Button>
           <Dialog open={areaModalOpen} onOpenChange={setAreaModalOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="secondary">

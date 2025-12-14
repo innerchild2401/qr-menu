@@ -28,15 +28,39 @@ export async function POST(
       return NextResponse.json({ error: 'Table not found' }, { status: 404 });
     }
 
-    // Verify session_id matches (security check)
-    if (!sessionId || table.session_id !== sessionId) {
-      console.log('❌ [PLACE ORDER] 403 - Invalid session_id');
+    // SECURITY: Always require session_id to match - no exceptions
+    if (!table.session_id) {
+      console.warn('⚠️ [PLACE ORDER] Table missing session_id, generating one and requiring QR scan');
+      const newSessionId = crypto.randomUUID();
+      await supabaseAdmin
+        .from('tables')
+        .update({
+          session_id: newSessionId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tableId);
+      
       return NextResponse.json(
         { 
           error: 'Invalid session. Please scan the QR code again.',
           message: 'In order to start a new order, you need to scan the QR code on the table.',
         },
-        { status: 403 }
+        { status: 403, headers: { 'x-session-id': newSessionId } }
+      );
+    }
+
+    // Verify session_id matches (security check)
+    if (!sessionId || table.session_id !== sessionId) {
+      console.log('❌ [PLACE ORDER] 403 - Invalid session_id:', {
+        clientSessionId: sessionId,
+        tableSessionId: table.session_id,
+      });
+      return NextResponse.json(
+        { 
+          error: 'Invalid session. Please scan the QR code again.',
+          message: 'In order to start a new order, you need to scan the QR code on the table.',
+        },
+        { status: 403, headers: { 'x-session-id': table.session_id || '' } }
       );
     }
 
@@ -182,7 +206,7 @@ export async function POST(
       console.log('✅ [PLACE ORDER] Table status updated to occupied');
     }
 
-    return NextResponse.json({ order: updatedOrder });
+    return NextResponse.json({ order: updatedOrder, sessionId: table.session_id });
   } catch (error) {
     console.error('Error in place order:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
