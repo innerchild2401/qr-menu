@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { validateUserAndGetRestaurant } from '../../../../../../lib/api-route-helpers';
+import { supabaseAdmin } from '../../../../../../lib/supabase-server';
 
 /**
  * Individual Table Management API
@@ -15,34 +16,13 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error || !user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
-    const { data: table, error } = await supabase
+    const { data: table, error: tableError } = await supabaseAdmin
       .from('tables')
       .select(`
         *,
@@ -53,11 +33,11 @@ export async function GET(
         )
       `)
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .single();
 
-    if (error) {
-      console.error('Error fetching table:', error);
+    if (tableError) {
+      console.error('Error fetching table:', tableError);
       return NextResponse.json(
         { error: 'Table not found' },
         { status: 404 }
@@ -82,48 +62,27 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error || !user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
-    const { data: table, error } = await supabase
+    const { data: table, error: updateError } = await supabaseAdmin
       .from('tables')
       .update({
         ...body,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Error updating table:', error);
+    if (updateError) {
+      console.error('Error updating table:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update table', details: error.message },
+        { error: 'Failed to update table', details: updateError.message },
         { status: 500 }
       );
     }
@@ -145,59 +104,38 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { user, restaurant, error } = await validateUserAndGetRestaurant(request);
+    
+    if (error || !user || !restaurant) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: userRestaurant } = await supabase
-      .from('user_restaurants')
-      .select('restaurant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRestaurant) {
-      return NextResponse.json({ error: 'No restaurant found' }, { status: 404 });
-    }
-
     // Get table to get area_id for count update
-    const { data: table } = await supabase
+    const { data: table } = await supabaseAdmin
       .from('tables')
       .select('area_id')
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id)
+      .eq('restaurant_id', restaurant.id)
       .single();
 
     // Delete table
-    const { error } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('tables')
       .delete()
       .eq('id', id)
-      .eq('restaurant_id', userRestaurant.restaurant_id);
+      .eq('restaurant_id', restaurant.id);
 
-    if (error) {
-      console.error('Error deleting table:', error);
+    if (deleteError) {
+      console.error('Error deleting table:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete table', details: error.message },
+        { error: 'Failed to delete table', details: deleteError.message },
         { status: 500 }
       );
     }
 
     // Update area table count if table existed
     if (table?.area_id) {
-      await supabase.rpc('decrement_area_table_count', { area_id: table.area_id });
+      await supabaseAdmin.rpc('decrement_area_table_count', { area_id: table.area_id });
     }
 
     return NextResponse.json({ success: true });
