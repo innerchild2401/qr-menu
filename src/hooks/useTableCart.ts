@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/auth-supabase';
 import { getOrCreateClientToken, generateClientFingerprint } from '@/lib/crm/client-tracking';
 
 interface TableOrderItem {
@@ -310,7 +311,7 @@ export function useTableCart(
     }
   }, [tableId, restaurantId]);
 
-  // Load order on mount and when tableId changes
+  // Load order on mount and when tableId changes; set up realtime subscription
   useEffect(() => {
     // Reset state when tableId changes (e.g., new QR scan)
     if (tableId) {
@@ -322,9 +323,50 @@ export function useTableCart(
     }
     
     loadTableOrder();
-    // Poll for updates every 5 seconds
-    const interval = setInterval(loadTableOrder, 5000);
-    return () => clearInterval(interval);
+
+    // Subscribe to realtime updates for this table's order and table status
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    if (tableId) {
+      channel = supabase
+        .channel(`table-orders-${tableId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'table_orders', filter: `table_id=eq.${tableId}` },
+          () => {
+            // Refresh order when order rows change
+            loadTableOrder();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'tables', filter: `id=eq.${tableId}` },
+          () => {
+            // Refresh when table status/session changes (close, reopen, etc.)
+            loadTableOrder();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ [CLIENT] Realtime subscribed for table', tableId);
+          }
+        });
+    }
+
+    // Refetch on focus as a safety net
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        loadTableOrder();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [loadTableOrder, tableId]);
 
   // Get customer's items from table order

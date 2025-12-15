@@ -9,6 +9,7 @@ import { Loader2, RefreshCcw, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authenticatedApiCall } from '@/lib/api-helpers';
 import TableOrderModal from '@/components/admin/TableOrderModal';
+import { supabase } from '@/lib/auth-supabase';
 
 interface TableRow {
   id: string;
@@ -57,7 +58,22 @@ export default function DiningRoomView() {
 
   useEffect(() => {
     loadTables();
-    const interval = setInterval(loadTables, 20000);
+    
+    // Realtime subscription for table status changes
+    const channel = supabase
+      .channel('admin-tables')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tables' },
+        () => {
+          loadTables();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [ADMIN] Realtime subscribed for dining room tables');
+        }
+      });
     
     // Listen for table detail open event
     const handleOpenTableDetail = (event: CustomEvent<{ tableId: string }>) => {
@@ -66,8 +82,15 @@ export default function DiningRoomView() {
     
     window.addEventListener('openTableDetail', handleOpenTableDetail as EventListener);
     
+    // Refetch on visibility (fallback)
+    const handleVisibility = () => {
+      if (!document.hidden) loadTables();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
-      clearInterval(interval);
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('openTableDetail', handleOpenTableDetail as EventListener);
     };
   }, []);
