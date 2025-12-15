@@ -29,6 +29,7 @@ export async function authenticatedApiCall(
   return fetch(endpoint, {
     ...options,
     headers,
+    credentials: 'include', // ensure cookies (auth) are sent on same-origin calls
   });
 }
 
