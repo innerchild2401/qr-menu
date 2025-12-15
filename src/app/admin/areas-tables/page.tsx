@@ -245,6 +245,15 @@ export default function AreasTablesPage() {
             )}
             Refresh Session IDs
           </Button>
+          <Button size="sm" variant="outline" asChild>
+            <a href="/admin/floor-plan">Floor Plan</a>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <a href="/admin/table-analytics">Table Analytics</a>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <a href="/admin/analytics-advanced">Advanced Analytics</a>
+          </Button>
           <Button 
             size="sm" 
             variant="outline" 
