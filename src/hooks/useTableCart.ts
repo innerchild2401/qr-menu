@@ -390,8 +390,9 @@ export function useTableCart(
         }),
       });
 
+      const json = await res.json();
+
       if (res.ok) {
-        const json = await res.json();
         // Store session_id from response if provided
         if (json.sessionId) {
           console.log('✅ [CLIENT] Received sessionId from POST:', json.sessionId);
@@ -399,9 +400,15 @@ export function useTableCart(
         } else {
           console.warn('⚠️ [CLIENT] POST response missing sessionId:', json);
         }
-        await loadTableOrder();
+
+        // Use returned order to avoid an extra GET round-trip (reduces perceived delay)
+        if (json.order) {
+          setTableOrder(json.order);
+        } else {
+          // Fallback to loading if server returned no order
+          await loadTableOrder();
+        }
       } else {
-        const json = await res.json();
         if (res.status === 403) {
           // Check if it's an approval issue
           if (json.requiresApproval) {
