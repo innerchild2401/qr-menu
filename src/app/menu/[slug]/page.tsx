@@ -120,7 +120,7 @@ function MenuPageContent({ params }: MenuPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { showOrderSummary, setShowOrderSummary } = useOrder();
+  const { order: localOrder, setOrder: setLocalOrder, showOrderSummary, setShowOrderSummary } = useOrder();
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [showAddedToast, setShowAddedToast] = useState<string | null>(null);
   const [showPlaceOrderConfirm, setShowPlaceOrderConfirm] = useState(false);
@@ -147,7 +147,6 @@ function MenuPageContent({ params }: MenuPageProps) {
   
   // Reset order state when tableId changes (new QR scan)
   useEffect(() => {
-    // Clear any cached order state when table changes
     setShowPlaceOrderConfirm(false);
     setPlacingOrder(false);
   }, [tableId]);
@@ -189,32 +188,30 @@ function MenuPageContent({ params }: MenuPageProps) {
 
   const addToOrder = async (product: Product) => {
     if (isTableOrder && tableCart) {
+      // Table mode: wait for cart to be ready (restaurantId + not loading)
+      if (!menuData?.restaurant?.id || tableCart.loading) {
+        return; // Silently wait; Add will work once loaded
+      }
       try {
         await tableCart.addItem(product);
-        // Show toast notification
         setShowAddedToast(product.id);
         setTimeout(() => setShowAddedToast(null), 2000);
       } catch (error: unknown) {
         // Handle approval required/pending
         if (error instanceof Error) {
           if (error.message === 'APPROVAL_REQUIRED') {
-            // Request approval
             const approvalResult = await tableCart.requestApproval();
             if (!approvalResult.approved) {
-              // Approval request created, modal will show via hook state
               return;
             }
-            // If auto-approved (first scanner), retry adding item
             await tableCart.addItem(product);
             setShowAddedToast(product.id);
             setTimeout(() => setShowAddedToast(null), 2000);
             return;
           } else if (error.message === 'APPROVAL_PENDING') {
-            // Already pending, modal should be showing
             return;
           } else if (error.message.includes('closed')) {
             alert('This table has been closed. Please contact staff if you need assistance.');
-            // Redirect to menu without table param
             if (typeof window !== 'undefined') {
               const url = new URL(window.location.href);
               url.searchParams.delete('table');
@@ -227,8 +224,19 @@ function MenuPageContent({ params }: MenuPageProps) {
         console.error('Failed to add item:', error);
       }
     } else {
-      // Fallback to local cart for non-table orders (shouldn't happen in new flow)
-      console.warn('Table order expected but not available');
+      // Browse/demo mode: use local cart so Add still works
+      setLocalOrder((prev) => {
+        const existing = prev.find((item) => item.product.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        }
+        return [...prev, { product, quantity: 1 }];
+      });
+      setShowOrderSummary(true);
+      setShowAddedToast(product.id);
+      setTimeout(() => setShowAddedToast(null), 2000);
     }
 
     // Track add-to-cart for CRM
@@ -247,50 +255,64 @@ function MenuPageContent({ params }: MenuPageProps) {
   const updateQuantity = async (productId: string, quantity: number) => {
     if (isTableOrder && tableCart) {
       await tableCart.updateQuantity(productId, quantity);
+    } else {
+      if (quantity <= 0) {
+        setLocalOrder((prev) => prev.filter((item) => item.product.id !== productId));
+      } else {
+        setLocalOrder((prev) =>
+          prev.map((item) =>
+            item.product.id === productId ? { ...item, quantity } : item
+          )
+        );
+      }
     }
   };
 
   const removeFromOrder = async (productId: string) => {
     if (isTableOrder && tableCart) {
       await tableCart.removeItem(productId);
+    } else {
+      setLocalOrder((prev) => prev.filter((item) => item.product.id !== productId));
     }
   };
 
   const handlePlaceOrder = async () => {
-    if (!isTableOrder || !tableCart) return;
-    
+    if (!isTableOrder || !tableCart) {
+      // Browse mode: can't place without a table
+      alert('To place your order, scan the QR code on your table.');
+      return;
+    }
     setShowPlaceOrderConfirm(true);
   };
 
   const confirmPlaceOrder = async () => {
     if (!isTableOrder || !tableCart) return;
-    
+
     setPlacingOrder(true);
     const result = await tableCart.placeOrder();
     setPlacingOrder(false);
-    
+
     if (result.success) {
       setShowPlaceOrderConfirm(false);
       setShowOrderSummary(false);
     } else {
-      // Show error message to user
       alert(result.error || 'Failed to place order. Please try again.');
     }
   };
 
-  // Get current order items (customer's items for table orders)
+  // Get current order items (table cart or local cart for browse mode)
   const getCurrentOrder = () => {
     if (isTableOrder && tableCart) {
       return tableCart.customerItems;
     }
-    return [];
+    return localOrder.map(({ product, quantity }) => ({ product, quantity, isProcessed: false }));
   };
 
   const getTotalPrice = () => {
     if (isTableOrder && tableCart) {
       return tableCart.getCustomerTotal();
     }
-    return 0;
+    return localOrder.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   };
 
   const getTableTotal = () => {
@@ -573,6 +595,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       onToggleDescription={() => toggleDescription(product.id, product)}
                       showAddedToast={showAddedToast === product.id}
                       restaurant={restaurant}
+                      addDisabled={isTableOrder && tableCart.loading}
                     />
                   ))}
                 </div>
@@ -594,6 +617,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                       onToggleDescription={() => toggleDescription(product.id, product)}
                       showAddedToast={showAddedToast === product.id}
                       restaurant={restaurant}
+                      addDisabled={isTableOrder && tableCart.loading}
                     />
                   ))}
                 </div>
@@ -611,6 +635,7 @@ function MenuPageContent({ params }: MenuPageProps) {
                 onToggleDescription={() => toggleDescription(product.id)}
                 showAddedToast={showAddedToast === product.id}
                 restaurant={restaurant}
+                addDisabled={isTableOrder && tableCart.loading}
               />
             ))}
           </div>
@@ -859,7 +884,8 @@ function ProductCard({
   isExpanded, 
   onToggleDescription,
   showAddedToast,
-  restaurant
+  restaurant,
+  addDisabled = false,
 }: { 
   product: Product; 
   onAddToOrder: (product: Product) => void;
@@ -867,6 +893,7 @@ function ProductCard({
   onToggleDescription: (product: Product) => void;
   showAddedToast: boolean;
   restaurant: Restaurant;
+  addDisabled?: boolean;
 }) {
   // Use AI generated description if available, otherwise fall back to regular description
   const description = product.generated_description || product.description || '';
@@ -1031,8 +1058,9 @@ function ProductCard({
               size="sm" 
               onClick={() => onAddToOrder(product)}
               className="bg-blue-600 hover:bg-blue-700"
+              disabled={addDisabled}
             >
-              Add to Order
+              {addDisabled ? 'Loading...' : 'Add to Order'}
             </Button>
           </div>
         </div>
